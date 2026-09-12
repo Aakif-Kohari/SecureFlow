@@ -1,7 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---- Mocks (must be hoisted before imports) ----
-const mockWorkerOn = vi.hoisted(() => vi.fn());
+const handlers = vi.hoisted(() => ({
+  completed: null as ((...args: any[]) => any) | null,
+  failed: null as ((...args: any[]) => any) | null,
+}));
+
+// Trap the handlers in our hoisted object so they survive Vitest clearing mocks
+const mockWorkerOn = vi.hoisted(() => vi.fn((event: string, handler: (...args: any[]) => any) => {
+  if (event === 'completed') handlers.completed = handler;
+  if (event === 'failed') handlers.failed = handler;
+}));
+
 const mockDLQAdd = vi.hoisted(() => vi.fn());
 
 vi.mock('bullmq', () => {
@@ -23,7 +33,6 @@ vi.mock('@/ai/flows/developer-receives-ai-security-explanations', () => ({
 }));
 
 // ---- Imports (after mocks) ----
-// This executes the file once and instantly triggers the worker.on() calls
 import {
   MAX_VALIDATION_ERROR_LENGTH,
   WebhookConfigurationError,
@@ -36,19 +45,16 @@ import {
 
 describe('Webhook Worker DLQ Routing', () => {
   beforeEach(() => {
-    // Only clear the DLQ tracker. 
-    // Do NOT clear mockWorkerOn, because the worker was only instantiated once upon import!
     mockDLQAdd.mockClear();
   });
 
   it('registers completed and failed listeners on the worker', () => {
-    expect(mockWorkerOn).toHaveBeenCalledWith('completed', expect.any(Function));
-    expect(mockWorkerOn).toHaveBeenCalledWith('failed', expect.any(Function));
+    expect(handlers.completed).toBeTypeOf('function');
+    expect(handlers.failed).toBeTypeOf('function');
   });
 
   it('routes to DLQ when job fails permanently (attempts exhausted)', async () => {
-    const failedHandlerCall = mockWorkerOn.mock.calls.find(call => call[0] === 'failed');
-    const failedHandler = failedHandlerCall![1];
+    const failedHandler = handlers.failed!;
 
     const mockJob = {
       id: 'job-failed-123',
@@ -73,8 +79,7 @@ describe('Webhook Worker DLQ Routing', () => {
   });
 
   it('does NOT route to DLQ when job fails temporarily (attempts remaining)', async () => {
-    const failedHandlerCall = mockWorkerOn.mock.calls.find(call => call[0] === 'failed');
-    const failedHandler = failedHandlerCall![1];
+    const failedHandler = handlers.failed!;
 
     const mockJob = {
       id: 'job-retry-123',
@@ -91,8 +96,7 @@ describe('Webhook Worker DLQ Routing', () => {
   });
 
   it('uses default maxAttempts of 3 when job.opts.attempts is missing (retry on attempt 2)', async () => {
-    const failedHandlerCall = mockWorkerOn.mock.calls.find(call => call[0] === 'failed');
-    const failedHandler = failedHandlerCall![1];
+    const failedHandler = handlers.failed!;
 
     const mockJob = {
       id: 'job-no-opts-retry',
@@ -109,8 +113,7 @@ describe('Webhook Worker DLQ Routing', () => {
   });
 
   it('uses default maxAttempts of 3 when job.opts.attempts is missing (DLQ on attempt 3)', async () => {
-    const failedHandlerCall = mockWorkerOn.mock.calls.find(call => call[0] === 'failed');
-    const failedHandler = failedHandlerCall![1];
+    const failedHandler = handlers.failed!;
 
     const mockJob = {
       id: 'job-no-opts-dlq',
@@ -165,6 +168,7 @@ describe('getCommentableLines (diff-position guard)', () => {
     expect(getCommentableLines(patch).size).toBe(0);
   });
 });
+
 describe('selectRepositoryList', () => {
   const repo = (id: number, fullName: string) => ({ id, full_name: fullName });
 
@@ -178,8 +182,6 @@ describe('selectRepositoryList', () => {
   });
 
   it('returns an empty list when installation/created omits `repositories`', () => {
-    // This is the regression: the old code called .map() straight onto
-    // undefined, throwing a TypeError on a well-formed delivery.
     const result = selectRepositoryList('installation', 'created', {});
 
     expect(result.intent).toBe('add');
@@ -288,8 +290,6 @@ describe('assertPullRequestContext', () => {
       message = (err as Error).message;
     }
 
-    // One error listing everything, rather than fixing one field and
-    // rediscovering the next on the following delivery.
     expect(message).toContain('pull_request');
     expect(message).toContain('repository');
     expect(message).toContain('pull_request.head.sha');
@@ -321,8 +321,6 @@ describe('getGitHubAppCredentials', () => {
   });
 
   it('names GITHUB_PRIVATE_KEY when it is missing', () => {
-    // Previously this surfaced as "Cannot read properties of undefined
-    // (reading 'replace')" three retries later.
     expect(() => getGitHubAppCredentials({ GITHUB_APP_ID: '1' })).toThrow(/GITHUB_PRIVATE_KEY/);
   });
 
