@@ -99,7 +99,7 @@ export interface SyncOutcome {
 
 export interface SingleRepositorySyncResponse {
   success: boolean;
-  status: "COMPLETED" | "NO_INSTALLATION" | "FAILED";
+  status: "COMPLETED" | "PARTIAL" | "NO_INSTALLATION" | "FAILED";
   repository: SyncedRepository;
   /** Repositories the run actually wrote, across the whole installation. */
   synced: number;
@@ -113,9 +113,10 @@ export interface SingleRepositorySyncResponse {
  * The reply for a request that named one repository.
  *
  * `status` is derived from what the run reported rather than hardcoded to
- * `"COMPLETED"`. That is the substance of this change: a caller has to be able
- * to tell a sync that ran from one that could not, and the previous branch gave
- * the same `success: true, status: "COMPLETED"` to every input it was handed.
+ * `"COMPLETED"`. A run with repository write failures is `"PARTIAL"`: some
+ * writes may have succeeded, but callers must not mistake that for complete
+ * synchronization. Explicit errors remain `"FAILED"`, and an account without
+ * an installation remains `"NO_INSTALLATION"`.
  *
  * `repository` carries the row as it stands *after* the run, so the caller sees
  * the refreshed name and active flag rather than a count of imaginary files.
@@ -126,9 +127,11 @@ export function singleRepositorySyncResponse(
 ): SingleRepositorySyncResponse {
   const status: SingleRepositorySyncResponse["status"] = outcome.error
     ? "FAILED"
-    : outcome.hasInstallation
-      ? "COMPLETED"
-      : "NO_INSTALLATION";
+    : !outcome.hasInstallation
+      ? "NO_INSTALLATION"
+      : (outcome.failed ?? 0) > 0
+        ? "PARTIAL"
+        : "COMPLETED";
 
   return {
     success: status === "COMPLETED",
