@@ -1,9 +1,20 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma"; 
+import prisma from "@/lib/prisma";
 import authConfig from "./auth.config";
 
-const CITIES = ["Tokyo", "Denver", "Helsinki", "Nairobi", "Berlin", "Rio", "Moscow", "Oslo", "Bogota", "Palermo"];
+const CITIES = [
+  "Tokyo",
+  "Denver",
+  "Helsinki",
+  "Nairobi",
+  "Berlin",
+  "Rio",
+  "Moscow",
+  "Oslo",
+  "Bogota",
+  "Palermo",
+];
 
 const nextAuthResult = NextAuth({
   // Spread authConfig first to inherit providers, pages, and base session logic
@@ -19,10 +30,17 @@ const nextAuthResult = NextAuth({
           githubLogin,
           codename: null,
           roles: {
-            create: [{
-              role: { connectOrCreate: { where: { name: "USER" }, create: { name: "USER", description: "Standard user access" } } }
-            }]
-          }
+            create: [
+              {
+                role: {
+                  connectOrCreate: {
+                    where: { name: "USER" },
+                    create: { name: "USER", description: "Standard user access" },
+                  },
+                },
+              },
+            ],
+          },
         },
       }) as any;
     },
@@ -52,11 +70,11 @@ const nextAuthResult = NextAuth({
       ) {
         const dbUser = await prisma.user.findUnique({
           where: { id: userId },
-          include: { roles: { include: { role: true } } }
+          include: { roles: { include: { role: true } } },
         });
-        
+
         token.roles = dbUser?.roles.map((r: any) => r.role.name) || [];
-        
+
         // Sync codename from database or session payload
         if (dbUser?.codename) {
           token.codename = dbUser.codename;

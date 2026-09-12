@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { syncUserRepositories } from "@/lib/github/sync-user-repos";
-import {
-  parseSyncTarget,
-  singleRepositorySyncResponse,
-} from "@/lib/github/repo-sync-request";
+import { parseSyncTarget, singleRepositorySyncResponse } from "@/lib/github/repo-sync-request";
 import { hashIdentifier } from "@/lib/audit/minimization";
 import { createLogger } from "@/lib/logger";
 import { scrubSensitiveData } from "@/lib/redaction";
@@ -67,10 +64,7 @@ async function handler(request: NextRequest) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401, headers: NO_STORE }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE });
   }
 
   const userId = session.user.id;
@@ -86,7 +80,7 @@ async function handler(request: NextRequest) {
     {
       fallbackStrategy: TIERS.REPO_SYNC.fallbackStrategy,
       timeoutMs: TIERS.REPO_SYNC.timeoutMs,
-    }
+    },
   );
 
   if (!limit.allowed) {
@@ -102,7 +96,7 @@ async function handler(request: NextRequest) {
           ...buildRateLimitHeaders(limit),
           "Retry-After": String(secondsUntilReset(limit.resetAt)),
         },
-      }
+      },
     );
   }
 
@@ -139,7 +133,7 @@ async function handler(request: NextRequest) {
     if (!namedRepository) {
       return NextResponse.json(
         { error: "Repository not found" },
-        { status: 404, headers: NO_STORE }
+        { status: 404, headers: NO_STORE },
       );
     }
 
@@ -147,7 +141,7 @@ async function handler(request: NextRequest) {
       log.warn("Sync aborted before it started", { actor });
       return NextResponse.json(
         { error: "Sync task aborted by client timeout signal" },
-        { status: 408, headers: NO_STORE }
+        { status: 408, headers: NO_STORE },
       );
     }
   }
@@ -157,7 +151,7 @@ async function handler(request: NextRequest) {
     const result = await syncUserRepositories(
       userId,
       (session.user as { githubLogin?: string | null }).githubLogin,
-      (session as { accessToken?: string | null }).accessToken
+      (session as { accessToken?: string | null }).accessToken,
     );
 
     log.info("Repository sync completed", {
@@ -172,9 +166,7 @@ async function handler(request: NextRequest) {
     // rather than by throwing, and that field is `err?.message` from the same
     // provider errors the catch below guards against. The success path has to
     // be scrubbed too, or the leak simply moves.
-    const outcome = result.error
-      ? { ...result, error: scrubSensitiveData(result.error) }
-      : result;
+    const outcome = result.error ? { ...result, error: scrubSensitiveData(result.error) } : result;
 
     if (namedRepository) {
       // Re-read so the caller sees the row as the sync left it — the name and
@@ -195,17 +187,17 @@ async function handler(request: NextRequest) {
   } catch (error: any) {
     if (error?.name === "AbortError" || error?.message?.includes("aborted")) {
       log.warn("Sync pipeline timed out or aborted by client", { actor, error: error?.message });
-      return NextResponse.json({ error: "Sync pipeline timed out or aborted by client" }, { status: 408, headers: NO_STORE });
+      return NextResponse.json(
+        { error: "Sync pipeline timed out or aborted by client" },
+        { status: 408, headers: NO_STORE },
+      );
     }
 
     // The raw error stays in the log, where it is useful and where the logger's
     // own redaction and newline stripping apply. The caller gets a constant.
     log.error("Repository sync failed", { actor, error });
 
-    return NextResponse.json(
-      { error: GENERIC_FAILURE },
-      { status: 500, headers: NO_STORE }
-    );
+    return NextResponse.json({ error: GENERIC_FAILURE }, { status: 500, headers: NO_STORE });
   }
 }
 
@@ -213,5 +205,5 @@ async function handler(request: NextRequest) {
 // the per-user tier inside is the one that actually bounds the cost.
 export const POST = withRateLimit(
   handler as (req: NextRequest, ...args: unknown[]) => Promise<NextResponse>,
-  { ...TIERS.REPO_SYNC, keyPrefix: "repo-sync:ip" }
+  { ...TIERS.REPO_SYNC, keyPrefix: "repo-sync:ip" },
 ) as (req: NextRequest) => Promise<NextResponse>;

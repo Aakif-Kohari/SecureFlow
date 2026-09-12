@@ -49,9 +49,7 @@ export interface RepositoryLookupStore {
   }) => Promise<SyncedRepository | null>;
 }
 
-export type SyncTarget =
-  | { ok: true; repositoryId: string | null }
-  | { ok: false; message: string };
+export type SyncTarget = { ok: true; repositoryId: string | null } | { ok: false; message: string };
 
 /**
  * Which repository, if any, this request is about.
@@ -70,21 +68,21 @@ export type SyncTarget =
 export function parseSyncTarget(body: unknown): SyncTarget {
   if (body === null || body === undefined) return { ok: true, repositoryId: null };
 
-  if (typeof body !== 'object' || Array.isArray(body)) {
-    return { ok: false, message: 'Request body must be a JSON object' };
+  if (typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Request body must be a JSON object" };
   }
 
   const raw = (body as Record<string, unknown>).repositoryId;
 
   if (raw === undefined || raw === null) return { ok: true, repositoryId: null };
 
-  if (typeof raw !== 'string') {
-    return { ok: false, message: '`repositoryId` must be a string' };
+  if (typeof raw !== "string") {
+    return { ok: false, message: "`repositoryId` must be a string" };
   }
 
   const trimmed = raw.trim();
-  if (trimmed === '') {
-    return { ok: false, message: '`repositoryId` must not be empty' };
+  if (trimmed === "") {
+    return { ok: false, message: "`repositoryId` must not be empty" };
   }
 
   return { ok: true, repositoryId: trimmed };
@@ -101,7 +99,7 @@ export interface SyncOutcome {
 
 export interface SingleRepositorySyncResponse {
   success: boolean;
-  status: 'COMPLETED' | 'NO_INSTALLATION' | 'FAILED';
+  status: "COMPLETED" | "NO_INSTALLATION" | "FAILED";
   repository: SyncedRepository;
   /** Repositories the run actually wrote, across the whole installation. */
   synced: number;
@@ -124,16 +122,16 @@ export interface SingleRepositorySyncResponse {
  */
 export function singleRepositorySyncResponse(
   repository: SyncedRepository,
-  outcome: SyncOutcome
+  outcome: SyncOutcome,
 ): SingleRepositorySyncResponse {
-  const status: SingleRepositorySyncResponse['status'] = outcome.error
-    ? 'FAILED'
+  const status: SingleRepositorySyncResponse["status"] = outcome.error
+    ? "FAILED"
     : outcome.hasInstallation
-      ? 'COMPLETED'
-      : 'NO_INSTALLATION';
+      ? "COMPLETED"
+      : "NO_INSTALLATION";
 
   return {
-    success: status === 'COMPLETED',
+    success: status === "COMPLETED",
     status,
     repository,
     synced: outcome.synced,

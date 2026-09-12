@@ -7,11 +7,8 @@
  * constants have somewhere to sit.
  */
 
-import {
-  normalizeDeliveryId,
-  webhookJobId,
-} from '@/lib/github/webhook-verification';
-import type { WebhookJobData } from './webhookQueue';
+import { normalizeDeliveryId, webhookJobId } from "@/lib/github/webhook-verification";
+import type { WebhookJobData } from "./webhookQueue";
 
 /**
  * Upper bound on DLQ entries read in one go.
@@ -65,15 +62,16 @@ export interface DlqJobLike {
  * the worker does its own validation, and this check exists to catch the
  * structurally absent case rather than to re-implement the worker's schema.
  */
-export function extractWebhookPayload(entry: DlqEntryData | null | undefined): WebhookJobData | null {
-  if (!entry || typeof entry !== 'object') return null;
+export function extractWebhookPayload(
+  entry: DlqEntryData | null | undefined,
+): WebhookJobData | null {
+  if (!entry || typeof entry !== "object") return null;
 
   const payload = entry.data;
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
 
   const candidate = payload as Record<string, unknown>;
-  const hasKnownField =
-    'payload' in candidate || 'event' in candidate || 'deliveryId' in candidate;
+  const hasKnownField = "payload" in candidate || "event" in candidate || "deliveryId" in candidate;
 
   if (!hasKnownField) return null;
 
@@ -132,12 +130,12 @@ export function describeDlqJob(job: DlqJobLike): DlqEntryDescriptor {
     jobId: job.id ?? null,
     originalJobId: job.data?.originalJobId ?? null,
     deliveryId: deliveryIdOf(payload),
-    event: typeof payload?.event === 'string' ? payload.event : null,
+    event: typeof payload?.event === "string" ? payload.event : null,
   };
 }
 
 /** How one entry fared in a bulk operation. */
-export type DlqOutcome = 'processed' | 'skipped' | 'failed' | 'missing';
+export type DlqOutcome = "processed" | "skipped" | "failed" | "missing";
 
 export interface DlqJobResult {
   descriptor: DlqEntryDescriptor;
@@ -170,19 +168,16 @@ export interface BulkDlqResult {
 }
 
 /** Roll per-entry results up into the response shape above. */
-export function summarizeDlqResults(
-  results: DlqJobResult[],
-  truncated = false
-): BulkDlqResult {
+export function summarizeDlqResults(results: DlqJobResult[], truncated = false): BulkDlqResult {
   let count = 0;
   let skipped = 0;
   let failed = 0;
   let missing = 0;
 
   for (const result of results) {
-    if (result.outcome === 'processed') count += 1;
-    else if (result.outcome === 'skipped') skipped += 1;
-    else if (result.outcome === 'failed') failed += 1;
+    if (result.outcome === "processed") count += 1;
+    else if (result.outcome === "skipped") skipped += 1;
+    else if (result.outcome === "failed") failed += 1;
     else missing += 1;
   }
 
@@ -196,14 +191,14 @@ export function summarizeDlqResults(
  * whether it reaches a toast or the audit log.
  */
 export function describeBulkOutcome(result: BulkDlqResult, verb: string): string {
-  const parts = [`${verb} ${result.count} job${result.count === 1 ? '' : 's'}`];
+  const parts = [`${verb} ${result.count} job${result.count === 1 ? "" : "s"}`];
 
   if (result.skipped > 0) parts.push(`${result.skipped} skipped (no usable payload)`);
   if (result.failed > 0) parts.push(`${result.failed} failed`);
   if (result.missing > 0) parts.push(`${result.missing} no longer in the queue`);
   if (result.truncated) parts.push(`stopped at the ${DLQ_READ_LIMIT}-job read limit`);
 
-  return parts.join('; ');
+  return parts.join("; ");
 }
 
 /**
@@ -219,7 +214,10 @@ export const AUDIT_SAMPLE_SIZE = 50;
 
 export function auditSample(results: DlqJobResult[]): string[] {
   return results
-    .filter((r) => r.outcome === 'processed')
+    .filter((r) => r.outcome === "processed")
     .slice(0, AUDIT_SAMPLE_SIZE)
-    .map((r) => r.descriptor.deliveryId ?? r.descriptor.originalJobId ?? r.descriptor.jobId ?? 'unknown');
+    .map(
+      (r) =>
+        r.descriptor.deliveryId ?? r.descriptor.originalJobId ?? r.descriptor.jobId ?? "unknown",
+    );
 }

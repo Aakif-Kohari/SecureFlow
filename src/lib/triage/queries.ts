@@ -1,10 +1,6 @@
 import prisma from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
-import {
-  SUPPRESSED_STATUSES,
-  isSuppressedStatus,
-  type TriageStatus,
-} from "./statuses";
+import { SUPPRESSED_STATUSES, isSuppressedStatus, type TriageStatus } from "./statuses";
 
 /**
  * Triage lookups for the dashboard (#689).
@@ -93,9 +89,7 @@ export interface SuppressedFingerprints {
  * This is what `/dashboard` needs. It was calling `getUserTriage` and
  * discarding `byKey`, paying for every triage note on the way.
  */
-export async function getSuppressedFingerprints(
-  userId: string
-): Promise<SuppressedFingerprints> {
+export async function getSuppressedFingerprints(userId: string): Promise<SuppressedFingerprints> {
   // One over the cap, so hitting it is distinguishable from landing exactly on it.
   const rows = await prisma.findingTriage.findMany({
     where: {

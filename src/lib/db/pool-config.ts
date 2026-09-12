@@ -67,7 +67,7 @@ export interface PoolMaxResolution {
 export function resolvePoolMax(env: NodeJS.ProcessEnv = process.env): PoolMaxResolution {
   const raw = env.DB_POOL_MAX;
 
-  if (raw === undefined || raw.trim() === '') {
+  if (raw === undefined || raw.trim() === "") {
     return { value: DEFAULT_POOL_MAX };
   }
 
@@ -112,7 +112,7 @@ export function resolvePoolMax(env: NodeJS.ProcessEnv = process.env): PoolMaxRes
  */
 export function resolveConnectionString(env: NodeJS.ProcessEnv = process.env): string | null {
   for (const candidate of [env.DATABASE_POOL_URL, env.DATABASE_URL]) {
-    if (typeof candidate === 'string' && candidate.trim() !== '') {
+    if (typeof candidate === "string" && candidate.trim() !== "") {
       return candidate.trim();
     }
   }
@@ -122,9 +122,9 @@ export function resolveConnectionString(env: NodeJS.ProcessEnv = process.env): s
 
 /** The message used when no connection string is configured. */
 export const MISSING_CONNECTION_STRING_MESSAGE =
-  'No database connection string is configured. Set DATABASE_URL (or DATABASE_POOL_URL ' +
-  'to route through a connection pooler). Without one, the pg driver falls back to a ' +
-  'local Unix socket and the failure surfaces later as an unrelated authentication error.';
+  "No database connection string is configured. Set DATABASE_URL (or DATABASE_POOL_URL " +
+  "to route through a connection pooler). Without one, the pg driver falls back to a " +
+  "local Unix socket and the failure surfaces later as an unrelated authentication error.";
 
 /** Options handed to `new Pool()`. */
 export interface PgPoolConfig {
@@ -198,20 +198,19 @@ export interface MockDbDecision {
  * exactly the boundary that matters here.
  */
 export function resolveMockDb(env: NodeJS.ProcessEnv = process.env): MockDbDecision {
-  const requested = env.NEXT_PUBLIC_MOCK_DB === 'true';
+  const requested = env.NEXT_PUBLIC_MOCK_DB === "true";
   if (!requested) return { requested: false, allowed: false };
 
-  const isProductionRuntime =
-    env.NODE_ENV === 'production' && !env.CI && !env.NEXT_PHASE;
+  const isProductionRuntime = env.NODE_ENV === "production" && !env.CI && !env.NEXT_PHASE;
 
   if (isProductionRuntime) {
     return {
       requested: true,
       allowed: false,
       refusal:
-        'NEXT_PUBLIC_MOCK_DB=true refused in a production runtime. The mock client serves ' +
-        'a hardcoded ADMIN user and fabricated counts; serving that from a deployment is ' +
-        'worse than serving an error. Unset it, or set a real DATABASE_URL.',
+        "NEXT_PUBLIC_MOCK_DB=true refused in a production runtime. The mock client serves " +
+        "a hardcoded ADMIN user and fabricated counts; serving that from a deployment is " +
+        "worse than serving an error. Unset it, or set a real DATABASE_URL.",
     };
   }
 

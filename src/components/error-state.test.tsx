@@ -34,7 +34,7 @@ describe("ErrorState", () => {
 
   it("renders the digest when one is supplied", () => {
     render(
-      <ErrorState title="Signal lost" description="Something went wrong." digest="a1b2c3d4" />
+      <ErrorState title="Signal lost" description="Something went wrong." digest="a1b2c3d4" />,
     );
 
     expect(screen.getByTestId("error-digest")).toHaveTextContent("a1b2c3d4");
@@ -88,23 +88,19 @@ describe("ErrorState", () => {
 
     expect(screen.getByRole("link", { name: /back to dashboard/i })).toHaveAttribute(
       "href",
-      "/dashboard"
+      "/dashboard",
     );
     expect(screen.getByRole("link", { name: /home/i })).toHaveAttribute("href", "/");
   });
 
   it("can suppress the dashboard link for a boundary already inside the dashboard", () => {
-    render(
-      <ErrorState title="Signal lost" description="Broken." showDashboardLink={false} />
-    );
+    render(<ErrorState title="Signal lost" description="Broken." showDashboardLink={false} />);
 
     expect(screen.queryByRole("link", { name: /back to dashboard/i })).not.toBeInTheDocument();
   });
 
   it("merges a caller-supplied className", () => {
-    render(
-      <ErrorState title="Signal lost" description="Broken." className="min-h-[50vh]" />
-    );
+    render(<ErrorState title="Signal lost" description="Broken." className="min-h-[50vh]" />);
 
     expect(screen.getByTestId("error-state")).toHaveClass("min-h-[50vh]");
   });

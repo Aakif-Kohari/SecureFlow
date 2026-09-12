@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '30 4 * * 0'
+    - cron: "30 4 * * 0"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,8 +28,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache node_modules
@@ -49,7 +49,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: 'javascript-typescript'
+          languages: "javascript-typescript"
           # Current built-in extended suites for deeper analysis:
           # security-extended (default + lower severity) and
           # security-and-quality (extended + maintainability/reliability).

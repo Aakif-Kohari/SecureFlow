@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 export const mockCreate = vi.fn().mockResolvedValue({
   choices: [{ message: { content: JSON.stringify({ findings: [] }) } }],
@@ -17,7 +17,7 @@ export const mockStream = {
   /** Incremental text snapshots (each one is the text-so-far, like a real stream). */
   chunks: [] as string[],
   /** Full text to return in the final `done` synthetic event (unused by mock itself). */
-  finalText: 'Bella ciao, accomplice. The vault is sealed.',
+  finalText: "Bella ciao, accomplice. The vault is sealed.",
   /** If true, the async-iterable throws on first iteration. */
   throws: false,
   /** If set, the async-iterable throws this specific error on first iteration. */
@@ -32,7 +32,7 @@ export const mockStream = {
           throw throwError;
         }
         if (throws) {
-          throw new Error('simulated stream failure');
+          throw new Error("simulated stream failure");
         }
         for (const text of chunks) {
           yield { choices: [{ delta: { content: text } }] };
@@ -45,7 +45,7 @@ export const mockStream = {
 /** Resets mockStream to its default (empty, non-throwing) state. */
 export function resetMockStream(): void {
   mockStream.chunks = [];
-  mockStream.finalText = 'Bella ciao, accomplice. The vault is sealed.';
+  mockStream.finalText = "Bella ciao, accomplice. The vault is sealed.";
   mockStream.throws = false;
   mockStream.throwError = null;
 }
@@ -78,9 +78,7 @@ export function resetMockCreate(): void {
  * matching the shape that groq-sdk throws (Error with `.status = 429`).
  */
 export function simulateRateLimit(): void {
-  mockCreate.mockRejectedValue(
-    Object.assign(new Error('Rate limit reached'), { status: 429 })
-  );
+  mockCreate.mockRejectedValue(Object.assign(new Error("Rate limit reached"), { status: 429 }));
 }
 
 /**
@@ -88,7 +86,7 @@ export function simulateRateLimit(): void {
  * simulating a rate-limit hit mid-stream for the streaming flows.
  */
 export function simulateStreamRateLimit(): void {
-  mockStream.throwError = Object.assign(new Error('Rate limit reached'), { status: 429 });
+  mockStream.throwError = Object.assign(new Error("Rate limit reached"), { status: 429 });
 }
 
 /**
@@ -96,8 +94,8 @@ export function simulateStreamRateLimit(): void {
  * simulating a connection timeout mid-stream for the streaming flows.
  */
 export function simulateStreamTimeout(): void {
-  const err = new Error('Connection timed out');
-  err.name = 'APIConnectionTimeoutError';
+  const err = new Error("Connection timed out");
+  err.name = "APIConnectionTimeoutError";
   mockStream.throwError = err;
 }
 
@@ -106,8 +104,8 @@ export function simulateStreamTimeout(): void {
  * exercising the malformed-output handling path in streaming callers.
  */
 export function simulateMalformedStreamJSON(): void {
-  mockStream.chunks = ['not valid json {{{{'];
-  mockStream.finalText = 'not valid json {{{{';
+  mockStream.chunks = ["not valid json {{{{"];
+  mockStream.finalText = "not valid json {{{{";
 }
 
 /**
@@ -115,8 +113,8 @@ export function simulateMalformedStreamJSON(): void {
  * matching the shape that groq-sdk throws (APIConnectionTimeoutError).
  */
 export function simulateTimeout(): void {
-  const err = new Error('Connection timed out');
-  err.name = 'APIConnectionTimeoutError';
+  const err = new Error("Connection timed out");
+  err.name = "APIConnectionTimeoutError";
   mockCreate.mockRejectedValue(err);
 }
 
@@ -126,7 +124,7 @@ export function simulateTimeout(): void {
  */
 export function simulateMalformedJSON(): void {
   mockCreate.mockResolvedValue({
-    choices: [{ message: { content: 'not valid json {{{{' } }],
+    choices: [{ message: { content: "not valid json {{{{" } }],
   });
 }
 
@@ -136,7 +134,7 @@ export function simulateMalformedJSON(): void {
  */
 export function simulatePromptInjectionYes(): void {
   mockCreate.mockResolvedValue({
-    choices: [{ message: { content: 'YES' } }],
+    choices: [{ message: { content: "YES" } }],
   });
 }
 
@@ -146,14 +144,14 @@ export function simulatePromptInjectionYes(): void {
  */
 export function simulatePromptInjectionNo(): void {
   mockCreate.mockResolvedValue({
-    choices: [{ message: { content: 'NO' } }],
+    choices: [{ message: { content: "NO" } }],
   });
 }
 
 class APIConnectionTimeoutError extends Error {
   constructor() {
-    super('timeout');
-    this.name = 'APIConnectionTimeoutError';
+    super("timeout");
+    this.name = "APIConnectionTimeoutError";
   }
 }
 

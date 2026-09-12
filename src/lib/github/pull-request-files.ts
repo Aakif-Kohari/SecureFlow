@@ -52,7 +52,7 @@ export interface PullRequestFilesClient {
   paginate: {
     iterator: (
       route: unknown,
-      params: Record<string, unknown>
+      params: Record<string, unknown>,
     ) => AsyncIterable<{ data: PullRequestFile[] }>;
   };
   rest: {
@@ -83,12 +83,12 @@ export interface FetchPullRequestFilesOptions {
  */
 export async function fetchPullRequestFiles(
   octokit: PullRequestFilesClient,
-  options: FetchPullRequestFilesOptions
+  options: FetchPullRequestFilesOptions,
 ): Promise<PullRequestFilesResult> {
   const { owner, repo, pullNumber } = options;
   const maxFiles = Math.max(1, options.maxFiles ?? DEFAULT_MAX_PR_FILES);
   const declaredTotal =
-    typeof options.changedFiles === 'number' && options.changedFiles >= 0
+    typeof options.changedFiles === "number" && options.changedFiles >= 0
       ? options.changedFiles
       : null;
 
@@ -135,7 +135,7 @@ export function formatCoverageNotice(result: PullRequestFilesResult): string | n
   if (!result.truncated) return null;
 
   const total = result.totalChanged;
-  const scope = total === null ? 'the first' : `${result.fetched} of ${total}`;
+  const scope = total === null ? "the first" : `${result.fetched} of ${total}`;
 
   return total === null
     ? `⚠️ This pull request changed more files than SecureFlow analyses in a single scan. Only ${scope} ${result.fetched} files were reviewed — findings in the remaining files are **not** reflected below.`

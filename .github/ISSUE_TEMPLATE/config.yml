@@ -5,5 +5,4 @@ contact_links:
     about: "If you believe you found a security vulnerability, please use the GitHub security advisories workflow."
   - name: "GitHub Discussions"
     url: "https://github.com/GauravKarakoti/SecureFlow/discussions"
-    about: "Ask questions and discuss ideas in GitHub Discussions." 
-
+    about: "Ask questions and discuss ideas in GitHub Discussions."

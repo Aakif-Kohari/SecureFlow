@@ -13,8 +13,12 @@ interface StreamingExplanationProps {
  * "Live Analysis" trigger that re-runs the AI explanation and streams it in token-by-token -
  * cutting perceived latency versus waiting for a full non-streamed response (issue #218).
  */
-export default function StreamingExplanation({ findingId, storedExplanation }: StreamingExplanationProps) {
-  const { isStreaming, explanation, isError, error, retry, start } = useStreamingExplanation(findingId);
+export default function StreamingExplanation({
+  findingId,
+  storedExplanation,
+}: StreamingExplanationProps) {
+  const { isStreaming, explanation, isError, error, retry, start } =
+    useStreamingExplanation(findingId);
 
   const displayText = isStreaming || explanation ? explanation : storedExplanation;
 

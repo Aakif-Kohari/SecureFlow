@@ -1,10 +1,10 @@
-import { z } from 'genkit'; 
-import { ai, securityExplanationModel } from '@/ai/genkit';
+import { z } from "genkit";
+import { ai, securityExplanationModel } from "@/ai/genkit";
 
 // Use z.object() to create a standard Zod schema
 const PatchOutputSchema = z.object({
   patchDiff: z.string().describe("The unified diff patch to fix the vulnerability."),
-  explanation: z.string().describe("Brief explanation of the changes made.")
+  explanation: z.string().describe("Brief explanation of the changes made."),
 });
 
 /**
@@ -13,11 +13,11 @@ const PatchOutputSchema = z.object({
  */
 export const generateRemediationPatchFlow = ai.defineFlow(
   {
-    name: 'generateRemediationPatch',
+    name: "generateRemediationPatch",
     inputSchema: z.object({
       vulnerableCode: z.string(),
       findingDescription: z.string(),
-      filePath: z.string()
+      filePath: z.string(),
     }),
     outputSchema: PatchOutputSchema,
   },
@@ -38,7 +38,7 @@ Provide ONLY the unified diff patch that fixes this issue securely. Do not inclu
     const { output } = await ai.generate({
       model: securityExplanationModel,
       prompt: prompt,
-      output: { schema: PatchOutputSchema, format: 'json' }
+      output: { schema: PatchOutputSchema, format: "json" },
     });
 
     if (!output) {
@@ -46,5 +46,5 @@ Provide ONLY the unified diff patch that fixes this issue securely. Do not inclu
     }
 
     return output;
-  }
+  },
 );

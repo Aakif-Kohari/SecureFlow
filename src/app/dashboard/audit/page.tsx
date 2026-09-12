@@ -3,10 +3,7 @@ import { Shield, Activity } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import {
-  getUserAuditLogs,
-  getUserAuditLogFilters,
-} from "@/lib/actions/audit";
+import { getUserAuditLogs, getUserAuditLogFilters } from "@/lib/actions/audit";
 import AuditLogTable from "./audit-log-table";
 
 export default async function AuditPage() {
@@ -21,18 +18,17 @@ export default async function AuditPage() {
   // eslint-disable-next-line react-hooks/purity -- server component, computing "24h ago" cutoff for a DB query, not a client render value
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [initialResult, filters, activeReposCount, actions24hCount] =
-    await Promise.all([
-      getUserAuditLogs({ page: 1, pageSize: 10 }),
-      getUserAuditLogFilters(),
-      prisma.repository.count({ where: { userId, isActive: true } }),
-      prisma.auditLog.count({
-        where: {
-          userId,
-          timestamp: { gte: yesterday },
-        },
-      }),
-    ]);
+  const [initialResult, filters, activeReposCount, actions24hCount] = await Promise.all([
+    getUserAuditLogs({ page: 1, pageSize: 10 }),
+    getUserAuditLogFilters(),
+    prisma.repository.count({ where: { userId, isActive: true } }),
+    prisma.auditLog.count({
+      where: {
+        userId,
+        timestamp: { gte: yesterday },
+      },
+    }),
+  ]);
 
   // Every log returned is already scoped to this user (or is a null-userId
   // "System" event), so there's no need to look up multiple users here —
@@ -46,7 +42,9 @@ export default async function AuditPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight mb-2">Audit Logs</h1>
-          <p className="text-muted-foreground">Comprehensive trail of all security decisions and system actions.</p>
+          <p className="text-muted-foreground">
+            Comprehensive trail of all security decisions and system actions.
+          </p>
         </div>
       </div>
 
@@ -56,7 +54,9 @@ export default async function AuditPage() {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Monitored Repos</div>
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Monitored Repos
+            </div>
             <div className="text-lg font-bold">{activeReposCount} Active</div>
           </div>
         </div>
@@ -66,7 +66,9 @@ export default async function AuditPage() {
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">System Actions</div>
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              System Actions
+            </div>
             <div className="text-lg font-bold">{actions24hCount.toLocaleString()}</div>
           </div>
         </div>

@@ -72,9 +72,7 @@ describe("AnalyticsClient", () => {
 
   it("renders the subtitle", () => {
     render(<AnalyticsClient {...mockProps} />);
-    expect(
-      screen.getByText(/Deep dive into scan history/)
-    ).toBeTruthy();
+    expect(screen.getByText(/Deep dive into scan history/)).toBeTruthy();
   });
 
   it("renders all four summary stat cards", () => {

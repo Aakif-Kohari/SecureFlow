@@ -39,21 +39,17 @@ export default function GlobalError({
           justifyContent: "center",
           background: "#0a0a0b",
           color: "#f5f5f5",
-          fontFamily:
-            "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
           padding: "1.5rem",
         }}
       >
-        <main
-          role="alert"
-          style={{ maxWidth: "32rem", textAlign: "center" }}
-        >
+        <main role="alert" style={{ maxWidth: "32rem", textAlign: "center" }}>
           <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0 0 0.75rem" }}>
             SecureFlow could not start
           </h1>
           <p style={{ margin: "0 0 1.5rem", color: "#a1a1aa", lineHeight: 1.6 }}>
-            A fault occurred before the application shell could render. The
-            incident has been logged.
+            A fault occurred before the application shell could render. The incident has been
+            logged.
           </p>
           {error.digest ? (
             <p style={{ margin: "0 0 1.5rem", fontSize: "0.75rem", color: "#71717a" }}>

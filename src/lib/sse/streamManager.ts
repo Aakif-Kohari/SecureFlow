@@ -155,12 +155,11 @@ export class StreamManager {
         this.cleanup(id);
       } else {
         const onAbort = () => this.cleanup(id);
-        upstreamSignal.addEventListener('abort', onAbort, { once: true });
+        upstreamSignal.addEventListener("abort", onAbort, { once: true });
         // Kept so `cleanup` can detach it. `{ once: true }` only removes the
         // listener once it has *fired*; a connection that ends normally would
         // otherwise leave it attached for the life of the signal.
-        connection.detachUpstream = () =>
-          upstreamSignal.removeEventListener('abort', onAbort);
+        connection.detachUpstream = () => upstreamSignal.removeEventListener("abort", onAbort);
       }
     }
 
@@ -316,7 +315,7 @@ export const streamManager = new StreamManager();
 export function createManagedStream<T extends Record<string, unknown>>(
   generator: (signal: AbortSignal) => AsyncIterable<T>,
   upstreamSignal?: AbortSignal,
-  label?: string
+  label?: string,
 ): ReadableStream<Uint8Array> {
   const { signal, release } = streamManager.register(upstreamSignal, label);
   const encoder = new TextEncoder();
@@ -328,9 +327,7 @@ export function createManagedStream<T extends Record<string, unknown>>(
       const send = (event: T): void => {
         if (closed || signal.aborted) return;
         try {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
-          );
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         } catch {
           closed = true;
         }
@@ -366,8 +363,8 @@ export function createManagedStream<T extends Record<string, unknown>>(
 
           // Check terminal events
           if (
-            (event as Record<string, unknown>).type === 'done' ||
-            (event as Record<string, unknown>).type === 'error'
+            (event as Record<string, unknown>).type === "done" ||
+            (event as Record<string, unknown>).type === "error"
           ) {
             finish();
             return;
@@ -384,10 +381,10 @@ export function createManagedStream<T extends Record<string, unknown>>(
           return;
         }
 
-        const message = err instanceof Error ? err.message : 'Unknown streaming error.';
+        const message = err instanceof Error ? err.message : "Unknown streaming error.";
         try {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'error', message })}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({ type: "error", message })}\n\n`),
           );
         } catch {}
         finish();

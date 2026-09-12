@@ -9,19 +9,19 @@
  *   const result = await processScanJob(jobData, onProgress);
  */
 
-import { scanner } from '@/lib/armor/scanner';
-import { iq } from '@/lib/armor/iq';
-import { computeFingerprint } from '@/lib/armor/fingerprint';
-import { developerReceivesAISecurityExplanations } from '@/ai/flows/developer-receives-ai-security-explanations';
-import { maskFindingText } from '@/lib/armor/secret-masking';
-import prisma from '@/lib/prisma';
-import { sanitizeAuditLogInput } from '@/lib/audit/minimization';
-import { severityBadge } from '@/lib/severity';
-import { App } from 'octokit';
-import { getGitHubAppCredentials } from '@/lib/queue/worker';
-import { fetchPullRequestFiles } from '@/lib/github/pull-request-files';
-import type { ScanJobData } from '@/lib/queue/scanQueue';
-import { updateScanJobProgress } from '@/lib/queue/scanQueue';
+import { scanner } from "@/lib/armor/scanner";
+import { iq } from "@/lib/armor/iq";
+import { computeFingerprint } from "@/lib/armor/fingerprint";
+import { developerReceivesAISecurityExplanations } from "@/ai/flows/developer-receives-ai-security-explanations";
+import { maskFindingText } from "@/lib/armor/secret-masking";
+import prisma from "@/lib/prisma";
+import { sanitizeAuditLogInput } from "@/lib/audit/minimization";
+import { severityBadge } from "@/lib/severity";
+import { App } from "octokit";
+import { getGitHubAppCredentials } from "@/lib/queue/worker";
+import { fetchPullRequestFiles } from "@/lib/github/pull-request-files";
+import type { ScanJobData } from "@/lib/queue/scanQueue";
+import { updateScanJobProgress } from "@/lib/queue/scanQueue";
 import {
   checkRunConclusion,
   parseInstallationId,
@@ -31,8 +31,8 @@ import {
   storedPolicyDecision,
   storedRiskScore,
   type EnrichedScanFinding,
-} from './scan-persistence';
-import { resolvePullRequestRecord, splitRepositoryFullName } from './pull-request-record';
+} from "./scan-persistence";
+import { resolvePullRequestRecord, splitRepositoryFullName } from "./pull-request-record";
 
 /** Maximum files to process in a single batch before yielding. */
 const CHUNK_SIZE = 10;
@@ -53,14 +53,14 @@ export interface ScanJobResult {
    * `'REVIEW REQUIRED'` from a field typed `string` is what made every non-PASS
    * scan fail its completion update (#747).
    */
-  policyDecision: 'PASS' | 'REVIEW' | 'BLOCK';
+  policyDecision: "PASS" | "REVIEW" | "BLOCK";
   /** The scanner's verdict as `iq.evaluateFindings` phrased it, for logs and copy. */
   verdict: string;
   findings: EnrichedScanFinding[];
 }
 
 export interface ScanProgress {
-  phase: 'starting' | 'scanning' | 'enriching' | 'posting' | 'completed';
+  phase: "starting" | "scanning" | "enriching" | "posting" | "completed";
   scannedFiles: number;
   totalFiles: number;
   vulnerabilitiesFound: number;
@@ -107,7 +107,7 @@ export interface ProcessScanJobOptions {
 export async function processScanJob(
   data: ScanJobData,
   onProgress: ProgressCallback = () => {},
-  options: ProcessScanJobOptions = {}
+  options: ProcessScanJobOptions = {},
 ): Promise<ScanJobResult> {
   const { report = true, persist = true } = options;
   const {
@@ -127,7 +127,13 @@ export async function processScanJob(
   console.log(`[ScanEngine] Starting scan for ${repositoryFullName}#${prNumber}`);
 
   // --- Phase 1: Fetch files from GitHub ---
-  onProgress({ phase: 'starting', scannedFiles: 0, totalFiles: initialFileChanges.length, vulnerabilitiesFound: 0, progress: 0 });
+  onProgress({
+    phase: "starting",
+    scannedFiles: 0,
+    totalFiles: initialFileChanges.length,
+    vulnerabilitiesFound: 0,
+    progress: 0,
+  });
 
   const { appId, privateKey } = getGitHubAppCredentials();
   const appClient = new App({ appId, privateKey });
@@ -145,7 +151,7 @@ export async function processScanJob(
       pullNumber: prNumber,
     });
     fileChanges = result.files
-      .filter((f: any) => f.patch && f.status !== 'removed')
+      .filter((f: any) => f.patch && f.status !== "removed")
       .map((f: any) => ({ filename: f.filename, patch: f.patch }));
   }
 
@@ -153,7 +159,13 @@ export async function processScanJob(
   console.log(`[ScanEngine] Scanning ${totalFiles} files`);
 
   // --- Phase 2: Scan files in chunks ---
-  onProgress({ phase: 'scanning', scannedFiles: 0, totalFiles, vulnerabilitiesFound: 0, progress: 0 });
+  onProgress({
+    phase: "scanning",
+    scannedFiles: 0,
+    totalFiles,
+    vulnerabilitiesFound: 0,
+    progress: 0,
+  });
 
   const allFindings: EnrichedScanFinding[] = [];
   let scannedFiles = 0;
@@ -166,7 +178,7 @@ export async function processScanJob(
         chunk,
         activePolicies as any[],
         customIgnores,
-        customPlaceholders
+        customPlaceholders,
       );
       allFindings.push(...chunkFindings);
     } catch (err) {
@@ -179,7 +191,7 @@ export async function processScanJob(
     const progress = progressPercent(scannedFiles, totalFiles);
 
     onProgress({
-      phase: 'scanning',
+      phase: "scanning",
       scannedFiles,
       totalFiles,
       vulnerabilitiesFound: vulnCount,
@@ -194,12 +206,18 @@ export async function processScanJob(
 
     // Yield to event loop between chunks
     if (i + CHUNK_SIZE < fileChanges.length) {
-      await new Promise(resolve => setTimeout(resolve, CHUNK_DELAY_MS));
+      await new Promise((resolve) => setTimeout(resolve, CHUNK_DELAY_MS));
     }
   }
 
   // --- Phase 3: Enrich findings with AI explanations ---
-  onProgress({ phase: 'enriching', scannedFiles: totalFiles, totalFiles, vulnerabilitiesFound: allFindings.length, progress: 90 });
+  onProgress({
+    phase: "enriching",
+    scannedFiles: totalFiles,
+    totalFiles,
+    vulnerabilitiesFound: allFindings.length,
+    progress: 90,
+  });
 
   // Compute fingerprints. `EnrichedScanFinding` declares the field; `ScanFinding`
   // does not, which is what made this assignment a type error (#747).
@@ -213,7 +231,7 @@ export async function processScanJob(
     const dismissed = await prisma.findingTriage.findMany({
       where: {
         repositoryId,
-        status: { in: ['FALSE_POSITIVE', 'IGNORED'] },
+        status: { in: ["FALSE_POSITIVE", "IGNORED"] },
       },
       select: { fingerprint: true },
     });
@@ -221,7 +239,7 @@ export async function processScanJob(
   }
 
   const activeFindings = allFindings.filter(
-    (f) => !f.fingerprint || !suppressedFingerprints.has(f.fingerprint)
+    (f) => !f.fingerprint || !suppressedFingerprints.has(f.fingerprint),
   );
 
   // Enrich active findings with AI explanations
@@ -233,7 +251,7 @@ export async function processScanJob(
           severity: finding.severity,
           description: finding.description,
           fileLocation: finding.fileLocation,
-          codeSnippet: finding.codeSnippet || '',
+          codeSnippet: finding.codeSnippet || "",
         });
         return {
           ...finding,
@@ -245,7 +263,7 @@ export async function processScanJob(
         console.error(`[ScanEngine] Failed to enrich finding:`, err);
         return finding;
       }
-    })
+    }),
   );
 
   // --- Phase 4: Evaluate policy decision ---
@@ -255,7 +273,13 @@ export async function processScanJob(
   const conclusion = checkRunConclusion(decision);
 
   // --- Phase 5: Post to GitHub ---
-  onProgress({ phase: 'posting', scannedFiles: totalFiles, totalFiles, vulnerabilitiesFound: enrichedFindings.length, progress: 95 });
+  onProgress({
+    phase: "posting",
+    scannedFiles: totalFiles,
+    totalFiles,
+    vulnerabilitiesFound: enrichedFindings.length,
+    progress: 95,
+  });
 
   if (report) {
     try {
@@ -265,9 +289,9 @@ export async function processScanJob(
       await octokit.rest.checks.create({
         owner,
         repo,
-        name: 'SecureFlow Scan',
+        name: "SecureFlow Scan",
         head_sha: headSha,
-        status: 'completed',
+        status: "completed",
         conclusion,
         output: {
           title: `Policy Decision: ${decision}`,
@@ -280,7 +304,7 @@ export async function processScanJob(
         let body = `### 🛡️ SecureFlow AI Security Report\n\n`;
         body += `⚠️ Detected **${enrichedFindings.length}** potential issues matching your code policies.\n\n`;
 
-        enrichedFindings.forEach(f => {
+        enrichedFindings.forEach((f) => {
           body += `#### ${severityBadge(f.severity)} | **${f.type}** in \`${f.fileLocation}\`\n`;
           if (f.promptInjectionSuspected) {
             body += `> ⚠️ **AI explanation may be unreliable for this finding — verify manually.**\n\n`;
@@ -321,7 +345,7 @@ export async function processScanJob(
       // Suppressed findings are still stored, so a reversed triage decision does
       // not lose its history, but they are excluded from the score.
       const suppressedFindings = allFindings.filter(
-        (f) => f.fingerprint && suppressedFingerprints.has(f.fingerprint)
+        (f) => f.fingerprint && suppressedFingerprints.has(f.fingerprint),
       );
       const findingsToPersist = [...enrichedFindings, ...suppressedFindings];
 
@@ -339,7 +363,7 @@ export async function processScanJob(
         await prisma.auditLog.create({
           data: sanitizeAuditLogInput({
             userId,
-            action: 'Background Scan Completed',
+            action: "Background Scan Completed",
             resource: `${repositoryFullName}#${prNumber}`,
             decision,
             metadata: {
@@ -362,11 +386,19 @@ export async function processScanJob(
   }
 
   // --- Done ---
-  onProgress({ phase: 'completed', scannedFiles: totalFiles, totalFiles, vulnerabilitiesFound: enrichedFindings.length, progress: 100 });
+  onProgress({
+    phase: "completed",
+    scannedFiles: totalFiles,
+    totalFiles,
+    vulnerabilitiesFound: enrichedFindings.length,
+    progress: 100,
+  });
 
   const riskScore = storedRiskScore(activeFindings);
 
-  console.log(`[ScanEngine] Scan complete: ${enrichedFindings.length} findings, risk=${riskScore}, decision=${decision}`);
+  console.log(
+    `[ScanEngine] Scan complete: ${enrichedFindings.length} findings, risk=${riskScore}, decision=${decision}`,
+  );
 
   if (persistenceError) {
     throw new ScanPersistenceError(persistenceError);

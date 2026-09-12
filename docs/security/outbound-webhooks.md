@@ -12,19 +12,19 @@ exercised by `src/lib/queue/outbound-dispatch.test.ts`.
 
 A destination is validated **before any socket is opened**. In order:
 
-| Check | Rejected |
-| --- | --- |
-| Scheme | anything other than `http:` / `https:` |
-| Transport | plaintext `http:` unless explicitly allowed (never in production) |
-| Authority | a URL carrying `user:password@` |
-| Allowlist | a host absent from `OUTBOUND_WEBHOOK_ALLOWED_HOSTS`, when that is set |
-| Hostname | `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal`, `instance-data` |
-| Address literal | loopback, link-local, RFC1918, CGNAT, multicast, reserved — v4 and v6 |
-| Resolved address | any of the above, after DNS |
+| Check            | Rejected                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| Scheme           | anything other than `http:` / `https:`                                                |
+| Transport        | plaintext `http:` unless explicitly allowed (never in production)                     |
+| Authority        | a URL carrying `user:password@`                                                       |
+| Allowlist        | a host absent from `OUTBOUND_WEBHOOK_ALLOWED_HOSTS`, when that is set                 |
+| Hostname         | `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal`, `instance-data` |
+| Address literal  | loopback, link-local, RFC1918, CGNAT, multicast, reserved — v4 and v6                 |
+| Resolved address | any of the above, after DNS                                                           |
 
 The last row is the one that matters most. Checking only the hostname is not a
 control: `hooks.attacker.example` is a perfectly ordinary public name, and it
-can answer `127.0.0.1`. We resolve the name and reject the destination if *any*
+can answer `127.0.0.1`. We resolve the name and reject the destination if _any_
 returned address is internal.
 
 Obfuscated spellings of loopback (`0x7f.0.0.1`, `2130706433`, `0177.0.0.1`,
@@ -59,19 +59,19 @@ The response body is drained up to `OUTBOUND_WEBHOOK_MAX_RESPONSE_BYTES`
 (default 64 KiB) and the rest is discarded. Two reasons:
 
 - Under undici an unread body keeps the connection held until GC.
-- The prefix we do keep is usually the only explanation of *why* a delivery
+- The prefix we do keep is usually the only explanation of _why_ a delivery
   failed. A DLQ entry that says `400` and nothing else is not actionable.
 
 ## Retry classification
 
-| Outcome | Class | Effect |
-| --- | --- | --- |
-| `2xx` | success | job completes |
-| `408`, `425`, `429`, `5xx` | retryable | normal BullMQ backoff |
-| network error, timeout, DNS failure | retryable | normal BullMQ backoff |
-| `3xx` | permanent | `UnrecoverableError` → DLQ immediately |
-| any other `4xx` | permanent | `UnrecoverableError` → DLQ immediately |
-| refused destination | permanent | `UnrecoverableError` → DLQ immediately |
+| Outcome                             | Class     | Effect                                 |
+| ----------------------------------- | --------- | -------------------------------------- |
+| `2xx`                               | success   | job completes                          |
+| `408`, `425`, `429`, `5xx`          | retryable | normal BullMQ backoff                  |
+| network error, timeout, DNS failure | retryable | normal BullMQ backoff                  |
+| `3xx`                               | permanent | `UnrecoverableError` → DLQ immediately |
+| any other `4xx`                     | permanent | `UnrecoverableError` → DLQ immediately |
+| refused destination                 | permanent | `UnrecoverableError` → DLQ immediately |
 
 A `404` will not become a `200` on the third attempt. Retrying it costs three
 worker slots and fifteen seconds of backoff to reach the same DLQ entry we could
@@ -107,13 +107,13 @@ must never reach a log drain. Error messages follow the same rule.
 
 ## Configuration
 
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `OUTBOUND_WEBHOOK_TIMEOUT_MS` | `10000` | capped at `60000` |
-| `OUTBOUND_WEBHOOK_MAX_RESPONSE_BYTES` | `65536` | capped at 1 MiB |
-| `OUTBOUND_WEBHOOK_ALLOWED_HOSTS` | *(empty)* | comma-separated; empty means any public host |
-| `OUTBOUND_WEBHOOK_ALLOW_INSECURE_HTTP` | `false` | **ignored when `NODE_ENV=production`** |
-| `OUTBOUND_WEBHOOK_ALLOW_PRIVATE_NETWORKS` | `false` | **ignored when `NODE_ENV=production`** |
+| Variable                                  | Default   | Notes                                        |
+| ----------------------------------------- | --------- | -------------------------------------------- |
+| `OUTBOUND_WEBHOOK_TIMEOUT_MS`             | `10000`   | capped at `60000`                            |
+| `OUTBOUND_WEBHOOK_MAX_RESPONSE_BYTES`     | `65536`   | capped at 1 MiB                              |
+| `OUTBOUND_WEBHOOK_ALLOWED_HOSTS`          | _(empty)_ | comma-separated; empty means any public host |
+| `OUTBOUND_WEBHOOK_ALLOW_INSECURE_HTTP`    | `false`   | **ignored when `NODE_ENV=production`**       |
+| `OUTBOUND_WEBHOOK_ALLOW_PRIVATE_NETWORKS` | `false`   | **ignored when `NODE_ENV=production`**       |
 
 The two permissive switches exist so a developer can point the worker at
 `http://localhost:4000` while working on a receiver. They are read through

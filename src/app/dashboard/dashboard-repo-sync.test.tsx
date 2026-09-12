@@ -40,13 +40,7 @@ describe("Dashboard Repository Sync & GitHub App Banner (#634)", () => {
   });
 
   it("displays GitHub App install prompt when needsGitHubAppInstall is true (Scenario 2)", () => {
-    render(
-      <DashboardClient
-        {...baseProps}
-        repoCount={0}
-        needsGitHubAppInstall={true}
-      />
-    );
+    render(<DashboardClient {...baseProps} repoCount={0} needsGitHubAppInstall={true} />);
 
     expect(screen.getByText("Install SecureFlow GitHub Application")).toBeInTheDocument();
     expect(screen.getByText("Install GitHub App")).toBeInTheDocument();
@@ -65,9 +59,7 @@ describe("Dashboard Repository Sync & GitHub App Banner (#634)", () => {
     fireEvent.click(syncButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Successfully synchronized 4 repositories.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Successfully synchronized 4 repositories.")).toBeInTheDocument();
     });
   });
 });

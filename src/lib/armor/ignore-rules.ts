@@ -38,9 +38,21 @@
  * `package-lock.json`, `tsconfig.json` catches `apps/web/tsconfig.json`.
  */
 export const IGNORED_EXTENSIONS = [
-  'lock.json', '.lock', 'lock.yaml', '.csv',
-  '.svg', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.gz',
-  '.md', 'tsconfig.json'
+  "lock.json",
+  ".lock",
+  "lock.yaml",
+  ".csv",
+  ".svg",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".pdf",
+  ".zip",
+  ".gz",
+  ".md",
+  "tsconfig.json",
 ] as const;
 
 /**
@@ -52,7 +64,11 @@ export const IGNORED_EXTENSIONS = [
  * `apps/api/prisma/migrations/x.sql`, but not `myprisma/migrations/x.sql`.
  */
 export const IGNORED_DIRECTORIES = [
-  'dist/', 'build/', '.next/', 'node_modules/', 'prisma/migrations/'
+  "dist/",
+  "build/",
+  ".next/",
+  "node_modules/",
+  "prisma/migrations/",
 ] as const;
 
 /**
@@ -63,7 +79,10 @@ export const IGNORED_DIRECTORIES = [
  * hold a credential like any other file — is not.
  */
 export const IGNORED_BASENAMES = [
-  'package.json', 'components.json', 'prisma.config.ts', '.gitignore'
+  "package.json",
+  "components.json",
+  "prisma.config.ts",
+  ".gitignore",
 ] as const;
 
 /**
@@ -75,22 +94,18 @@ export const IGNORED_BASENAMES = [
  * removes a class of near-miss.
  */
 export function normalizeScanPath(filename: string): string {
-  return filename
-    .replace(/\\/g, '/')
-    .replace(/^\.\//, '')
-    .replace(/^\/+/, '')
-    .toLowerCase();
+  return filename.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\/+/, "").toLowerCase();
 }
 
 /** The path's segments, with empty ones (from `a//b`) dropped. */
 export function pathSegments(normalizedPath: string): string[] {
-  return normalizedPath.split('/').filter((segment) => segment.length > 0);
+  return normalizedPath.split("/").filter((segment) => segment.length > 0);
 }
 
 /** The filename, without its directories. */
 export function basenameOf(normalizedPath: string): string {
   const segments = pathSegments(normalizedPath);
-  return segments.length > 0 ? segments[segments.length - 1] : '';
+  return segments.length > 0 ? segments[segments.length - 1] : "";
 }
 
 /**
@@ -128,7 +143,7 @@ export function hasIgnoredBasename(normalizedPath: string): boolean {
 }
 
 /** Why a file was skipped, for the log line the scanner prints. */
-export type IgnoreReason = 'directory' | 'extension' | 'config-file' | 'custom' | null;
+export type IgnoreReason = "directory" | "extension" | "config-file" | "custom" | null;
 
 /**
  * Decide whether `filename` should be skipped, and say why.
@@ -143,28 +158,28 @@ export type IgnoreReason = 'directory' | 'extension' | 'config-file' | 'custom' 
  * repository's own maintainers, and they are glob-anchored already.
  */
 export function ignoreReasonFor(filename: string, customIgnores: RegExp[] = []): IgnoreReason {
-  if (typeof filename !== 'string' || filename.trim() === '') return null;
+  if (typeof filename !== "string" || filename.trim() === "") return null;
 
   const normalized = normalizeScanPath(filename);
 
   if (IGNORED_DIRECTORIES.some((rule) => isUnderIgnoredDirectory(normalized, rule))) {
-    return 'directory';
+    return "directory";
   }
 
   if (hasIgnoredExtension(normalized)) {
-    return 'extension';
+    return "extension";
   }
 
   // `.env.example` is deliberately NOT ignored here: the scanner has a dedicated
   // context hint and false-positive filter for template files, and a real key
   // committed to one is still a real key.
   if (hasIgnoredBasename(normalized)) {
-    return 'config-file';
+    return "config-file";
   }
 
-  const forCustom = filename.replace(/\\/g, '/');
+  const forCustom = filename.replace(/\\/g, "/");
   if (customIgnores.some((pattern) => pattern.test(forCustom))) {
-    return 'custom';
+    return "custom";
   }
 
   return null;

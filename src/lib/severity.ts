@@ -29,7 +29,7 @@
  * a level in the wrong place silently changes every threshold comparison in the
  * codebase. Append-only changes are safe; reordering is not.
  */
-export const SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE'] as const;
+export const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"] as const;
 
 export type Severity = (typeof SEVERITY_ORDER)[number];
 
@@ -52,45 +52,45 @@ const CANONICAL = new Set<string>(SEVERITY_ORDER);
  */
 const SEVERITY_ALIASES: Readonly<Record<string, Severity>> = {
   // Abbreviations
-  CRIT: 'CRITICAL',
-  CRITICALS: 'CRITICAL',
-  SEVERE: 'CRITICAL',
-  BLOCKER: 'CRITICAL',
-  FATAL: 'CRITICAL',
+  CRIT: "CRITICAL",
+  CRITICALS: "CRITICAL",
+  SEVERE: "CRITICAL",
+  BLOCKER: "CRITICAL",
+  FATAL: "CRITICAL",
 
   // Priority scales (Jira / PagerDuty / most bug trackers)
-  SEV0: 'CRITICAL',
-  SEV1: 'CRITICAL',
-  P0: 'CRITICAL',
-  P1: 'CRITICAL',
-  SEV2: 'HIGH',
-  P2: 'HIGH',
-  SEV3: 'MEDIUM',
-  P3: 'MEDIUM',
-  SEV4: 'LOW',
-  P4: 'LOW',
+  SEV0: "CRITICAL",
+  SEV1: "CRITICAL",
+  P0: "CRITICAL",
+  P1: "CRITICAL",
+  SEV2: "HIGH",
+  P2: "HIGH",
+  SEV3: "MEDIUM",
+  P3: "MEDIUM",
+  SEV4: "LOW",
+  P4: "LOW",
 
   // SARIF / linter level names
-  ERROR: 'HIGH',
-  WARNING: 'MEDIUM',
-  WARN: 'MEDIUM',
-  NOTE: 'LOW',
-  INFO: 'LOW',
-  INFORMATIONAL: 'LOW',
-  NOTICE: 'LOW',
+  ERROR: "HIGH",
+  WARNING: "MEDIUM",
+  WARN: "MEDIUM",
+  NOTE: "LOW",
+  INFO: "LOW",
+  INFORMATIONAL: "LOW",
+  NOTICE: "LOW",
 
   // Prose the model reaches for when it ignores the enum
-  MODERATE: 'MEDIUM',
-  MINOR: 'LOW',
-  MAJOR: 'HIGH',
-  TRIVIAL: 'LOW',
-  NEGLIGIBLE: 'LOW',
+  MODERATE: "MEDIUM",
+  MINOR: "LOW",
+  MAJOR: "HIGH",
+  TRIVIAL: "LOW",
+  NEGLIGIBLE: "LOW",
 
   // Explicit "nothing found"
-  CLEAN: 'NONE',
-  PASS: 'NONE',
-  OK: 'NONE',
-  UNKNOWN: 'NONE',
+  CLEAN: "NONE",
+  PASS: "NONE",
+  OK: "NONE",
+  UNKNOWN: "NONE",
 };
 
 /**
@@ -118,11 +118,11 @@ export const SEVERITY_RISK_WEIGHT: Readonly<Record<Severity, number>> = {
  * severe findings.
  */
 export const SEVERITY_BADGE: Readonly<Record<Severity, string>> = {
-  CRITICAL: '🔴 CRITICAL',
-  HIGH: '🟠 HIGH',
-  MEDIUM: '🟡 MEDIUM',
-  LOW: '🔵 LOW',
-  NONE: '⚪ NONE',
+  CRITICAL: "🔴 CRITICAL",
+  HIGH: "🟠 HIGH",
+  MEDIUM: "🟡 MEDIUM",
+  LOW: "🔵 LOW",
+  NONE: "⚪ NONE",
 };
 
 /**
@@ -150,7 +150,7 @@ export const SEVERITY_BADGE: Readonly<Record<Severity, string>> = {
  * not load-bearing for thresholds, only for the bucket walk in
  * `planSeverityPage`.
  */
-export const STORED_SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'] as const;
+export const STORED_SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const;
 
 export type StoredSeverity = (typeof STORED_SEVERITIES)[number];
 
@@ -166,11 +166,11 @@ const STORED_CANONICAL = new Set<string>(STORED_SEVERITIES);
  * write simply failing, which is what happens today.
  */
 const RANK_TO_STORED: Readonly<Record<Severity, StoredSeverity>> = {
-  CRITICAL: 'CRITICAL',
-  HIGH: 'HIGH',
-  MEDIUM: 'MEDIUM',
-  LOW: 'LOW',
-  NONE: 'INFO',
+  CRITICAL: "CRITICAL",
+  HIGH: "HIGH",
+  MEDIUM: "MEDIUM",
+  LOW: "LOW",
+  NONE: "INFO",
 };
 
 /**
@@ -183,21 +183,21 @@ const RANK_TO_STORED: Readonly<Record<Severity, StoredSeverity>> = {
  * `LOW` loses the distinction the column was migrated to preserve.
  */
 const STORED_ALIASES: Readonly<Record<string, StoredSeverity>> = {
-  INFO: 'INFO',
-  INFORMATIONAL: 'INFO',
-  INFORMATION: 'INFO',
-  NOTICE: 'INFO',
-  NOTE: 'INFO',
-  NONE: 'INFO',
-  CLEAN: 'INFO',
-  PASS: 'INFO',
-  OK: 'INFO',
-  UNKNOWN: 'INFO',
+  INFO: "INFO",
+  INFORMATIONAL: "INFO",
+  INFORMATION: "INFO",
+  NOTICE: "INFO",
+  NOTE: "INFO",
+  NONE: "INFO",
+  CLEAN: "INFO",
+  PASS: "INFO",
+  OK: "INFO",
+  UNKNOWN: "INFO",
 };
 
 /** Narrowing predicate for a value the `FindingSeverity` column accepts as-is. */
 export function isStoredSeverity(value: unknown): value is StoredSeverity {
-  return typeof value === 'string' && STORED_CANONICAL.has(value);
+  return typeof value === "string" && STORED_CANONICAL.has(value);
 }
 
 /**
@@ -209,9 +209,12 @@ export function isStoredSeverity(value: unknown): value is StoredSeverity {
  * {@link toStoredSeverity} when a value has to be produced regardless.
  */
 export function parseStoredSeverity(value: unknown): StoredSeverity | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== "string") return null;
 
-  const key = value.trim().toUpperCase().replace(/[\s_-]+/g, '');
+  const key = value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
   if (!key) return null;
 
   if (STORED_CANONICAL.has(key)) return key as StoredSeverity;
@@ -237,7 +240,7 @@ export function parseStoredSeverity(value: unknown): StoredSeverity | null {
  */
 export function toStoredSeverity(
   value: unknown,
-  fallback: StoredSeverity = 'MEDIUM'
+  fallback: StoredSeverity = "MEDIUM",
 ): StoredSeverity {
   return parseStoredSeverity(value) ?? fallback;
 }
@@ -266,7 +269,7 @@ export type SeverityCountMap = Record<Severity, number>;
 
 /** Narrowing predicate for a value that is already canonical. */
 export function isSeverity(value: unknown): value is Severity {
-  return typeof value === 'string' && CANONICAL.has(value);
+  return typeof value === "string" && CANONICAL.has(value);
 }
 
 /**
@@ -277,11 +280,11 @@ export function isSeverity(value: unknown): value is Severity {
  * for any non-string input, which callers treat as "no severity given".
  */
 function canonicalizeKey(value: unknown): string {
-  if (typeof value !== 'string') return '';
+  if (typeof value !== "string") return "";
   return value
     .trim()
     .toUpperCase()
-    .replace(/[\s_-]+/g, '');
+    .replace(/[\s_-]+/g, "");
 }
 
 /**
@@ -311,7 +314,7 @@ export function parseSeverity(value: unknown): Severity | null {
  * out of enforcement entirely. MEDIUM keeps it visible and matches the pre-existing
  * behaviour in `scanner.ts`.
  */
-export function normalizeSeverity(value: unknown, fallback: Severity = 'MEDIUM'): Severity {
+export function normalizeSeverity(value: unknown, fallback: Severity = "MEDIUM"): Severity {
   return parseSeverity(value) ?? fallback;
 }
 
@@ -383,7 +386,7 @@ export function riskWeight(value: unknown): number {
 
 /** Pull request comment badge for a severity. Unparseable input renders as NONE. */
 export function severityBadge(value: unknown): string {
-  return SEVERITY_BADGE[normalizeSeverity(value, 'NONE')];
+  return SEVERITY_BADGE[normalizeSeverity(value, "NONE")];
 }
 
 /**
@@ -417,7 +420,7 @@ export function emptySeverityCounts(): SeverityCountMap {
  */
 export function countBySeverity<T>(
   items: readonly T[],
-  getSeverity: (item: T) => unknown = (item) => (item as { severity?: unknown })?.severity
+  getSeverity: (item: T) => unknown = (item) => (item as { severity?: unknown })?.severity,
 ): SeverityCountMap {
   const counts = emptySeverityCounts();
 
@@ -438,7 +441,7 @@ export function countBySeverity<T>(
  */
 export function totalRiskScore<T>(
   items: readonly T[],
-  getSeverity: (item: T) => unknown = (item) => (item as { severity?: unknown })?.severity
+  getSeverity: (item: T) => unknown = (item) => (item as { severity?: unknown })?.severity,
 ): number {
   return items.reduce((total, item) => total + riskWeight(getSeverity(item)), 0);
 }

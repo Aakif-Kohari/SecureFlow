@@ -4,14 +4,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "./card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./card";
 
 describe("Card components", () => {
   it("renders a complete card structure", () => {
@@ -27,7 +20,7 @@ describe("Card components", () => {
         <CardFooter>
           <span>Footer text</span>
         </CardFooter>
-      </Card>
+      </Card>,
     );
 
     expect(screen.getByTestId("card-root")).toBeInTheDocument();

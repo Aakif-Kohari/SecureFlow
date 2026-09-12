@@ -44,7 +44,7 @@ describe("triggerRepositorySync Server Action (#634)", () => {
     expect(syncEngine.syncUserRepositories).toHaveBeenCalledWith(
       "user-456",
       "dev_heist",
-      "gho_token_abc"
+      "gho_token_abc",
     );
   });
 });

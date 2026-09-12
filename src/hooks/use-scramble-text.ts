@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /** Pool of characters used as noise during the scramble transition. */
-const SCRAMBLE_CHARS =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%!";
+const SCRAMBLE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%!";
 
 interface UseScrambleTextOptions {
   /** Text shown at rest (the codename). */
@@ -96,8 +95,7 @@ export function useScrambleText({
           result += target[i] ?? "";
         } else {
           // Scrambling — random noise character.
-          result +=
-            SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+          result += SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
         }
       }
 

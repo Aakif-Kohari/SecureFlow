@@ -97,7 +97,7 @@ export default function FindingsToolbar({
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
       });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   const setSingle = useCallback(
@@ -107,7 +107,7 @@ export default function FindingsToolbar({
         else params.set(key, value);
       });
     },
-    [apply]
+    [apply],
   );
 
   // Debounced so a search term does not push one history entry per keystroke.
@@ -132,7 +132,7 @@ export default function FindingsToolbar({
   const activeSort = searchParams.get("sort") ?? "newest";
 
   const activeCount = ["severity", "type", "status", "repo", "q"].filter((key) =>
-    searchParams.has(key)
+    searchParams.has(key),
   ).length;
 
   return (

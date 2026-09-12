@@ -1,6 +1,6 @@
 # SecureFlow API Documentation
 
-> *"The Professor only opens the vault through the right doors. Here are the doors."*
+> _"The Professor only opens the vault through the right doors. Here are the doors."_
 
 This document describes every HTTP route exposed under `src/app/api/`, including the expected request payloads, headers, authentication, and response shapes. Use it as the single source of truth when integrating with SecureFlow programmatically.
 
@@ -41,11 +41,11 @@ The session is augmented with SecureFlow-specific fields in `src/auth.ts`:
 ```ts
 interface Session {
   user: {
-    id: string;            // SecureFlow user ID (CUID)
-    codename: string;      // Heist-themed codename (e.g. "Tokyo")
-    roles: string[];       // e.g. ["USER"] or ["USER", "ADMIN"]
+    id: string; // SecureFlow user ID (CUID)
+    codename: string; // Heist-themed codename (e.g. "Tokyo")
+    roles: string[]; // e.g. ["USER"] or ["USER", "ADMIN"]
   };
-  accessToken: string;     // GitHub OAuth access token
+  accessToken: string; // GitHub OAuth access token
   error?: "RefreshAccessTokenError";
 }
 ```
@@ -54,10 +54,10 @@ interface Session {
 
 Two roles are seeded out of the box:
 
-| Role   | Grants |
-| ------ | ------ |
-| `USER` | Default. Access to the dashboard, findings, policies, audit pages, and the finding explanation stream. |
-| `ADMIN`| Everything `USER` has, plus the `/api/admin/export` route and the `/admin` UI. |
+| Role    | Grants                                                                                                 |
+| ------- | ------------------------------------------------------------------------------------------------------ |
+| `USER`  | Default. Access to the dashboard, findings, policies, audit pages, and the finding explanation stream. |
+| `ADMIN` | Everything `USER` has, plus the `/api/admin/export` route and the `/admin` UI.                         |
 
 ### Authenticating API requests
 
@@ -88,10 +88,10 @@ Retry-After: <windowSeconds>
 }
 ```
 
-| Route                          | Limit | Window |
-| ------------------------------ | ----- | ------ |
-| `POST /api/auth/*`             | 10    | 60s    |
-| `POST /api/webhooks/github`    | 50    | 60s    |
+| Route                       | Limit | Window |
+| --------------------------- | ----- | ------ |
+| `POST /api/auth/*`          | 10    | 60s    |
+| `POST /api/webhooks/github` | 50    | 60s    |
 
 All other routes have no explicit rate limit (Next.js / Vercel platform limits still apply).
 
@@ -104,24 +104,24 @@ Routes wrapped in `withErrorHandler` (`src/lib/middleware/error-handler.ts`) ret
 ```ts
 interface ApiError {
   success: false;
-  error: string;    // machine-readable code, e.g. "UNAUTHORIZED", "DATABASE_ERROR"
-  message: string;  // human-readable, with sensitive data scrubbed
+  error: string; // machine-readable code, e.g. "UNAUTHORIZED", "DATABASE_ERROR"
+  message: string; // human-readable, with sensitive data scrubbed
 }
 ```
 
 ### Error code mapping
 
-| HTTP Status | `error`                | When |
-| ----------- | ---------------------- | ---- |
-| 400         | `BAD_REQUEST`          | Malformed input / failed Zod validation. |
-| 401         | `UNAUTHORIZED`         | Missing or invalid session. |
-| 403         | `FORBIDDEN`            | Authenticated but lacking role. |
-| 404         | `NOT_FOUND`            | Resource doesn't exist or isn't owned by the caller. |
-| 409         | `CONFLICT`             | Duplicate resource. |
-| 422         | `UNPROCESSABLE_ENTITY` | Semantic validation failure. |
-| 429         | `TOO_MANY_REQUESTS`    | Rate limit exceeded (see above). |
-| 500         | `INTERNAL_SERVER_ERROR`| Unexpected server failure. Sensitive paths/credentials are scrubbed. |
-| 500         | `DATABASE_ERROR`       | Prisma/Postgres failure. Schema details redacted. |
+| HTTP Status | `error`                 | When                                                                 |
+| ----------- | ----------------------- | -------------------------------------------------------------------- |
+| 400         | `BAD_REQUEST`           | Malformed input / failed Zod validation.                             |
+| 401         | `UNAUTHORIZED`          | Missing or invalid session.                                          |
+| 403         | `FORBIDDEN`             | Authenticated but lacking role.                                      |
+| 404         | `NOT_FOUND`             | Resource doesn't exist or isn't owned by the caller.                 |
+| 409         | `CONFLICT`              | Duplicate resource.                                                  |
+| 422         | `UNPROCESSABLE_ENTITY`  | Semantic validation failure.                                         |
+| 429         | `TOO_MANY_REQUESTS`     | Rate limit exceeded (see above).                                     |
+| 500         | `INTERNAL_SERVER_ERROR` | Unexpected server failure. Sensitive paths/credentials are scrubbed. |
+| 500         | `DATABASE_ERROR`        | Prisma/Postgres failure. Schema details redacted.                    |
 
 **Sensitive-data scrubbing**: error messages are passed through `scrubSensitiveData()` before being returned to the client. This redacts connection strings, file paths, and `*=*` env-var patterns. The original (unredacted) error is logged server-side via the structured `logger`.
 
@@ -136,18 +136,19 @@ interface ApiError {
 
 This is the catch-all NextAuth route. It handles the OAuth dance with GitHub, JWT issuance/refresh, and session retrieval. You generally don't call it directly — the `<LoginButton>` component and NextAuth client hooks do.
 
-| Method | Path                  | Purpose |
-| ------ | --------------------- | ------- |
-| `GET`  | `/api/auth/signin`    | Renders the GitHub sign-in flow (redirects to `/login` per `auth.config.ts`). |
+| Method | Path                        | Purpose                                                                                                     |
+| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/auth/signin`          | Renders the GitHub sign-in flow (redirects to `/login` per `auth.config.ts`).                               |
 | `POST` | `/api/auth/callback/github` | OAuth callback from GitHub. Creates the user + `USER` role on first login, assigns a random heist codename. |
-| `GET`  | `/api/auth/session`   | Returns the current session JSON (or `null` if signed out). |
-| `POST` | `/api/auth/signout`   | Destroys the session. |
+| `GET`  | `/api/auth/session`         | Returns the current session JSON (or `null` if signed out).                                                 |
+| `POST` | `/api/auth/signout`         | Destroys the session.                                                                                       |
 
 #### `GET /api/auth/session`
 
 **Auth**: None.
 
 **200 OK** (signed in):
+
 ```json
 {
   "user": {
@@ -161,6 +162,7 @@ This is the catch-all NextAuth route. It handles the OAuth dance with GitHub, JW
 ```
 
 **200 OK** (signed out):
+
 ```json
 null
 ```
@@ -205,23 +207,28 @@ cld3...,cld4...,Policy Evaluation,owner/repo#42,PASS,{"findingsCount":0},2025-01
 ```
 
 CSV rules:
+
 - Column order: `id,userId,action,resource,decision,metadata,timestamp`.
 - The `metadata` column is the JSON value serialized to a single line.
 - Fields containing `,`, `"`, or `\n` are double-quoted; embedded `"` are escaped as `""` (RFC 4180).
 - `null` / `undefined` values become empty strings.
 
 **401 Unauthorized**:
+
 ```json
 { "error": "Unauthorized access" }
 ```
 
 **404 Not Found** — no audit logs exist yet:
+
 ```
 No data available
 ```
-*(Plain text, not JSON — this route predates the standardized error envelope.)*
+
+_(Plain text, not JSON — this route predates the standardized error envelope.)_
 
 **500 Internal Server Error**:
+
 ```json
 { "error": "Internal Server Error" }
 ```
@@ -254,13 +261,13 @@ The `X-Hub-Signature-256` header must be `sha256=` + the hex HMAC of the raw req
 
 #### Events handled
 
-| `X-GitHub-Event` | `action` | Behavior |
-| ---------------- | -------- | -------- |
-| `pull_request` | `opened`, `synchronize`, `reopened` | Full scan pipeline (below). |
-| `pull_request` | `closed` | Records merge/closure state for leaderboard scoring. No scan. |
-| `installation` | `created` | Links the installer's GitHub account (via `sender.id`) and bulk-inserts selected repos in chunks of 50. |
-| `installation_repositories` | `added` | Inserts newly-added repos for an existing installation. |
-| *(anything else)* | — | Returns `200 { "message": "Event not tracked" }`. |
+| `X-GitHub-Event`            | `action`                            | Behavior                                                                                                |
+| --------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `pull_request`              | `opened`, `synchronize`, `reopened` | Full scan pipeline (below).                                                                             |
+| `pull_request`              | `closed`                            | Records merge/closure state for leaderboard scoring. No scan.                                           |
+| `installation`              | `created`                           | Links the installer's GitHub account (via `sender.id`) and bulk-inserts selected repos in chunks of 50. |
+| `installation_repositories` | `added`                             | Inserts newly-added repos for an existing installation.                                                 |
+| _(anything else)_           | —                                   | Returns `200 { "message": "Event not tracked" }`.                                                       |
 
 #### Payload schema (validated subset)
 
@@ -297,6 +304,7 @@ SecureFlow uses a Zod schema that's intentionally permissive (`.passthrough()`) 
 All responses are JSON.
 
 **200** — Event ignored or PR closed/merge recorded:
+
 ```json
 { "message": "Event not tracked" }
 // or
@@ -304,6 +312,7 @@ All responses are JSON.
 ```
 
 **202** — Duplicate delivery (idempotency guard) or rate-limit-failed scan:
+
 ```json
 { "message": "Webhook already processed" }
 // or
@@ -311,6 +320,7 @@ All responses are JSON.
 ```
 
 **200** — Successful scan:
+
 ```json
 {
   "success": true,
@@ -320,6 +330,7 @@ All responses are JSON.
 ```
 
 **200** — Scan failed (AI timeout / API error), check run marked neutral:
+
 ```json
 {
   "success": false,
@@ -329,6 +340,7 @@ All responses are JSON.
 ```
 
 **400 Bad Request**:
+
 ```json
 { "error": "Invalid payload structure" }
 // or
@@ -338,6 +350,7 @@ All responses are JSON.
 ```
 
 **401 Unauthorized**:
+
 ```json
 { "error": "Invalid GitHub webhook signature" }
 ```
@@ -389,8 +402,8 @@ Accept: text/event-stream
 
 #### Path parameters
 
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
+| Name | Type   | Description                         |
+| ---- | ------ | ----------------------------------- |
 | `id` | string | The SecureFlow `Finding.id` (CUID). |
 
 #### Query parameters
@@ -411,11 +424,13 @@ X-Accel-Buffering: no
 Each SSE frame is `data: <json>\n\n`. Three event types:
 
 **Chunk** (streaming text):
+
 ```json
 { "type": "chunk", "text": "This finding indicates..." }
 ```
 
 **Done** (final result — also persisted to the DB):
+
 ```json
 {
   "type": "done",
@@ -428,6 +443,7 @@ Each SSE frame is `data: <json>\n\n`. Three event types:
 ```
 
 **Error**:
+
 ```json
 { "type": "error", "message": "AI generation failed." }
 ```
@@ -435,11 +451,13 @@ Each SSE frame is `data: <json>\n\n`. Three event types:
 > On `done`, the handler persists `explanation`, `remediation`, and `promptInjectionSuspected` back to the `Finding` row. A failed persist is non-fatal — the client already has the streamed result.
 
 **401 Unauthorized**:
+
 ```json
 { "error": "Unauthorized" }
 ```
 
 **404 Not Found** — finding doesn't exist or isn't owned by the caller:
+
 ```json
 { "error": "Finding not found" }
 ```
@@ -461,7 +479,7 @@ while (true) {
   for (const frame of frames) {
     const json = JSON.parse(frame.replace(/^data: /, ""));
     if (json.type === "chunk") appendText(json.text);
-    if (json.type === "done")  finalize(json.result);
+    if (json.type === "done") finalize(json.result);
     if (json.type === "error") showError(json.message);
   }
 }
@@ -487,24 +505,24 @@ GET /api/og/heist?project=The%20Royal%20Mint&score=92&rank=S&findingsCount=3
 
 #### Query parameters
 
-| Name | Type | Required | Default | Description |
-| ---- | ---- | -------- | ------- | ----------- |
-| `project` | string | no | `Classified Target` | Target repository name shown on the card. |
-| `score` | number | no | — | Security score (0–100). Drives the tier if `rank` is absent. |
-| `rank` | string | no | derived from `score` | One of `S`, `A`, `B`, `C`, `D`. Overrides the score-derived tier. |
-| `findingsCount` | number | no | — | Number of findings to display. |
+| Name            | Type   | Required | Default              | Description                                                       |
+| --------------- | ------ | -------- | -------------------- | ----------------------------------------------------------------- |
+| `project`       | string | no       | `Classified Target`  | Target repository name shown on the card.                         |
+| `score`         | number | no       | —                    | Security score (0–100). Drives the tier if `rank` is absent.      |
+| `rank`          | string | no       | derived from `score` | One of `S`, `A`, `B`, `C`, `D`. Overrides the score-derived tier. |
+| `findingsCount` | number | no       | —                    | Number of findings to display.                                    |
 
 #### Tier resolution
 
 If `rank` is provided and valid, it's used directly. Otherwise, `score` is mapped:
 
-| Score range | Tier | Color | Quote |
-| ----------- | ---- | ----- | ----- |
-| 90–100 | S | `#facc15` (gold) | Ghost protocol. Zero traces left behind. |
-| 75–89  | A | `#ef4444` (red) | The vault is empty. Clean getaway. |
-| 60–74  | B | `#fb923c` (orange) | Job done. A few loose ends remain. |
-| 40–59  | C | `#a3a3a3` (grey) | Amateur hour. The vault noticed. |
-| 0–39   | D | `#71717a` (dark grey) | Blown cover. Back to the drawing board. |
+| Score range | Tier | Color                 | Quote                                    |
+| ----------- | ---- | --------------------- | ---------------------------------------- |
+| 90–100      | S    | `#facc15` (gold)      | Ghost protocol. Zero traces left behind. |
+| 75–89       | A    | `#ef4444` (red)       | The vault is empty. Clean getaway.       |
+| 60–74       | B    | `#fb923c` (orange)    | Job done. A few loose ends remain.       |
+| 40–59       | C    | `#a3a3a3` (grey)      | Amateur hour. The vault noticed.         |
+| 0–39        | D    | `#71717a` (dark grey) | Blown cover. Back to the drawing board.  |
 
 #### Responses
 
@@ -515,13 +533,15 @@ Content-Type: image/png
 Cache-Control: public, max-age=31536000, immutable
 ```
 
-*(Standard `next/og` caching headers — the image is deterministic for a given query string.)*
+_(Standard `next/og` caching headers — the image is deterministic for a given query string.)_
 
 **500 Internal Server Error** — image generation failure:
+
 ```
 Failed to generate image
 ```
-*(Plain text, not JSON.)*
+
+_(Plain text, not JSON.)_
 
 ---
 
@@ -530,26 +550,28 @@ Failed to generate image
 These are the persisted data shapes referenced throughout the routes above. All are defined in `prisma/schema.prisma`.
 
 ### `Repository`
+
 ```ts
 {
-  id: string;          // CUID
-  githubId: bigint;    // GitHub repo ID
-  fullName: string;    // "owner/name"
+  id: string; // CUID
+  githubId: bigint; // GitHub repo ID
+  fullName: string; // "owner/name"
   owner: string;
   isActive: boolean;
-  userId: string;      // SecureFlow owner
+  userId: string; // SecureFlow owner
 }
 ```
 
 ### `PullRequest`
+
 ```ts
 {
-  id: string;          // CUID
+  id: string; // CUID
   githubId: bigint;
   prNumber: number;
   title: string;
-  state: string;       // "open" | "closed" | "merged"
-  status: string;      // "PASS" | "REVIEW_REQUIRED" | "BLOCKED"
+  state: string; // "open" | "closed" | "merged"
+  status: string; // "PASS" | "REVIEW_REQUIRED" | "BLOCKED"
   authorLogin: string | null;
   authorAvatarUrl: string | null;
   repositoryId: string;
@@ -557,50 +579,54 @@ These are the persisted data shapes referenced throughout the routes above. All 
 ```
 
 ### `ScanResult`
+
 ```ts
 {
   id: string;
   pullRequestId: string;
   riskScore: number;
-  policyDecision: string;  // "PASS" | "REVIEW_REQUIRED" | "BLOCKED"
-  createdAt: string;       // ISO timestamp
+  policyDecision: string; // "PASS" | "REVIEW_REQUIRED" | "BLOCKED"
+  createdAt: string; // ISO timestamp
 }
 ```
 
 ### `Finding`
+
 ```ts
 {
   id: string;
   scanResultId: string;
-  type: string;            // "Secret" | "Vulnerability" | "Misconfig" | ...
-  severity: string;        // "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
+  type: string; // "Secret" | "Vulnerability" | "Misconfig" | ...
+  severity: string; // "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
   fileLocation: string;
   codeSnippet: string | null;
   explanation: string | null;
   remediation: string | null;
   promptInjectionSuspected: boolean;
-  createdAt: string;       // ISO timestamp
+  createdAt: string; // ISO timestamp
 }
 ```
 
 ### `AuditLog`
+
 ```ts
 {
   id: string;
   userId: string | null;
-  action: string;          // "Scan Triggered" | "Policy Evaluation" | ...
-  resource: string;        // "owner/repo#42"
+  action: string; // "Scan Triggered" | "Policy Evaluation" | ...
+  resource: string; // "owner/repo#42"
   decision: string | null; // "PASS" | "REVIEW_REQUIRED" | "BLOCKED" | "FAIL"
   metadata: object | null; // arbitrary JSON
-  timestamp: string;       // ISO timestamp
+  timestamp: string; // ISO timestamp
 }
 ```
 
 ### `WebhookEvent`
+
 ```ts
 {
   id: string;
-  deliveryId: string;      // X-GitHub-Delivery UUID, unique
+  deliveryId: string; // X-GitHub-Delivery UUID, unique
   repositoryId: string | null;
   pullRequestId: string | null;
   createdAt: string;
@@ -613,24 +639,24 @@ These are the persisted data shapes referenced throughout the routes above. All 
 
 Required across the API surface:
 
-| Variable | Used by | Purpose |
-| -------- | ------- | ------- |
-| `GITHUB_CLIENT_ID` | `/api/auth/*` | GitHub OAuth client ID. |
-| `GITHUB_CLIENT_SECRET` | `/api/auth/*` | GitHub OAuth client secret. |
-| `GITHUB_APP_ID` | `/api/webhooks/github` | SecureFlow GitHub App ID. |
-| `GITHUB_PRIVATE_KEY` | `/api/webhooks/github` | App PEM private key (`\n`-escaped). |
-| `GITHUB_WEBHOOK_SECRET` | `/api/webhooks/github` | HMAC secret for webhook signature verification. |
-| `NEXT_PUBLIC_APP_URL` | `/share/heist` (OG meta) | Public origin for absolute OG image URLs. |
-| `DATABASE_URL` | All DB-backed routes | Postgres connection string. |
-| `UPSTASH_REDIS_REST_URL` | `withRateLimit` | (Optional) Upstash Redis for distributed rate limiting. |
-| `UPSTASH_REDIS_REST_TOKEN` | `withRateLimit` | (Optional) Upstash Redis token. |
+| Variable                   | Used by                  | Purpose                                                 |
+| -------------------------- | ------------------------ | ------------------------------------------------------- |
+| `GITHUB_CLIENT_ID`         | `/api/auth/*`            | GitHub OAuth client ID.                                 |
+| `GITHUB_CLIENT_SECRET`     | `/api/auth/*`            | GitHub OAuth client secret.                             |
+| `GITHUB_APP_ID`            | `/api/webhooks/github`   | SecureFlow GitHub App ID.                               |
+| `GITHUB_PRIVATE_KEY`       | `/api/webhooks/github`   | App PEM private key (`\n`-escaped).                     |
+| `GITHUB_WEBHOOK_SECRET`    | `/api/webhooks/github`   | HMAC secret for webhook signature verification.         |
+| `NEXT_PUBLIC_APP_URL`      | `/share/heist` (OG meta) | Public origin for absolute OG image URLs.               |
+| `DATABASE_URL`             | All DB-backed routes     | Postgres connection string.                             |
+| `UPSTASH_REDIS_REST_URL`   | `withRateLimit`          | (Optional) Upstash Redis for distributed rate limiting. |
+| `UPSTASH_REDIS_REST_TOKEN` | `withRateLimit`          | (Optional) Upstash Redis token.                         |
 
 ---
 
 ## Changelog
 
-| Date | Change |
-| ---- | ------ |
+| Date       | Change                                                 |
+| ---------- | ------------------------------------------------------ |
 | 2025-01-31 | Initial API documentation covering all 5 route groups. |
 
 ---

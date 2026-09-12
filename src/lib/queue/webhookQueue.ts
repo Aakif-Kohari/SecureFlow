@@ -1,5 +1,5 @@
-import { Queue } from 'bullmq';
-import { redis } from './redis';
+import { Queue } from "bullmq";
+import { redis } from "./redis";
 
 export interface WebhookJobData {
   payload?: Record<string, unknown>;
@@ -7,18 +7,18 @@ export interface WebhookJobData {
   deliveryId?: string | null;
 }
 
-export const webhookQueue = new Queue<WebhookJobData>('github-webhooks', {
+export const webhookQueue = new Queue<WebhookJobData>("github-webhooks", {
   connection: redis as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 5000,
     },
   },
 });
 
-export const webhookDLQ = new Queue('github-webhooks-dlq', {
+export const webhookDLQ = new Queue("github-webhooks-dlq", {
   connection: redis as any,
 });
 
@@ -35,20 +35,17 @@ export interface AddWebhookJobOptions {
   jobId?: string;
 }
 
-export async function addWebhookJob(
-  payload: WebhookJobData,
-  options: AddWebhookJobOptions = {}
-) {
-  if (process.env.NEXT_PUBLIC_MOCK_DB === 'true') {
+export async function addWebhookJob(payload: WebhookJobData, options: AddWebhookJobOptions = {}) {
+  if (process.env.NEXT_PUBLIC_MOCK_DB === "true") {
     return {
       id: options.jobId ?? `mock-job-${Date.now()}`,
-      name: 'process-webhook',
+      name: "process-webhook",
       data: payload,
     };
   }
-  return await webhookQueue.add('process-webhook', payload, {
+  return await webhookQueue.add("process-webhook", payload, {
     attempts: 3,
-    backoff: { type: 'exponential', delay: 5000 },
+    backoff: { type: "exponential", delay: 5000 },
     ...(options.jobId ? { jobId: options.jobId } : {}),
   });
 }

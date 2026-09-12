@@ -20,7 +20,7 @@
  * contain it, which teaches people to reach for `--no-verify`.
  */
 
-import { execFileSync } from 'child_process';
+import { execFileSync } from "child_process";
 
 /**
  * Buffer ceiling for git output.
@@ -33,15 +33,18 @@ const MAX_GIT_BUFFER = 64 * 1024 * 1024;
 
 /** A problem with the repository or the git invocation, not with the content. */
 export class GitError extends Error {
-  constructor(message: string, readonly cause?: unknown) {
+  constructor(
+    message: string,
+    readonly cause?: unknown,
+  ) {
     super(message);
-    this.name = 'GitError';
+    this.name = "GitError";
   }
 }
 
 function git(args: string[]): string {
-  return execFileSync('git', args, {
-    encoding: 'utf-8',
+  return execFileSync("git", args, {
+    encoding: "utf-8",
     maxBuffer: MAX_GIT_BUFFER,
   });
 }
@@ -49,7 +52,7 @@ function git(args: string[]): string {
 /** Whether the current directory is inside a work tree. */
 export function isGitRepository(): boolean {
   try {
-    return git(['rev-parse', '--is-inside-work-tree']).trim() === 'true';
+    return git(["rev-parse", "--is-inside-work-tree"]).trim() === "true";
   } catch {
     return false;
   }
@@ -72,18 +75,18 @@ export function getStagedFiles(): string[] {
   let output: string;
 
   try {
-    output = git(['diff', '--cached', '--name-only', '-z', '--diff-filter=ACMR']);
+    output = git(["diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"]);
   } catch (error) {
     throw new GitError(
       isGitRepository()
-        ? 'Could not list staged files. `git diff --cached` failed.'
-        : 'Not a git repository (or git is not on PATH).',
+        ? "Could not list staged files. `git diff --cached` failed."
+        : "Not a git repository (or git is not on PATH).",
       error,
     );
   }
 
   // NUL-separated, with a trailing separator on a non-empty list.
-  return output.split('\u0000').filter((entry) => entry.length > 0);
+  return output.split("\u0000").filter((entry) => entry.length > 0);
 }
 
 /**
@@ -95,7 +98,7 @@ export function getStagedFiles(): string[] {
  */
 export function readStagedContent(path: string): string | null {
   try {
-    return git(['show', `:${path}`]);
+    return git(["show", `:${path}`]);
   } catch {
     return null;
   }

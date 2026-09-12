@@ -262,6 +262,7 @@ CREATE DATABASE secureflow;
 ```
 
 Set your local connection string in `.env`:
+
 ```env
 DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/secureflow"
 ```
@@ -290,16 +291,19 @@ DB_POOL_MAX=10
 **Then run database setup:**
 
 - Generate Prisma Client
+
 ```bash
 npm run db:gen
 ```
 
 - Apply migrations (creates all tables using `DATABASE_URL`)
+
 ```bash
 npm run db:migrate
 ```
 
 - Seed default security policy templates
+
 ```bash
 npm run db:seed
 ```
@@ -336,24 +340,24 @@ npm run genkit:dev
 
 ## 🔑 Environment Variables Reference
 
-| Variable                | Required | Description                                                                             |
-| ----------------------- | -------- | --------------------------------------------------------------------------------------- |
-| `DATABASE_URL`          | ✅       | PostgreSQL connection string (Direct/Standard)                                          |
-| `DATABASE_POOL_URL`     | ⬜       | Recommended for production serverless connection pooler (PgBouncer/Neon Pooler)       |
-| `DB_POOL_MAX`           | ⬜       | Max connections per serverless function instance (default: 10)                          |
-| `GROQ_API_KEY`          | ✅       | API key from [console.groq.com](https://console.groq.com)                               |
-| `GITHUB_APP_ID`         | ✅       | Numeric ID of your GitHub App                                                           |
-| `GITHUB_WEBHOOK_SECRET` | ✅       | Secret used to verify webhook payloads                                                  |
-| `GITHUB_PRIVATE_KEY`    | ✅       | RSA private key from your GitHub App (`.pem` contents)                                  |
-| `GITHUB_APP_URL`        | ✅       | Public URL of your GitHub App (e.g. `https://github.com/apps/your-app`)                 |
-| `GITHUB_CLIENT_ID`      | ✅       | OAuth Client ID for GitHub login                                                        |
-| `GITHUB_CLIENT_SECRET`  | ✅       | OAuth Client Secret for GitHub login                                                    |
-| `AUTH_SECRET`           | ✅       | Random secret for NextAuth session encryption — generate with `openssl rand -base64 32` |
-| `ARMORIQ_API_KEY`       | ⬜       | Optional — ArmorIQ SDK key for advanced policy features                                 |
-| `USER_ID`               | ⬜       | Optional — ArmorIQ user ID                                                              |
-| `AGENT_ID`              | ⬜       | Optional — ArmorIQ agent ID                                                             |
-| `TRUSTED_PROXY_HOP_COUNT` | ⬜     | Trusted proxies in front of the app (default: `1`). Set `0` when exposed directly — see below |
-| `TRUSTED_PROXY_IPS`     | ⬜       | Optional — comma-separated proxy addresses / IPv4 CIDRs, used instead of a fixed hop count |
+| Variable                  | Required | Description                                                                                   |
+| ------------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`            | ✅       | PostgreSQL connection string (Direct/Standard)                                                |
+| `DATABASE_POOL_URL`       | ⬜       | Recommended for production serverless connection pooler (PgBouncer/Neon Pooler)               |
+| `DB_POOL_MAX`             | ⬜       | Max connections per serverless function instance (default: 10)                                |
+| `GROQ_API_KEY`            | ✅       | API key from [console.groq.com](https://console.groq.com)                                     |
+| `GITHUB_APP_ID`           | ✅       | Numeric ID of your GitHub App                                                                 |
+| `GITHUB_WEBHOOK_SECRET`   | ✅       | Secret used to verify webhook payloads                                                        |
+| `GITHUB_PRIVATE_KEY`      | ✅       | RSA private key from your GitHub App (`.pem` contents)                                        |
+| `GITHUB_APP_URL`          | ✅       | Public URL of your GitHub App (e.g. `https://github.com/apps/your-app`)                       |
+| `GITHUB_CLIENT_ID`        | ✅       | OAuth Client ID for GitHub login                                                              |
+| `GITHUB_CLIENT_SECRET`    | ✅       | OAuth Client Secret for GitHub login                                                          |
+| `AUTH_SECRET`             | ✅       | Random secret for NextAuth session encryption — generate with `openssl rand -base64 32`       |
+| `ARMORIQ_API_KEY`         | ⬜       | Optional — ArmorIQ SDK key for advanced policy features                                       |
+| `USER_ID`                 | ⬜       | Optional — ArmorIQ user ID                                                                    |
+| `AGENT_ID`                | ⬜       | Optional — ArmorIQ agent ID                                                                   |
+| `TRUSTED_PROXY_HOP_COUNT` | ⬜       | Trusted proxies in front of the app (default: `1`). Set `0` when exposed directly — see below |
+| `TRUSTED_PROXY_IPS`       | ⬜       | Optional — comma-separated proxy addresses / IPv4 CIDRs, used instead of a fixed hop count    |
 
 ### Trusted proxies and rate limiting
 

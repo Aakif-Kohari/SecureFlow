@@ -62,7 +62,7 @@ describe("setCrewCodename — losing the race", () => {
 
   it("handles a P2002 that carries no target", async () => {
     vi.mocked(prisma.user.update).mockRejectedValue(
-      Object.assign(new Error("Unique constraint failed"), { code: "P2002" })
+      Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
     );
 
     const result = await setCrewCodename("Tokyo");

@@ -31,9 +31,9 @@
  * degrade to a slow card rather than a 500.
  */
 
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /** A font this module knows how to load. */
 export interface FontAsset {
@@ -44,13 +44,13 @@ export interface FontAsset {
 }
 
 export const ORBITRON_REGULAR: FontAsset = {
-  fileName: 'Orbitron-Regular.ttf',
-  cdnUrl: 'https://fonts.gstatic.com/s/orbitron/v31/yDirect4mAydbld1e65dqv248s.ttf',
+  fileName: "Orbitron-Regular.ttf",
+  cdnUrl: "https://fonts.gstatic.com/s/orbitron/v31/yDirect4mAydbld1e65dqv248s.ttf",
 };
 
 export const ORBITRON_BOLD: FontAsset = {
-  fileName: 'Orbitron-Bold.ttf',
-  cdnUrl: 'https://fonts.gstatic.com/s/orbitron/v31/yDirect4mAydbld1e65bvq8.ttf',
+  fileName: "Orbitron-Bold.ttf",
+  cdnUrl: "https://fonts.gstatic.com/s/orbitron/v31/yDirect4mAydbld1e65bvq8.ttf",
 };
 
 /**
@@ -72,7 +72,7 @@ export interface FontLoaderDeps {
  * the route used to carry, minus the `fetch()` wrapper around a `file:` URL.
  */
 export function defaultFontPaths(fileName: string): string[] {
-  const paths = [join(process.cwd(), 'public', 'fonts', fileName)];
+  const paths = [join(process.cwd(), "public", "fonts", fileName)];
 
   try {
     paths.push(fileURLToPath(new URL(`../../../public/fonts/${fileName}`, import.meta.url)));
@@ -121,7 +121,7 @@ async function load(asset: FontAsset, deps: FontLoaderDeps): Promise<ArrayBuffer
         // pool holds, and its byteLength is the pool's, not the file's.
         return buffer.buffer.slice(
           buffer.byteOffset,
-          buffer.byteOffset + buffer.byteLength
+          buffer.byteOffset + buffer.byteLength,
         ) as ArrayBuffer;
       }
       failures.push(`${path}: empty`);
@@ -134,8 +134,8 @@ async function load(asset: FontAsset, deps: FontLoaderDeps): Promise<ArrayBuffer
   const response = await deps.fetch(asset.cdnUrl);
   if (!response.ok) {
     throw new Error(
-      `Failed to load font ${asset.fileName} (disk: ${failures.join('; ') || 'no candidates'}; ` +
-        `cdn: HTTP ${response.status})`
+      `Failed to load font ${asset.fileName} (disk: ${failures.join("; ") || "no candidates"}; ` +
+        `cdn: HTTP ${response.status})`,
     );
   }
 
@@ -150,7 +150,7 @@ async function load(asset: FontAsset, deps: FontLoaderDeps): Promise<ArrayBuffer
  */
 export function loadFont(
   asset: FontAsset,
-  deps: FontLoaderDeps = defaultDeps
+  deps: FontLoaderDeps = defaultDeps,
 ): Promise<ArrayBuffer> {
   const cached = cache.get(asset.fileName);
   if (cached) return cached;
@@ -166,7 +166,7 @@ export function loadFont(
 
 /** Both Orbitron weights, in the order `ImageResponse` wants them. */
 export async function loadOrbitron(
-  deps: FontLoaderDeps = defaultDeps
+  deps: FontLoaderDeps = defaultDeps,
 ): Promise<{ regular: ArrayBuffer; bold: ArrayBuffer }> {
   const [regular, bold] = await Promise.all([
     loadFont(ORBITRON_REGULAR, deps),

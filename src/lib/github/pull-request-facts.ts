@@ -25,7 +25,7 @@
  */
 
 /** The `PRState` members, mirroring `prisma/schema.prisma`. */
-export type PullRequestState = 'OPEN' | 'CLOSED' | 'MERGED';
+export type PullRequestState = "OPEN" | "CLOSED" | "MERGED";
 
 /**
  * What a `pull_request` action is worth doing.
@@ -36,10 +36,10 @@ export type PullRequestState = 'OPEN' | 'CLOSED' | 'MERGED';
  *   a pull request comment on an already-closed PR helps nobody.
  * - `ignore` — nothing to do.
  */
-export type PullRequestActionKind = 'scan' | 'metadata' | 'ignore';
+export type PullRequestActionKind = "scan" | "metadata" | "ignore";
 
 /** Actions that justify a full scan. Unchanged from the previous inline list. */
-export const SCANNABLE_ACTIONS = ['opened', 'synchronize', 'reopened'] as const;
+export const SCANNABLE_ACTIONS = ["opened", "synchronize", "reopened"] as const;
 
 /**
  * Actions that update the stored row without scanning.
@@ -51,7 +51,7 @@ export const SCANNABLE_ACTIONS = ['opened', 'synchronize', 'reopened'] as const;
  * `edited` is here because a retitled pull request should not keep showing its
  * old title on the dashboard, and updating a row is cheap.
  */
-export const METADATA_ONLY_ACTIONS = ['closed', 'edited'] as const;
+export const METADATA_ONLY_ACTIONS = ["closed", "edited"] as const;
 
 /** The subset of a `pull_request` payload this module reads. */
 export interface PullRequestPayloadLike {
@@ -70,14 +70,14 @@ export interface PullRequestPayloadLike {
  * dozen GitHub sends — are ignored rather than scanned, exactly as before.
  */
 export function classifyPullRequestAction(action: unknown): PullRequestActionKind {
-  if (typeof action !== 'string') return 'ignore';
+  if (typeof action !== "string") return "ignore";
 
   const clean = action.trim().toLowerCase();
 
-  if ((SCANNABLE_ACTIONS as readonly string[]).includes(clean)) return 'scan';
-  if ((METADATA_ONLY_ACTIONS as readonly string[]).includes(clean)) return 'metadata';
+  if ((SCANNABLE_ACTIONS as readonly string[]).includes(clean)) return "scan";
+  if ((METADATA_ONLY_ACTIONS as readonly string[]).includes(clean)) return "metadata";
 
-  return 'ignore';
+  return "ignore";
 }
 
 /**
@@ -91,12 +91,12 @@ export function classifyPullRequestAction(action: unknown): PullRequestActionKin
  * bug this function exists to fix on a narrower set of payloads.
  */
 export function isMergedPayload(pullRequest: PullRequestPayloadLike | null | undefined): boolean {
-  if (!pullRequest || typeof pullRequest !== 'object') return false;
+  if (!pullRequest || typeof pullRequest !== "object") return false;
 
   if (pullRequest.merged === true) return true;
 
   const mergedAt = pullRequest.merged_at;
-  return typeof mergedAt === 'string' && mergedAt.trim() !== '';
+  return typeof mergedAt === "string" && mergedAt.trim() !== "";
 }
 
 /**
@@ -111,30 +111,30 @@ export function isMergedPayload(pullRequest: PullRequestPayloadLike | null | und
  * live pull request as closed.
  */
 export function resolvePullRequestState(
-  pullRequest: PullRequestPayloadLike | null | undefined
+  pullRequest: PullRequestPayloadLike | null | undefined,
 ): PullRequestState {
-  if (isMergedPayload(pullRequest)) return 'MERGED';
+  if (isMergedPayload(pullRequest)) return "MERGED";
 
   const state = pullRequest?.state;
-  if (typeof state !== 'string') return 'OPEN';
+  if (typeof state !== "string") return "OPEN";
 
   const clean = state.trim().toUpperCase();
-  if (clean === 'MERGED') return 'MERGED';
-  if (clean === 'CLOSED') return 'CLOSED';
+  if (clean === "MERGED") return "MERGED";
+  if (clean === "CLOSED") return "CLOSED";
 
-  return 'OPEN';
+  return "OPEN";
 }
 
 /** Trim a payload string, returning null for anything that is not usable. */
 function optionalString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== "string") return null;
   const trimmed = value.trim();
-  return trimmed === '' ? null : trimmed;
+  return trimmed === "" ? null : trimmed;
 }
 
 /** The author's GitHub login, or null when the payload does not name one. */
 export function resolveAuthorLogin(
-  pullRequest: PullRequestPayloadLike | null | undefined
+  pullRequest: PullRequestPayloadLike | null | undefined,
 ): string | null {
   return optionalString(pullRequest?.user?.login);
 }
@@ -150,13 +150,13 @@ export function resolveAuthorLogin(
  * is null, so rejecting an odd value costs nothing.
  */
 export function resolveAuthorAvatarUrl(
-  pullRequest: PullRequestPayloadLike | null | undefined
+  pullRequest: PullRequestPayloadLike | null | undefined,
 ): string | null {
   const raw = optionalString(pullRequest?.user?.avatar_url);
   if (!raw) return null;
 
   try {
-    return new URL(raw).protocol === 'https:' ? raw : null;
+    return new URL(raw).protocol === "https:" ? raw : null;
   } catch {
     return null;
   }
@@ -164,13 +164,13 @@ export function resolveAuthorAvatarUrl(
 
 /** The title to store, falling back to the PR number when none is given. */
 export function resolvePullRequestTitle(
-  pullRequest: PullRequestPayloadLike | null | undefined
+  pullRequest: PullRequestPayloadLike | null | undefined,
 ): string {
   const title = optionalString(pullRequest?.title);
   if (title) return title;
 
   const number = pullRequest?.number;
-  return typeof number === 'number' ? `PR #${number}` : 'Untitled pull request';
+  return typeof number === "number" ? `PR #${number}` : "Untitled pull request";
 }
 
 /** Everything derived from the payload that belongs on the stored row. */
@@ -183,7 +183,7 @@ export interface PullRequestFacts {
 
 /** Collect the stored-row facts from a `pull_request` payload. */
 export function buildPullRequestFacts(
-  pullRequest: PullRequestPayloadLike | null | undefined
+  pullRequest: PullRequestPayloadLike | null | undefined,
 ): PullRequestFacts {
   return {
     title: resolvePullRequestTitle(pullRequest),

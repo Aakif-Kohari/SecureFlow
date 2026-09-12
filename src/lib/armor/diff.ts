@@ -31,7 +31,7 @@
  * — they consume no line number and must never be scanned, since the pull
  * request removes them.
  */
-export type DiffLineKind = 'added' | 'context';
+export type DiffLineKind = "added" | "context";
 
 export interface DiffLine {
   /** Line number in the file as it will exist after the pull request merges. */
@@ -87,9 +87,9 @@ export function parseUnifiedPatch(patch: string): ParsedPatch {
   let hunkCount = 0;
 
   // A trailing newline would otherwise yield a spurious empty final entry.
-  const body = patch.endsWith('\n') ? patch.slice(0, -1) : patch;
+  const body = patch.endsWith("\n") ? patch.slice(0, -1) : patch;
 
-  for (const raw of body.split('\n')) {
+  for (const raw of body.split("\n")) {
     const hunk = raw.match(HUNK_HEADER);
     if (hunk) {
       newLine = parseInt(hunk[1], 10);
@@ -104,31 +104,31 @@ export function parseUnifiedPatch(patch: string): ParsedPatch {
 
     // "\ No newline at end of file" is a note about the line above it, not a
     // line of its own. It carries no number and must not advance the counter.
-    if (raw.startsWith('\\')) continue;
+    if (raw.startsWith("\\")) continue;
 
-    if (raw.startsWith('+')) {
-      lines.push({ number: newLine, content: raw.slice(1), kind: 'added' });
+    if (raw.startsWith("+")) {
+      lines.push({ number: newLine, content: raw.slice(1), kind: "added" });
       newLine += 1;
       continue;
     }
 
-    if (raw.startsWith('-')) {
+    if (raw.startsWith("-")) {
       // Removed from the new file, so it consumes no new-file line number.
       continue;
     }
 
-    if (raw.startsWith(' ')) {
-      lines.push({ number: newLine, content: raw.slice(1), kind: 'context' });
+    if (raw.startsWith(" ")) {
+      lines.push({ number: newLine, content: raw.slice(1), kind: "context" });
       newLine += 1;
       continue;
     }
 
-    if (raw === '') {
+    if (raw === "") {
       // A context line whose leading space was stripped — any
       // trailing-whitespace normaliser between git and us produces these.
       // Treating it as "not a line" desynchronises everything after it, which
       // is precisely the drift this module exists to remove.
-      lines.push({ number: newLine, content: '', kind: 'context' });
+      lines.push({ number: newLine, content: "", kind: "context" });
       newLine += 1;
     }
 
@@ -148,7 +148,7 @@ export function parseUnifiedPatch(patch: string): ParsedPatch {
  * finding is never raised against code the pull request removes.
  */
 export function renderNumberedLines(parsed: ParsedPatch): string {
-  return parsed.lines.map((line) => `${line.number}: ${line.content}`).join('\n');
+  return parsed.lines.map((line) => `${line.number}: ${line.content}`).join("\n");
 }
 
 /**
@@ -173,7 +173,7 @@ export function commentableLineNumbers(parsed: ParsedPatch): Set<number> {
  * that need to reason about what the author actually wrote.
  */
 export function addedLines(parsed: ParsedPatch): DiffLine[] {
-  return parsed.lines.filter((line) => line.kind === 'added');
+  return parsed.lines.filter((line) => line.kind === "added");
 }
 
 /**

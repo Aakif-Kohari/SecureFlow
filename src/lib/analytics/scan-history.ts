@@ -146,7 +146,7 @@ export function buildDateIndex(dates: string[]): Map<string, number> {
  */
 export function computeTrendDirection(
   recentValues: number[],
-  threshold: number = 0.10
+  threshold: number = 0.1,
 ): "up" | "down" | "flat" {
   if (recentValues.length < 2) return "flat";
 
@@ -159,9 +159,7 @@ export function computeTrendDirection(
 
   if (avgFirst === 0 && avgSecond === 0) return "flat";
 
-  const change = avgFirst === 0
-    ? avgSecond > 0 ? 1 : 0
-    : (avgSecond - avgFirst) / avgFirst;
+  const change = avgFirst === 0 ? (avgSecond > 0 ? 1 : 0) : (avgSecond - avgFirst) / avgFirst;
 
   if (change >= threshold) return "up";
   if (change <= -threshold) return "down";
@@ -171,10 +169,7 @@ export function computeTrendDirection(
 /**
  * Compute pass rate as a percentage (0–100).
  */
-export function computePassRate(
-  passedScans: number,
-  totalScans: number
-): number {
+export function computePassRate(passedScans: number, totalScans: number): number {
   if (totalScans === 0) return 0;
   return Math.round((passedScans / totalScans) * 100);
 }
@@ -198,7 +193,7 @@ export function roundTo(value: number, precision: number = 1): number {
  */
 export async function fetchDailyScanMetrics(
   userId: string,
-  days: number = DEFAULT_DAYS
+  days: number = DEFAULT_DAYS,
 ): Promise<DailyScanMetric[]> {
   const dateRange = generateDateRange(days);
   const dateIndex = buildDateIndex(dateRange);
@@ -279,7 +274,7 @@ export async function fetchDailyScanMetrics(
  */
 export async function fetchSeverityTrend(
   userId: string,
-  days: number = DEFAULT_DAYS
+  days: number = DEFAULT_DAYS,
 ): Promise<SeverityTrendPoint[]> {
   const dateRange = generateDateRange(days);
   const dateIndex = buildDateIndex(dateRange);
@@ -349,9 +344,7 @@ export async function fetchSeverityTrend(
  * Joins repositories with their scan results and findings to produce a
  * ranked table of scan activity per repo.
  */
-export async function fetchRepoSummaries(
-  userId: string
-): Promise<RepoScanSummary[]> {
+export async function fetchRepoSummaries(userId: string): Promise<RepoScanSummary[]> {
   const repos = await prisma.repository.findMany({
     where: {
       userId,
@@ -437,8 +430,7 @@ export async function fetchRepoSummaries(
       highFindings,
       mediumFindings,
       lowFindings,
-      averageRiskScore:
-        riskScoreCount > 0 ? roundTo(riskScoreSum / riskScoreCount) : 0,
+      averageRiskScore: riskScoreCount > 0 ? roundTo(riskScoreSum / riskScoreCount) : 0,
       lastScanAt: lastScanAt?.toISOString() ?? null,
       passRate: computePassRate(passedScans, totalScans),
     };
@@ -455,7 +447,7 @@ export async function fetchRepoSummaries(
  */
 export async function fetchTopFindingTypes(
   userId: string,
-  days: number = DEFAULT_DAYS
+  days: number = DEFAULT_DAYS,
 ): Promise<TopFindingType[]> {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -484,17 +476,12 @@ export async function fetchTopFindingTypes(
     take: MAX_FINDING_TYPES,
   });
 
-  const totalTypeFindings = findings.reduce(
-    (sum: number, f: any) => sum + f._count.type,
-    0
-  );
+  const totalTypeFindings = findings.reduce((sum: number, f: any) => sum + f._count.type, 0);
 
   return findings.map((f: any) => ({
     type: f.type,
     count: f._count.type,
-    percentage: totalTypeFindings > 0
-      ? roundTo((f._count.type / totalTypeFindings) * 100)
-      : 0,
+    percentage: totalTypeFindings > 0 ? roundTo((f._count.type / totalTypeFindings) * 100) : 0,
   }));
 }
 
@@ -503,7 +490,7 @@ export async function fetchTopFindingTypes(
  */
 export async function fetchScanVelocity(
   userId: string,
-  days: number = DEFAULT_DAYS
+  days: number = DEFAULT_DAYS,
 ): Promise<ScanVelocity[]> {
   const dateRange = generateDateRange(days);
   const dateIndex = buildDateIndex(dateRange);
@@ -547,38 +534,37 @@ export async function fetchAnalyticsSummary(userId: string) {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-  const [totalScans, totalFindings, totalPRs, passCount, riskAgg] =
-    await Promise.all([
-      prisma.scanResult.count({
-        where: {
+  const [totalScans, totalFindings, totalPRs, passCount, riskAgg] = await Promise.all([
+    prisma.scanResult.count({
+      where: {
+        pullRequest: { repository: { userId } },
+      },
+    }),
+    prisma.finding.count({
+      where: {
+        scanResult: {
           pullRequest: { repository: { userId } },
         },
-      }),
-      prisma.finding.count({
-        where: {
-          scanResult: {
-            pullRequest: { repository: { userId } },
-          },
-        },
-      }),
-      prisma.pullRequest.count({
-        where: {
-          repository: { userId },
-        },
-      }),
-      prisma.scanResult.count({
-        where: {
-          policyDecision: "PASS",
-          pullRequest: { repository: { userId } },
-        },
-      }),
-      prisma.scanResult.aggregate({
-        where: {
-          pullRequest: { repository: { userId } },
-        },
-        _avg: { riskScore: true },
-      }),
-    ]);
+      },
+    }),
+    prisma.pullRequest.count({
+      where: {
+        repository: { userId },
+      },
+    }),
+    prisma.scanResult.count({
+      where: {
+        policyDecision: "PASS",
+        pullRequest: { repository: { userId } },
+      },
+    }),
+    prisma.scanResult.aggregate({
+      where: {
+        pullRequest: { repository: { userId } },
+      },
+      _avg: { riskScore: true },
+    }),
+  ]);
 
   // Compute trend direction from recent scan finding counts
   const recentMetrics = await fetchDailyScanMetrics(userId, 30);
@@ -603,7 +589,7 @@ export async function fetchAnalyticsSummary(userId: string) {
  */
 export async function getAnalyticsPayload(
   userId: string,
-  days: number = DEFAULT_DAYS
+  days: number = DEFAULT_DAYS,
 ): Promise<AnalyticsPayload> {
   const [dailyMetrics, severityTrend, repoSummaries, topFindingTypes, scanVelocity, summary] =
     await Promise.all([

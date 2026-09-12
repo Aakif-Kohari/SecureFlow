@@ -36,7 +36,7 @@ import {
   pullRequestUpdateData,
   type PullRequestFacts,
   type PullRequestPayloadLike,
-} from '@/lib/github/pull-request-facts';
+} from "@/lib/github/pull-request-facts";
 
 /** The stored row, as much of it as the caller needs. */
 export interface PullRequestRow {
@@ -75,7 +75,7 @@ export interface PullRequestFetcher {
 export class MissingPullRequestIdError extends Error {
   constructor(repositoryFullName: string, prNumber: number) {
     super(`GitHub returned no id for ${repositoryFullName}#${prNumber}`);
-    this.name = 'MissingPullRequestIdError';
+    this.name = "MissingPullRequestIdError";
   }
 }
 
@@ -88,7 +88,7 @@ export class MissingPullRequestIdError extends Error {
  * GitHub client as the string `"undefined"`.
  */
 export function splitRepositoryFullName(fullName: string): { owner: string; repo: string } {
-  const parts = typeof fullName === 'string' ? fullName.split('/') : [];
+  const parts = typeof fullName === "string" ? fullName.split("/") : [];
 
   if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
     throw new Error(`Expected a repository as "owner/repo", received: ${JSON.stringify(fullName)}`);
@@ -105,11 +105,11 @@ export function splitRepositoryFullName(fullName: string): { owner: string; repo
  * string. Both are accepted; anything else is a missing id.
  */
 export function parsePullRequestId(value: unknown): bigint | null {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Number.isSafeInteger(value) && value > 0 ? BigInt(value) : null;
   }
 
-  if (typeof value === 'string' && /^\d+$/.test(value.trim())) {
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) {
     const parsed = BigInt(value.trim());
     // `> BigInt(0)` rather than `> 0n`: the literal form needs an ES2020 target
     // and `tsconfig.json` sets ES2017.
@@ -167,7 +167,7 @@ export interface ResolvePullRequestArgs {
  * constraint violation, which the outer `catch` would then swallow.
  */
 export async function resolvePullRequestRecord(
-  args: ResolvePullRequestArgs
+  args: ResolvePullRequestArgs,
 ): Promise<PullRequestRow> {
   const { store, fetchPullRequest, repositoryId, repositoryFullName, prNumber } = args;
 

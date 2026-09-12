@@ -19,10 +19,12 @@ const ITEMS_PER_PAGE = 15;
 
 function actionBadgeClass(action: string): string {
   const a = action.toUpperCase();
-  if (a.startsWith("ADMIN_")) return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30";
+  if (a.startsWith("ADMIN_"))
+    return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30";
   if (a.includes("SCAN") || a.includes("FINDING"))
     return "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30";
-  if (a.includes("POLICY")) return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
+  if (a.includes("POLICY"))
+    return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
   if (a.includes("LOGIN") || a.includes("AUTH"))
     return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
   return "bg-muted text-muted-foreground border-border";
@@ -242,7 +244,9 @@ export default function LogsTable({ logs, actions }: { logs: AuditLogRow[]; acti
                       <td className="px-6 py-4">
                         {l.actor ? (
                           <div className="flex flex-col">
-                            <span className="text-foreground/90">{l.actor.name || l.actor.email}</span>
+                            <span className="text-foreground/90">
+                              {l.actor.name || l.actor.email}
+                            </span>
                             <span className="text-muted-foreground/70 text-[10px] font-mono uppercase tracking-wider">
                               {l.actor.codename || "—"}
                             </span>
@@ -261,7 +265,10 @@ export default function LogsTable({ logs, actions }: { logs: AuditLogRow[]; acti
                           <span className="text-muted-foreground/70">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground font-mono text-xs whitespace-nowrap" suppressHydrationWarning>
+                      <td
+                        className="px-6 py-4 text-muted-foreground font-mono text-xs whitespace-nowrap"
+                        suppressHydrationWarning
+                      >
                         {new Date(l.timestamp).toLocaleString()}
                       </td>
                     </tr>

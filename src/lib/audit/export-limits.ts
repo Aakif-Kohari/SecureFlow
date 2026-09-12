@@ -65,7 +65,7 @@ export interface UserAuditLogExport {
 export function summarizeExport(
   rows: UserAuditLogRow[],
   total: number,
-  limit: number = MAX_EXPORT_ROWS
+  limit: number = MAX_EXPORT_ROWS,
 ): UserAuditLogExport {
   const safeTotal = Math.max(total, rows.length);
 

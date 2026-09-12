@@ -1,10 +1,10 @@
 "use server";
 
-import prisma from '@/lib/prisma';
-import { webhookQueue, webhookDLQ, addWebhookJob } from '@/lib/queue/webhookQueue';
-import { auth } from '@/auth';
-import { revalidatePath } from 'next/cache';
-import { sanitizeAuditLogInput } from '@/lib/audit/minimization';
+import prisma from "@/lib/prisma";
+import { webhookQueue, webhookDLQ, addWebhookJob } from "@/lib/queue/webhookQueue";
+import { auth } from "@/auth";
+import { revalidatePath } from "next/cache";
+import { sanitizeAuditLogInput } from "@/lib/audit/minimization";
 import {
   AUDIT_SAMPLE_SIZE,
   DLQ_READ_LIMIT,
@@ -17,7 +17,7 @@ import {
   type BulkDlqResult,
   type DlqJobLike,
   type DlqJobResult,
-} from '@/lib/queue/dlq';
+} from "@/lib/queue/dlq";
 
 /**
  * Admin gate for every action in this file.
@@ -43,7 +43,7 @@ async function requireAdmin() {
 
 /** Whether the app is running against the mock database rather than Redis. */
 function isMockMode(): boolean {
-  return process.env.NEXT_PUBLIC_MOCK_DB === 'true';
+  return process.env.NEXT_PUBLIC_MOCK_DB === "true";
 }
 
 /**
@@ -62,7 +62,7 @@ async function recordDlqAudit(
   actorId: string | null,
   action: string,
   result: BulkDlqResult,
-  extra: Record<string, unknown> = {}
+  extra: Record<string, unknown> = {},
 ): Promise<void> {
   if (isMockMode()) return;
 
@@ -72,7 +72,7 @@ async function recordDlqAudit(
         userId: actorId,
         action,
         resource: `dlq:${result.count}`,
-        decision: result.failed > 0 ? 'PARTIAL' : 'OK',
+        decision: result.failed > 0 ? "PARTIAL" : "OK",
         metadata: {
           ...extra,
           processed: result.count,
@@ -87,7 +87,7 @@ async function recordDlqAudit(
       }),
     });
   } catch (err) {
-    console.error('[DLQ] Failed to write audit entry:', (err as Error)?.message);
+    console.error("[DLQ] Failed to write audit entry:", (err as Error)?.message);
   }
 }
 
@@ -100,7 +100,7 @@ async function recordDlqAudit(
  * covered everything.
  */
 async function readDlqJobs(): Promise<{ jobs: DlqJobLike[]; truncated: boolean }> {
-  const fetched = ((await webhookDLQ.getJobs(['waiting'], 0, DLQ_READ_LIMIT)) ??
+  const fetched = ((await webhookDLQ.getJobs(["waiting"], 0, DLQ_READ_LIMIT)) ??
     []) as DlqJobLike[];
   const truncated = fetched.length > DLQ_READ_LIMIT;
 
@@ -131,20 +131,20 @@ async function requeueOne(job: DlqJobLike): Promise<DlqJobResult> {
   if (!payload) {
     return {
       descriptor,
-      outcome: 'skipped',
-      reason: 'DLQ entry carries no usable webhook payload',
+      outcome: "skipped",
+      reason: "DLQ entry carries no usable webhook payload",
     };
   }
 
   try {
     await job.remove();
     await addWebhookJob(payload, requeueOptionsFor(payload));
-    return { descriptor, outcome: 'processed' };
+    return { descriptor, outcome: "processed" };
   } catch (err) {
     return {
       descriptor,
-      outcome: 'failed',
-      reason: (err as Error)?.message ?? 'Unknown error',
+      outcome: "failed",
+      reason: (err as Error)?.message ?? "Unknown error",
     };
   }
 }
@@ -155,12 +155,12 @@ async function deleteOne(job: DlqJobLike): Promise<DlqJobResult> {
 
   try {
     await job.remove();
-    return { descriptor, outcome: 'processed' };
+    return { descriptor, outcome: "processed" };
   } catch (err) {
     return {
       descriptor,
-      outcome: 'failed',
-      reason: (err as Error)?.message ?? 'Unknown error',
+      outcome: "failed",
+      reason: (err as Error)?.message ?? "Unknown error",
     };
   }
 }
@@ -184,8 +184,14 @@ export async function getQueueMetrics(): Promise<{
     };
   }
 
-  const counts = await webhookQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed');
-  const dlqCounts = await webhookDLQ.getJobCounts('waiting');
+  const counts = await webhookQueue.getJobCounts(
+    "waiting",
+    "active",
+    "completed",
+    "failed",
+    "delayed",
+  );
+  const dlqCounts = await webhookDLQ.getJobCounts("waiting");
 
   return {
     waiting: counts.waiting || 0,
@@ -334,14 +340,14 @@ export async function requeueDLQJob(jobId: string) {
 
   const outcome = await requeueOne(job);
 
-  if (outcome.outcome !== 'processed') {
-    throw new Error(outcome.reason ?? 'Failed to requeue job');
+  if (outcome.outcome !== "processed") {
+    throw new Error(outcome.reason ?? "Failed to requeue job");
   }
 
   const result = summarizeDlqResults([outcome]);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_REQUEUE', result, { scope: 'single' });
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_REQUEUE", result, { scope: "single" });
 
-  revalidatePath('/admin/queue');
+  revalidatePath("/admin/queue");
   return { success: true };
 }
 
@@ -359,14 +365,14 @@ export async function deleteDLQJob(jobId: string) {
 
   const outcome = await deleteOne(job);
 
-  if (outcome.outcome !== 'processed') {
-    throw new Error(outcome.reason ?? 'Failed to delete job');
+  if (outcome.outcome !== "processed") {
+    throw new Error(outcome.reason ?? "Failed to delete job");
   }
 
   const result = summarizeDlqResults([outcome]);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_DELETE', result, { scope: 'single' });
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_DELETE", result, { scope: "single" });
 
-  revalidatePath('/admin/queue');
+  revalidatePath("/admin/queue");
   return { success: true };
 }
 
@@ -375,7 +381,7 @@ export async function clearAllDLQ(): Promise<BulkDlqResult & { summary: string }
 
   if (isMockMode()) {
     const empty = summarizeDlqResults([]);
-    return { ...empty, summary: describeBulkOutcome(empty, 'Deleted') };
+    return { ...empty, summary: describeBulkOutcome(empty, "Deleted") };
   }
 
   const { jobs, truncated } = await readDlqJobs();
@@ -391,10 +397,10 @@ export async function clearAllDLQ(): Promise<BulkDlqResult & { summary: string }
   }
 
   const result = summarizeDlqResults(results, truncated);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_CLEAR_ALL', result, { scope: 'all' });
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_CLEAR_ALL", result, { scope: "all" });
 
-  revalidatePath('/admin/queue');
-  return { ...result, summary: describeBulkOutcome(result, 'Deleted') };
+  revalidatePath("/admin/queue");
+  return { ...result, summary: describeBulkOutcome(result, "Deleted") };
 }
 
 export async function requeueAllDLQ(): Promise<BulkDlqResult & { summary: string }> {
@@ -402,7 +408,7 @@ export async function requeueAllDLQ(): Promise<BulkDlqResult & { summary: string
 
   if (isMockMode()) {
     const empty = summarizeDlqResults([]);
-    return { ...empty, summary: describeBulkOutcome(empty, 'Requeued') };
+    return { ...empty, summary: describeBulkOutcome(empty, "Requeued") };
   }
 
   const { jobs, truncated } = await readDlqJobs();
@@ -413,30 +419,30 @@ export async function requeueAllDLQ(): Promise<BulkDlqResult & { summary: string
   }
 
   const result = summarizeDlqResults(results, truncated);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_REQUEUE_ALL', result, { scope: 'all' });
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_REQUEUE_ALL", result, { scope: "all" });
 
-  revalidatePath('/admin/queue');
-  return { ...result, summary: describeBulkOutcome(result, 'Requeued') };
+  revalidatePath("/admin/queue");
+  return { ...result, summary: describeBulkOutcome(result, "Requeued") };
 }
 
 export async function requeueBulkDLQJobs(
-  jobIds: string[]
+  jobIds: string[],
 ): Promise<BulkDlqResult & { summary: string }> {
   const session = await requireAdmin();
 
   if (!jobIds || jobIds.length === 0) {
     const empty = summarizeDlqResults([]);
-    return { ...empty, summary: describeBulkOutcome(empty, 'Requeued') };
+    return { ...empty, summary: describeBulkOutcome(empty, "Requeued") };
   }
 
   if (isMockMode()) {
     const mocked = summarizeDlqResults(
       jobIds.map((id) => ({
         descriptor: { jobId: id, originalJobId: null, deliveryId: null, event: null },
-        outcome: 'processed' as const,
-      }))
+        outcome: "processed" as const,
+      })),
     );
-    return { ...mocked, summary: describeBulkOutcome(mocked, 'Requeued') };
+    return { ...mocked, summary: describeBulkOutcome(mocked, "Requeued") };
   }
 
   const results: DlqJobResult[] = [];
@@ -446,8 +452,8 @@ export async function requeueBulkDLQJobs(
     if (!job) {
       results.push({
         descriptor: { jobId: id, originalJobId: null, deliveryId: null, event: null },
-        outcome: 'missing',
-        reason: 'No longer in the DLQ',
+        outcome: "missing",
+        reason: "No longer in the DLQ",
       });
       continue;
     }
@@ -456,33 +462,33 @@ export async function requeueBulkDLQJobs(
   }
 
   const result = summarizeDlqResults(results);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_REQUEUE_BULK', result, {
-    scope: 'bulk',
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_REQUEUE_BULK", result, {
+    scope: "bulk",
     requested: jobIds.length,
   });
 
-  revalidatePath('/admin/queue');
-  return { ...result, summary: describeBulkOutcome(result, 'Requeued') };
+  revalidatePath("/admin/queue");
+  return { ...result, summary: describeBulkOutcome(result, "Requeued") };
 }
 
 export async function deleteBulkDLQJobs(
-  jobIds: string[]
+  jobIds: string[],
 ): Promise<BulkDlqResult & { summary: string }> {
   const session = await requireAdmin();
 
   if (!jobIds || jobIds.length === 0) {
     const empty = summarizeDlqResults([]);
-    return { ...empty, summary: describeBulkOutcome(empty, 'Deleted') };
+    return { ...empty, summary: describeBulkOutcome(empty, "Deleted") };
   }
 
   if (isMockMode()) {
     const mocked = summarizeDlqResults(
       jobIds.map((id) => ({
         descriptor: { jobId: id, originalJobId: null, deliveryId: null, event: null },
-        outcome: 'processed' as const,
-      }))
+        outcome: "processed" as const,
+      })),
     );
-    return { ...mocked, summary: describeBulkOutcome(mocked, 'Deleted') };
+    return { ...mocked, summary: describeBulkOutcome(mocked, "Deleted") };
   }
 
   const results: DlqJobResult[] = [];
@@ -492,8 +498,8 @@ export async function deleteBulkDLQJobs(
     if (!job) {
       results.push({
         descriptor: { jobId: id, originalJobId: null, deliveryId: null, event: null },
-        outcome: 'missing',
-        reason: 'No longer in the DLQ',
+        outcome: "missing",
+        reason: "No longer in the DLQ",
       });
       continue;
     }
@@ -502,11 +508,11 @@ export async function deleteBulkDLQJobs(
   }
 
   const result = summarizeDlqResults(results);
-  await recordDlqAudit(session?.user?.id ?? null, 'DLQ_DELETE_BULK', result, {
-    scope: 'bulk',
+  await recordDlqAudit(session?.user?.id ?? null, "DLQ_DELETE_BULK", result, {
+    scope: "bulk",
     requested: jobIds.length,
   });
 
-  revalidatePath('/admin/queue');
-  return { ...result, summary: describeBulkOutcome(result, 'Deleted') };
+  revalidatePath("/admin/queue");
+  return { ...result, summary: describeBulkOutcome(result, "Deleted") };
 }
