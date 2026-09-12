@@ -39,9 +39,6 @@ describe("parseSyncTarget", () => {
   });
 
   it("rejects an empty repositoryId rather than falling through to a full sync", () => {
-    // The old branch was entered on truthiness, so `""` silently ran the full
-    // sync while `{}` ran the fabricated one. Three ways of getting the field
-    // wrong produced three different behaviours.
     expect(parseSyncTarget({ repositoryId: "" })).toEqual({
       ok: false,
       message: "`repositoryId` must not be empty",
@@ -71,7 +68,7 @@ describe("parseSyncTarget", () => {
 });
 
 describe("singleRepositorySyncResponse", () => {
-  it("reports COMPLETED only when a sync actually ran", () => {
+  it("reports COMPLETED only when a sync actually ran without write failures", () => {
     const response = singleRepositorySyncResponse(repository, {
       synced: 3,
       hasInstallation: true,
@@ -82,8 +79,6 @@ describe("singleRepositorySyncResponse", () => {
   });
 
   it("does not claim success when there is no installation", () => {
-    // The fabricated branch answered `success: true, status: "COMPLETED"` for
-    // every input, including an account with no GitHub App installed at all.
     const response = singleRepositorySyncResponse(repository, {
       synced: 0,
       hasInstallation: false,
@@ -103,6 +98,46 @@ describe("singleRepositorySyncResponse", () => {
     expect(response.status).toBe("FAILED");
     expect(response.success).toBe(false);
     expect(response.error).toBe("Failed to synchronize repositories");
+  });
+
+  it("reports PARTIAL when repository writes fail", () => {
+    const response = singleRepositorySyncResponse(repository, {
+      synced: 7,
+      failed: 2,
+      hasInstallation: true,
+    });
+
+    expect(response.status).toBe("PARTIAL");
+    expect(response.success).toBe(false);
+    expect(response.synced).toBe(7);
+    expect(response.failed).toBe(2);
+  });
+
+  it("gives explicit errors precedence over partial write failures", () => {
+    const response = singleRepositorySyncResponse(repository, {
+      synced: 2,
+      failed: 1,
+      hasInstallation: true,
+      error: "GitHub request failed",
+    });
+
+    expect(response.status).toBe("FAILED");
+    expect(response.success).toBe(false);
+    expect(response.failed).toBe(1);
+    expect(response.error).toBe("GitHub request failed");
+  });
+
+  it("does not treat skipped repositories as write failures", () => {
+    const response = singleRepositorySyncResponse(repository, {
+      synced: 2,
+      skipped: 3,
+      failed: 0,
+      hasInstallation: true,
+    });
+
+    expect(response.status).toBe("COMPLETED");
+    expect(response.success).toBe(true);
+    expect(response.skipped).toBe(3);
   });
 
   it("omits the error field entirely on the success path", () => {
@@ -141,13 +176,14 @@ describe("singleRepositorySyncResponse", () => {
   it("reports the skipped and failed counts the run produced", () => {
     const response = singleRepositorySyncResponse(repository, {
       synced: 2,
-      hasInstallation: true,
       skipped: 1,
       failed: 3,
     });
 
     expect(response.skipped).toBe(1);
     expect(response.failed).toBe(3);
+    expect(response.status).toBe("PARTIAL");
+    expect(response.success).toBe(false);
   });
 
   it("never reports a fabricated file count", () => {
