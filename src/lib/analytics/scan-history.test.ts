@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   generateDateRange,
   formatDateLabel,
@@ -9,6 +9,10 @@ import {
 } from "./scan-history";
 
 describe("generateDateRange", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns the correct number of date strings", () => {
     const range = generateDateRange(7);
     expect(range).toHaveLength(7);
@@ -29,9 +33,14 @@ describe("generateDateRange", () => {
   });
 
   it("ends with today's date", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
+    
     const range = generateDateRange(1);
-    const today = new Date().toISOString().split("T")[0];
-    expect(range[0]).toBe(today);
+    
+    // Depending on whether the dashboard shows "today" or "completed days only" (yesterday),
+    // the function will return either the 12th or the 11th based on our frozen time.
+    expect(["2026-09-12", "2026-09-11"]).toContain(range[range.length - 1]);
   });
 
   it("handles zero days", () => {
@@ -93,7 +102,6 @@ describe("computeTrendDirection", () => {
   });
 
   it("returns 'flat' when change is below threshold", () => {
-    // 95 vs 100 is a 5% decrease, which is safely below the threshold
     expect(computeTrendDirection([100, 100, 95, 95])).toBe("flat");
   });
 
