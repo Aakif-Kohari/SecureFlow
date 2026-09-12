@@ -6,6 +6,7 @@ import { LoginButton } from '@/components/ui/login-button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import InteractiveDemo from '@/components/landing/InteractiveDemo';
 import { getLandingStats } from '@/lib/metrics/landing-stats';
+import { ScrollToTop } from "@/components/scroll-to-top/ScrollToTop";
 
 export const dynamic = 'force-dynamic';
 export default async function LandingPage() {
@@ -205,6 +206,7 @@ export default async function LandingPage() {
           </div>
         </div>
       </footer>
+      <ScrollToTop />
     </div>
   );
 }
