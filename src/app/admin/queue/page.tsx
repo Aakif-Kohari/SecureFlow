@@ -1,10 +1,16 @@
-import { getQueueMetrics, getDLQJobs } from '@/lib/actions/queue';
-import { Activity, CheckCircle, Clock, AlertTriangle, AlertOctagon, ShieldAlert } from 'lucide-react';
-import DLQTable from '@/components/admin/DLQTable';
-import JobExplorer from '@/components/admin/JobExplorer';
+import { getQueueMetrics, getDLQJobs } from "@/lib/actions/queue";
+import {
+  Activity,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  AlertOctagon,
+  ShieldAlert,
+} from "lucide-react";
+import DLQTable from "@/components/admin/DLQTable";
+import JobExplorer from "@/components/admin/JobExplorer";
 
-export const dynamic = 'force-dynamic';
-
+export const dynamic = "force-dynamic";
 
 export default async function QueueMonitorPage() {
   const metrics = await getQueueMetrics();
@@ -24,7 +30,9 @@ export default async function QueueMonitorPage() {
         <div className="glass-card group relative overflow-hidden rounded-xl border border-white/10 p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-zinc-500/50 hover:shadow-[0_0_25px_rgba(255,255,255,0.05)]">
           <div className="absolute top-0 left-0 w-0 h-[2px] bg-zinc-500 group-hover:w-full transition-all duration-500" />
           <div className="flex items-center justify-between pb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-zinc-300 transition-colors">Waiting</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-zinc-300 transition-colors">
+              Waiting
+            </h3>
             <Clock className="w-4 h-4 text-zinc-400" />
           </div>
           <div className="text-3xl font-black font-headline text-white">{metrics.waiting}</div>
@@ -34,7 +42,9 @@ export default async function QueueMonitorPage() {
         <div className="glass-card group relative overflow-hidden rounded-xl border border-white/10 p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-blue-500/50 hover:shadow-[0_0_25px_rgba(59,130,246,0.15)]">
           <div className="absolute top-0 left-0 w-0 h-[2px] bg-blue-500 group-hover:w-full transition-all duration-500" />
           <div className="flex items-center justify-between pb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-blue-400 transition-colors">Active</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-blue-400 transition-colors">
+              Active
+            </h3>
             <Activity className="w-4 h-4 text-blue-500 animate-pulse" />
           </div>
           <div className="text-3xl font-black font-headline text-white">{metrics.active}</div>
@@ -44,7 +54,9 @@ export default async function QueueMonitorPage() {
         <div className="glass-card group relative overflow-hidden rounded-xl border border-white/10 p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-emerald-500/50 hover:shadow-[0_0_25px_rgba(16,185,129,0.15)]">
           <div className="absolute top-0 left-0 w-0 h-[2px] bg-emerald-500 group-hover:w-full transition-all duration-500" />
           <div className="flex items-center justify-between pb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-emerald-400 transition-colors">Completed</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-emerald-400 transition-colors">
+              Completed
+            </h3>
             <CheckCircle className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-3xl font-black font-headline text-white">{metrics.completed}</div>
@@ -54,7 +66,9 @@ export default async function QueueMonitorPage() {
         <div className="glass-card group relative overflow-hidden rounded-xl border border-white/10 p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-red-500/50 hover:shadow-[0_0_25px_rgba(239,68,68,0.15)]">
           <div className="absolute top-0 left-0 w-0 h-[2px] bg-red-500 group-hover:w-full transition-all duration-500" />
           <div className="flex items-center justify-between pb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-red-400 transition-colors">Failed (DLQ)</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-red-400 transition-colors">
+              Failed (DLQ)
+            </h3>
             <AlertTriangle className="w-4 h-4 text-red-500" />
           </div>
           <div className="text-3xl font-black font-headline text-white">{metrics.failed}</div>
@@ -64,7 +78,9 @@ export default async function QueueMonitorPage() {
         <div className="glass-card group relative overflow-hidden rounded-xl border border-white/10 p-6 transition-all duration-500 hover:-translate-y-1.5 hover:border-yellow-500/50 hover:shadow-[0_0_25px_rgba(245,158,11,0.15)]">
           <div className="absolute top-0 left-0 w-0 h-[2px] bg-yellow-500 group-hover:w-full transition-all duration-500" />
           <div className="flex items-center justify-between pb-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-yellow-400 transition-colors">Delayed</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-yellow-400 transition-colors">
+              Delayed
+            </h3>
             <AlertOctagon className="w-4 h-4 text-yellow-500" />
           </div>
           <div className="text-3xl font-black font-headline text-white">{metrics.delayed}</div>
@@ -81,18 +97,22 @@ export default async function QueueMonitorPage() {
         <div className="grid md:grid-cols-2 gap-6 text-sm text-zinc-400 leading-relaxed">
           <div className="space-y-3">
             <p>
-              The system processes security evaluations asynchronously using BullMQ backed by a high-throughput Redis instance. 
-              Each scan verifies if passwords, secrets, or vulnerable dependencies are being committed.
+              The system processes security evaluations asynchronously using BullMQ backed by a
+              high-throughput Redis instance. Each scan verifies if passwords, secrets, or
+              vulnerable dependencies are being committed.
             </p>
             <p>
-              If a scan job fails, it automatically enters the Dead-Letter Queue (DLQ) for retries or manual diagnostics. 
-              The monitoring interface updates in real-time to report pipeline anomalies.
+              If a scan job fails, it automatically enters the Dead-Letter Queue (DLQ) for retries
+              or manual diagnostics. The monitoring interface updates in real-time to report
+              pipeline anomalies.
             </p>
           </div>
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <span>Auto-Retry System</span>
-              <span className="text-emerald-400 font-bold uppercase text-xs tracking-wider">Active (3 retries)</span>
+              <span className="text-emerald-400 font-bold uppercase text-xs tracking-wider">
+                Active (3 retries)
+              </span>
             </div>
             <div className="flex justify-between items-center border-b border-white/5 pb-2">
               <span>Dead-Letter Storage Limit</span>

@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useTransition } from "react";
-import {
-  getQueueJobs,
-  removeQueueJob,
-  type QueueJobState,
-} from "@/lib/actions/queue";
+import { getQueueJobs, removeQueueJob, type QueueJobState } from "@/lib/actions/queue";
 import {
   ChevronDown,
   ChevronUp,
@@ -161,9 +157,7 @@ export default function JobExplorer() {
               <Icon className="w-3.5 h-3.5" />
               {label}
               {jobsByTab[key] !== undefined && (
-                <span className="ml-1 text-[10px] text-zinc-500">
-                  {jobsByTab[key]!.length}
-                </span>
+                <span className="ml-1 text-[10px] text-zinc-500">{jobsByTab[key]!.length}</span>
               )}
             </button>
           ))}
@@ -285,20 +279,34 @@ export default function JobExplorer() {
                             <div className="flex flex-col gap-2">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-zinc-500 uppercase tracking-widest">Job ID</span>
+                                  <span className="text-zinc-500 uppercase tracking-widest">
+                                    Job ID
+                                  </span>
                                   <span className="font-mono text-zinc-300">{job.id}</span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-zinc-500 uppercase tracking-widest">Attempts</span>
-                                  <span className="font-mono text-zinc-300">{job.attemptsMade}</span>
+                                  <span className="text-zinc-500 uppercase tracking-widest">
+                                    Attempts
+                                  </span>
+                                  <span className="font-mono text-zinc-300">
+                                    {job.attemptsMade}
+                                  </span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-zinc-500 uppercase tracking-widest">Enqueued</span>
-                                  <span className="font-mono text-zinc-300">{fmtDate(job.timestamp)}</span>
+                                  <span className="text-zinc-500 uppercase tracking-widest">
+                                    Enqueued
+                                  </span>
+                                  <span className="font-mono text-zinc-300">
+                                    {fmtDate(job.timestamp)}
+                                  </span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="text-zinc-500 uppercase tracking-widest">Finished</span>
-                                  <span className="font-mono text-zinc-300">{fmtDate(job.finishedOn)}</span>
+                                  <span className="text-zinc-500 uppercase tracking-widest">
+                                    Finished
+                                  </span>
+                                  <span className="font-mono text-zinc-300">
+                                    {fmtDate(job.finishedOn)}
+                                  </span>
                                 </div>
                               </div>
 
@@ -334,7 +342,8 @@ export default function JobExplorer() {
         {totalItems > ITEMS_PER_PAGE && (
           <div className="p-4 border-t border-white/5 flex justify-between items-center text-sm">
             <span>
-              Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} of {totalItems} results
+              Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} of{" "}
+              {totalItems} results
             </span>
             <div className="space-x-2">
               <button

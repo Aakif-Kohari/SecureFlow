@@ -35,10 +35,17 @@ export interface ResilienceExecutionStats {
 export function isRateLimitError(err: unknown): boolean {
   if (!err) return false;
   const msg = String(err).toLowerCase();
-  const status = (err as { status?: number; statusCode?: number })?.status ||
-                 (err as { status?: number; statusCode?: number })?.statusCode;
+  const status =
+    (err as { status?: number; statusCode?: number })?.status ||
+    (err as { status?: number; statusCode?: number })?.statusCode;
 
-  return status === 429 || msg.includes('429') || msg.includes('rate limit') || msg.includes('ratelimit') || msg.includes('quota exceeded');
+  return (
+    status === 429 ||
+    msg.includes("429") ||
+    msg.includes("rate limit") ||
+    msg.includes("ratelimit") ||
+    msg.includes("quota exceeded")
+  );
 }
 
 /**
@@ -47,17 +54,18 @@ export function isRateLimitError(err: unknown): boolean {
 export function isTimeoutError(err: unknown): boolean {
   if (!err) return false;
   const msg = String(err).toLowerCase();
-  const status = (err as { status?: number; statusCode?: number })?.status ||
-                 (err as { status?: number; statusCode?: number })?.statusCode;
+  const status =
+    (err as { status?: number; statusCode?: number })?.status ||
+    (err as { status?: number; statusCode?: number })?.statusCode;
 
   return (
     status === 503 ||
     status === 504 ||
-    msg.includes('timeout') ||
-    msg.includes('timed out') ||
-    msg.includes('econnreset') ||
-    msg.includes('etimedout') ||
-    msg.includes('deadline exceeded')
+    msg.includes("timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("econnreset") ||
+    msg.includes("etimedout") ||
+    msg.includes("deadline exceeded")
   );
 }
 
@@ -69,7 +77,7 @@ export function computeBackoffDelay(
   initialDelayMs = 100,
   maxDelayMs = 5000,
   backoffFactor = 2,
-  useJitter = true
+  useJitter = true,
 ): number {
   const calculated = initialDelayMs * Math.pow(backoffFactor, Math.max(0, attempt - 1));
   const capped = Math.min(calculated, maxDelayMs);
@@ -92,7 +100,7 @@ export function delay(ms: number): Promise<void> {
  */
 export async function executeWithFallbackAndRetry<T, TModel extends string = string>(
   operation: (model: TModel, attempt: number) => Promise<T>,
-  config: ModelFallbackConfig<TModel>
+  config: ModelFallbackConfig<TModel>,
 ): Promise<{ result: T; stats: ResilienceExecutionStats }> {
   const startTime = Date.now();
   const models = [config.primaryModel, ...config.fallbackModels];
@@ -133,9 +141,15 @@ export async function executeWithFallbackAndRetry<T, TModel extends string = str
             config.retryConfig.retryableErrors.some((fn) => fn(err)));
 
         if (attempt < maxRetries && isRetryable) {
-          const waitTime = computeBackoffDelay(attempt, initialDelay, maxDelay, backoffFactor, useJitter);
+          const waitTime = computeBackoffDelay(
+            attempt,
+            initialDelay,
+            maxDelay,
+            backoffFactor,
+            useJitter,
+          );
           console.warn(
-            `[AI_RESILIENCE] Model ${String(currentModel)} failed on attempt ${attempt}/${maxRetries} (${String(err)}). Retrying in ${waitTime}ms...`
+            `[AI_RESILIENCE] Model ${String(currentModel)} failed on attempt ${attempt}/${maxRetries} (${String(err)}). Retrying in ${waitTime}ms...`,
           );
           await delay(waitTime);
         } else {
@@ -144,7 +158,7 @@ export async function executeWithFallbackAndRetry<T, TModel extends string = str
             fallbackSwitches++;
             const nextModel = models[mIdx + 1];
             console.warn(
-              `[AI_RESILIENCE] Primary model ${String(currentModel)} exhausted or unrecoverable. Switching to fallback model: ${String(nextModel)}`
+              `[AI_RESILIENCE] Primary model ${String(currentModel)} exhausted or unrecoverable. Switching to fallback model: ${String(nextModel)}`,
             );
 
             if (config.onModelSwitch) {
@@ -157,6 +171,11 @@ export async function executeWithFallbackAndRetry<T, TModel extends string = str
     }
   }
 
-  console.error(`[AI_RESILIENCE] All models in fallback chain failed after ${totalAttempts} total attempts.`, lastError);
-  throw lastError instanceof Error ? lastError : new Error(`AI operation failed across all fallback models: ${String(lastError)}`);
+  console.error(
+    `[AI_RESILIENCE] All models in fallback chain failed after ${totalAttempts} total attempts.`,
+    lastError,
+  );
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`AI operation failed across all fallback models: ${String(lastError)}`);
 }

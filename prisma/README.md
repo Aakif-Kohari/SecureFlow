@@ -50,14 +50,18 @@ prisma/
 The database schema in [`schema.prisma`](./schema.prisma) is organized into logical domain modules:
 
 ### 1. Identity & Authentication
+
 Compliant with NextAuth.js / Auth.js standard data models with custom SecureFlow attributes:
+
 - **`User`**: Application users, including GitHub profile metadata (`githubLogin`), gamification codenames (`codename`), email, and relation associations.
 - **`Account`**: OAuth provider credentials and access tokens linked to user accounts.
 - **`Session`**: Active user sessions and expiration timestamps.
 - **`VerificationToken`**: Passwordless or email verification tokens.
 
 ### 2. Core Domain & Security Analysis
+
 Tracks monitored repositories, pull requests, automated security scans, and persistent finding triage states:
+
 - **`Repository`**: Monitored GitHub repositories (`githubId`, `fullName`, `owner`, `isActive`, `userId`).
 - **`PullRequest`**: Scanned pull requests with statuses (`PASS`, `REVIEW_REQUIRED`, `BLOCKED`) and author metadata.
 - **`ScanResult`**: Individual scan executions linked to a pull request with overall `riskScore` and `policyDecision`.
@@ -65,17 +69,23 @@ Tracks monitored repositories, pull requests, automated security scans, and pers
 - **`FindingTriage`**: Triage and lifecycle states (`OPEN`, `RESOLVED`, `FALSE_POSITIVE`, `IGNORED`) keyed by `(repositoryId, fingerprint)`. Ensures developer dismissals survive re-scans.
 
 ### 3. Policy Engine & Rules
+
 Provides configurable compliance guardrails:
+
 - **`PolicyTemplate`**: Built-in and custom security policy definitions (`name`, `severity`, `action`, `rules` JSON conditions, `isDefault`).
 - **`UserPolicyToggle`**: User-specific activation toggles for individual policy templates.
 
 ### 4. Audit & Webhook Observability
+
 Enterprise-grade activity auditing and event provenance:
+
 - **`AuditLog`**: Tamper-evident records of user actions (`action`, `resource`, `decision`, `metadata` JSON, `timestamp`).
 - **`WebhookEvent`**: GitHub webhook delivery logs tracking `deliveryId` to prevent duplicate processing and guarantee idempotent ingestion.
 
 ### 5. Role-Based Access Control (RBAC)
+
 Granular administrative and auditor permission enforcement:
+
 - **`Role`**: Named user roles (e.g., `ADMIN`, `USER`, `AUDITOR`).
 - **`Permission`**: Specific action privileges (e.g., `read:audit`, `delete:user`).
 - **`UserRole`**: Junction table mapping users to roles.
@@ -155,6 +165,7 @@ npx prisma migrate dev --name add_prompt_injection_flags
 ```
 
 This will:
+
 1. Compare `schema.prisma` against existing migrations in `prisma/migrations/`.
 2. Generate a new timestamped migration directory (`prisma/migrations/<timestamp>_<name>/migration.sql`).
 3. Execute the SQL against your local PostgreSQL database.
@@ -218,7 +229,7 @@ If your local database schema gets out of sync or encounters drift:
   ```bash
   npx prisma migrate reset
   ```
-  *(Drops the schema, runs all migrations from scratch, and executes `seed.ts` automatically).*
+  _(Drops the schema, runs all migrations from scratch, and executes `seed.ts` automatically)._
 
 ---
 

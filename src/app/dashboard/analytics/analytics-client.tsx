@@ -145,7 +145,7 @@ export default function AnalyticsClient({
 
   const visibleRepos = useMemo(
     () => (showAllRepos ? repoSummaries : repoSummaries.slice(0, 5)),
-    [showAllRepos, repoSummaries]
+    [showAllRepos, repoSummaries],
   );
 
   const handleExportCSV = useCallback(() => {
@@ -224,7 +224,7 @@ export default function AnalyticsClient({
         name: ft.type,
         value: ft.count,
       })),
-    [topFindingTypes]
+    [topFindingTypes],
   );
 
   return (
@@ -425,8 +425,7 @@ export default function AnalyticsClient({
                       <div
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{
-                          backgroundColor:
-                            FINDING_TYPE_COLORS[i % FINDING_TYPE_COLORS.length],
+                          backgroundColor: FINDING_TYPE_COLORS[i % FINDING_TYPE_COLORS.length],
                         }}
                       />
                       <span className="truncate text-muted-foreground">{ft.type}</span>
@@ -449,9 +448,8 @@ export default function AnalyticsClient({
           </Badge>
         </CardHeader>
         <CardContent className="h-[300px]">
-          {severityTrend.length === 0 || severityTrend.every(
-            (s) => s.critical + s.high + s.medium + s.low === 0
-          ) ? (
+          {severityTrend.length === 0 ||
+          severityTrend.every((s) => s.critical + s.high + s.medium + s.low === 0) ? (
             <EmptyState
               icon={<BarChart3 className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />}
               title="No Severity Data"
@@ -481,7 +479,12 @@ export default function AnalyticsClient({
                   }}
                 />
                 <Legend />
-                <Bar dataKey="critical" name="Critical" stackId="a" fill={SEVERITY_COLORS.critical} />
+                <Bar
+                  dataKey="critical"
+                  name="Critical"
+                  stackId="a"
+                  fill={SEVERITY_COLORS.critical}
+                />
                 <Bar dataKey="high" name="High" stackId="a" fill={SEVERITY_COLORS.high} />
                 <Bar dataKey="medium" name="Medium" stackId="a" fill={SEVERITY_COLORS.medium} />
                 <Bar dataKey="low" name="Low" stackId="a" fill={SEVERITY_COLORS.low} />
@@ -616,9 +619,7 @@ export default function AnalyticsClient({
                           {repo.repositoryName}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs">
-                        {repo.totalScans}
-                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-xs">{repo.totalScans}</td>
                       <td className="py-3 px-4 text-right font-mono text-xs">
                         {repo.totalFindings}
                       </td>
@@ -717,9 +718,7 @@ function SummaryCard({
         </div>
         <h3 className="text-5xl font-bold font-headline tracking-tight">
           <CountUp end={value} duration={1.2} />
-          {suffix && (
-            <span className="text-3xl text-muted-foreground">{suffix}</span>
-          )}
+          {suffix && <span className="text-3xl text-muted-foreground">{suffix}</span>}
         </h3>
       </CardContent>
     </Card>

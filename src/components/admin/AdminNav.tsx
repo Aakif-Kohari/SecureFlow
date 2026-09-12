@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Users,
-  ScrollText,
-  ShieldAlert,
-  ArrowLeft,
-  Activity,
-} from "lucide-react";
+import { LayoutDashboard, Users, ScrollText, ShieldAlert, ArrowLeft, Activity } from "lucide-react";
 
 const ADMIN_NAV = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
@@ -60,7 +53,7 @@ export function AdminSidebarNav() {
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border-l-2",
               active
                 ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500"
-                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5 border-transparent"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5 border-transparent",
             )}
           >
             <Icon className="w-4 h-4 shrink-0" />
@@ -102,7 +95,7 @@ export function AdminMobileNav() {
               "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap shrink-0",
               active
                 ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5",
             )}
           >
             <Icon className="w-3.5 h-3.5" />

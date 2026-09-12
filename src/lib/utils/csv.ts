@@ -20,19 +20,19 @@
  * TAB or CR is stripped by some importers, exposing whichever character follows it,
  * so they are treated as triggers too.
  */
-const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'] as const;
+const FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"] as const;
 
 /** Prefix that forces text interpretation while remaining visible-ish to the reader. */
 const NEUTRALISING_PREFIX = "'";
 
 /** RFC 4180 mandates CRLF between records. */
-export const CSV_ROW_SEPARATOR = '\r\n';
+export const CSV_ROW_SEPARATOR = "\r\n";
 
 /**
  * Byte-order mark. Excel on Windows assumes the host ANSI code page for a BOM-less
  * file, which renders any non-ASCII repository name or codename as mojibake.
  */
-export const CSV_BOM = '﻿';
+export const CSV_BOM = "﻿";
 
 export interface CsvOptions {
   /**
@@ -54,9 +54,9 @@ export interface CsvOptions {
  * when stringifying it directly.
  */
 export function stringifyCsvValue(value: unknown): string {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined) return "";
   if (value instanceof Date) return value.toISOString();
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     try {
       return JSON.stringify(value);
     } catch {
@@ -96,7 +96,7 @@ export function escapeCsvCell(value: unknown): string {
   // `\r` is included deliberately: a lone carriage return inside an unquoted field
   // terminates the record for most parsers and corrupts every subsequent column.
   const needsQuoting =
-    text.includes(',') || text.includes('"') || text.includes('\n') || text.includes('\r');
+    text.includes(",") || text.includes('"') || text.includes("\n") || text.includes("\r");
 
   if (!needsQuoting) return text;
 
@@ -115,7 +115,7 @@ export function collectCsvHeaders(rows: Array<Record<string, unknown>>): string[
   const seen = new Set<string>();
 
   for (const row of rows) {
-    if (!row || typeof row !== 'object') continue;
+    if (!row || typeof row !== "object") continue;
     for (const key of Object.keys(row)) {
       if (!seen.has(key)) {
         seen.add(key);
@@ -134,15 +134,15 @@ export function collectCsvHeaders(rows: Array<Record<string, unknown>>): string[
  * there is anything worth downloading.
  */
 export function toCsv(rows: Array<Record<string, unknown>>, options: CsvOptions = {}): string {
-  if (!Array.isArray(rows) || rows.length === 0) return '';
+  if (!Array.isArray(rows) || rows.length === 0) return "";
 
   const headers = options.headers ?? collectCsvHeaders(rows);
-  if (headers.length === 0) return '';
+  if (headers.length === 0) return "";
 
-  const lines: string[] = [headers.map(escapeCsvCell).join(',')];
+  const lines: string[] = [headers.map(escapeCsvCell).join(",")];
 
   for (const row of rows) {
-    lines.push(headers.map((header) => escapeCsvCell(row?.[header])).join(','));
+    lines.push(headers.map((header) => escapeCsvCell(row?.[header])).join(","));
   }
 
   const body = lines.join(CSV_ROW_SEPARATOR);

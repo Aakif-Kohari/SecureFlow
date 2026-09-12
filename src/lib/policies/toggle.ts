@@ -6,7 +6,7 @@
  * so a schema, a type, or a pure helper cannot live there.
  */
 
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * What the toggle accepts.
@@ -27,7 +27,7 @@ import { z } from 'zod';
  * toggle should be: "set this rule to on" applied twice is on.
  */
 export const togglePolicySchema = z.object({
-  templateId: z.string().trim().min(1, 'Missing policy template').max(64),
+  templateId: z.string().trim().min(1, "Missing policy template").max(64),
   isActive: z.boolean(),
 });
 
@@ -42,10 +42,10 @@ export interface TogglePolicyResult {
 }
 
 export const TOGGLE_ERRORS = {
-  unauthenticated: 'Your session has expired. Sign in again to change rules.',
-  invalidInput: 'That rule could not be identified.',
-  notFound: 'That rule no longer exists.',
-  failed: 'The rule could not be updated. Please try again.',
+  unauthenticated: "Your session has expired. Sign in again to change rules.",
+  invalidInput: "That rule could not be identified.",
+  notFound: "That rule no longer exists.",
+  failed: "The rule could not be updated. Please try again.",
 } as const;
 
 /**
@@ -73,13 +73,13 @@ export function parseToggleInput(input: unknown): TogglePolicyInput | null {
  * have read minutes ago is the bug this change exists to remove.
  */
 export function normalizeToggleInput(input: unknown): TogglePolicyInput | null {
-  if (typeof FormData !== 'undefined' && input instanceof FormData) {
-    const templateId = input.get('templateId');
-    const isActive = input.get('isActive');
+  if (typeof FormData !== "undefined" && input instanceof FormData) {
+    const templateId = input.get("templateId");
+    const isActive = input.get("isActive");
 
-    if (typeof templateId !== 'string' || typeof isActive !== 'string') return null;
+    if (typeof templateId !== "string" || typeof isActive !== "string") return null;
 
-    return parseToggleInput({ templateId, isActive: isActive === 'true' });
+    return parseToggleInput({ templateId, isActive: isActive === "true" });
   }
 
   return parseToggleInput(input);

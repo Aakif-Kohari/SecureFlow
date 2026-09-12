@@ -21,30 +21,27 @@
  * are handed out in the POST response and appear in logs.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import prisma from '@/lib/prisma';
-import { withErrorHandler, AppError } from '@/lib/middleware/error-handler';
-import { withRateLimit, TIERS } from '@/lib/middleware/rate-limit';
-import { getScanJobStatus } from '@/lib/queue/scanQueue';
-import {
-  loadScanJobOwnership,
-  scanJobVisibility,
-} from '@/lib/findings/scan-authorization';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+import { withErrorHandler, AppError } from "@/lib/middleware/error-handler";
+import { withRateLimit, TIERS } from "@/lib/middleware/rate-limit";
+import { getScanJobStatus } from "@/lib/queue/scanQueue";
+import { loadScanJobOwnership, scanJobVisibility } from "@/lib/findings/scan-authorization";
 
 const handler = withErrorHandler(async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
+  { params }: { params: Promise<{ jobId: string }> },
 ) {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new AppError('Unauthorized', 401);
+    throw new AppError("Unauthorized", 401);
   }
 
   const { jobId } = await params;
 
-  if (!jobId || typeof jobId !== 'string') {
-    throw new AppError('Invalid job ID', 400);
+  if (!jobId || typeof jobId !== "string") {
+    throw new AppError("Invalid job ID", 400);
   }
 
   // Ownership first, and a job the caller does not own is reported as absent
@@ -52,22 +49,22 @@ const handler = withErrorHandler(async function GET(
   // oracle for "does this job id exist", which is most of what id-guessing
   // wants, and the caller has no legitimate use for the difference.
   const ownership = await loadScanJobOwnership(prisma.scanJob as never, jobId);
-  if (scanJobVisibility(ownership, session.user.id) !== 'visible') {
-    throw new AppError('Scan job not found', 404);
+  if (scanJobVisibility(ownership, session.user.id) !== "visible") {
+    throw new AppError("Scan job not found", 404);
   }
 
   const status = await getScanJobStatus(jobId);
 
   if (!status) {
-    throw new AppError('Scan job not found', 404);
+    throw new AppError("Scan job not found", 404);
   }
 
   return NextResponse.json(status, {
     status: 200,
     headers: {
       // Allow polling from the frontend
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'Pragma': 'no-cache',
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      Pragma: "no-cache",
     },
   });
 });
@@ -81,7 +78,7 @@ const handler = withErrorHandler(async function GET(
 // where this route needed covering.
 export const GET = withRateLimit(handler, {
   ...TIERS.STANDARD,
-  keyPrefix: 'findings:status',
+  keyPrefix: "findings:status",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";

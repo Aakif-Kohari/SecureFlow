@@ -55,21 +55,21 @@ export default function UsersTable({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [optimisticUsers, setOptimisticUsers] = useOptimistic<
-    AdminUserRow[],
-    OptimisticUserAction
-  >(users, (currentUsers, action) => {
-    switch (action.type) {
-      case "UPDATE_ROLE":
-        return currentUsers.map((u) =>
-          u.id === action.userId ? { ...u, roles: [action.newRole] } : u
-        );
-      case "DELETE_USER":
-        return currentUsers.filter((u) => u.id !== action.userId);
-      default:
-        return currentUsers;
-    }
-  });
+  const [optimisticUsers, setOptimisticUsers] = useOptimistic<AdminUserRow[], OptimisticUserAction>(
+    users,
+    (currentUsers, action) => {
+      switch (action.type) {
+        case "UPDATE_ROLE":
+          return currentUsers.map((u) =>
+            u.id === action.userId ? { ...u, roles: [action.newRole] } : u,
+          );
+        case "DELETE_USER":
+          return currentUsers.filter((u) => u.id !== action.userId);
+        default:
+          return currentUsers;
+      }
+    },
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -116,7 +116,7 @@ export default function UsersTable({
   const handleDelete = (userId: string, label: string) => {
     if (
       !window.confirm(
-        `Delete user "${label}"?\n\nThis permanently removes their account, repositories, pull requests, and scan history. This action cannot be undone.`
+        `Delete user "${label}"?\n\nThis permanently removes their account, repositories, pull requests, and scan history. This action cannot be undone.`,
       )
     )
       return;
@@ -249,14 +249,17 @@ export default function UsersTable({
                     <td className="px-6 py-4">
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono ${roleBadgeClass(
-                          u.roles
+                          u.roles,
                         )}`}
                       >
                         {primaryRole(u.roles)}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono text-foreground/80">{u.repoCount}</td>
-                    <td className="px-6 py-4 text-muted-foreground font-mono text-xs" suppressHydrationWarning>
+                    <td
+                      className="px-6 py-4 text-muted-foreground font-mono text-xs"
+                      suppressHydrationWarning
+                    >
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
@@ -264,14 +267,8 @@ export default function UsersTable({
                         <select
                           value={primaryRole(u.roles)}
                           disabled={busy || isSelf}
-                          onChange={(e) =>
-                            handleRoleChange(u.id, e.target.value as RoleName)
-                          }
-                          title={
-                            isSelf
-                              ? "You cannot change your own role"
-                              : "Change role"
-                          }
+                          onChange={(e) => handleRoleChange(u.id, e.target.value as RoleName)}
+                          title={isSelf ? "You cannot change your own role" : "Change role"}
                           className="bg-background border border-border text-foreground text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {ROLES.map((r) => (
@@ -292,8 +289,8 @@ export default function UsersTable({
                               isSelf
                                 ? "You cannot delete your own account"
                                 : isLastAdmin
-                                ? "Cannot delete the last admin"
-                                : "Delete user"
+                                  ? "Cannot delete the last admin"
+                                  : "Delete user"
                             }
                             className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                           >
@@ -324,7 +321,7 @@ export default function UsersTable({
             ? "Showing 0 results"
             : `Showing ${start + 1} to ${Math.min(
                 start + ITEMS_PER_PAGE,
-                filtered.length
+                filtered.length,
               )} of ${filtered.length} users`}
         </span>
         <div className="flex items-center gap-2">

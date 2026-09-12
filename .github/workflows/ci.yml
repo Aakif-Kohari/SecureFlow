@@ -20,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['22']
+        node-version: ["22"]
 
     steps:
       - name: Checkout repository
@@ -30,7 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache npm cache
@@ -88,8 +88,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: cli/package-lock.json
 
       - name: Install CLI dependencies
@@ -115,8 +115,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache npm cache
@@ -159,8 +159,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache node_modules
@@ -185,11 +185,11 @@ jobs:
       # ⭐ NEW: Auth.js configuration for E2E tests
       NEXTAUTH_URL: http://localhost:9002
       NEXTAUTH_SECRET: e2e-test-secret-key
-      AUTH_TRUST_HOST: 'true'
-      NEXTAUTH_TRUST_HOST: 'true'
-      NEXT_PUBLIC_MOCK_DB: 'true'
-      NEXT_PUBLIC_MOCK_AUTH: 'true'
-      CI: 'true'
+      AUTH_TRUST_HOST: "true"
+      NEXTAUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_MOCK_DB: "true"
+      NEXT_PUBLIC_MOCK_AUTH: "true"
+      CI: "true"
 
     steps:
       - name: Checkout repository
@@ -198,8 +198,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Cache npm cache

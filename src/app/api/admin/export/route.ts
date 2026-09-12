@@ -88,7 +88,7 @@ export interface ExportRange {
  */
 export function resolveExportRange(
   searchParams: URLSearchParams,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): ExportRange {
   const from = parseDateParam(searchParams.get("from"), "from");
   const to = parseDateParam(searchParams.get("to"), "to");
@@ -192,7 +192,7 @@ async function handler(req: NextRequest) {
       headers: [...AUDIT_LOG_EXPORT_COLUMNS],
       batchSize: EXPORT_BATCH_SIZE,
       maxRows: range.limit,
-    }
+    },
   );
 
   return new NextResponse(body, {
@@ -214,5 +214,5 @@ async function handler(req: NextRequest) {
 
 export const GET = withRateLimit(
   withErrorHandler(handler) as (req: NextRequest) => Promise<NextResponse>,
-  { ...TIERS.ADMIN, keyPrefix: "admin:export" }
+  { ...TIERS.ADMIN, keyPrefix: "admin:export" },
 );

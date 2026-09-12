@@ -4,12 +4,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "./accordion";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion";
 
 describe("Accordion component", () => {
   it("renders accordion items and triggers", () => {
@@ -23,7 +18,7 @@ describe("Accordion component", () => {
           <AccordionTrigger>Section 2</AccordionTrigger>
           <AccordionContent>Content 2</AccordionContent>
         </AccordionItem>
-      </Accordion>
+      </Accordion>,
     );
 
     expect(screen.getByText("Section 1")).toBeInTheDocument();
@@ -38,7 +33,7 @@ describe("Accordion component", () => {
           <AccordionTrigger>Toggle Item</AccordionTrigger>
           <AccordionContent>Item Content</AccordionContent>
         </AccordionItem>
-      </Accordion>
+      </Accordion>,
     );
 
     const trigger = screen.getByRole("button", { name: /toggle item/i });
@@ -63,7 +58,7 @@ describe("Accordion component", () => {
           <AccordionTrigger>Trigger 2</AccordionTrigger>
           <AccordionContent>Content 2</AccordionContent>
         </AccordionItem>
-      </Accordion>
+      </Accordion>,
     );
 
     const trigger1 = screen.getByRole("button", { name: /trigger 1/i });
@@ -83,7 +78,7 @@ describe("Accordion component", () => {
           <AccordionTrigger className="custom-trigger">Trigger</AccordionTrigger>
           <AccordionContent className="custom-content">Content</AccordionContent>
         </AccordionItem>
-      </Accordion>
+      </Accordion>,
     );
 
     expect(container.querySelector(".custom-accordion")).toBeInTheDocument();

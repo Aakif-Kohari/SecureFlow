@@ -26,10 +26,10 @@
  */
 
 /** Set to a falsey word to run a webhook-only worker process. */
-export const SCAN_WORKER_ENABLED_VAR = 'SCAN_WORKER_ENABLED';
+export const SCAN_WORKER_ENABLED_VAR = "SCAN_WORKER_ENABLED";
 
 /** Concurrency for the scan worker, read by `workerPool`. */
-export const SCAN_WORKER_CONCURRENCY_VAR = 'SCAN_WORKER_CONCURRENCY';
+export const SCAN_WORKER_CONCURRENCY_VAR = "SCAN_WORKER_CONCURRENCY";
 
 /** What `workerPool` falls back to when the variable is unset. */
 export const DEFAULT_SCAN_WORKER_CONCURRENCY = 3;
@@ -44,7 +44,7 @@ export const DEFAULT_SCAN_WORKER_CONCURRENCY = 3;
 export const MAX_SCAN_WORKER_CONCURRENCY = 32;
 
 /** Words that turn the scan worker off. Everything else leaves it on. */
-const DISABLED_WORDS = new Set(['0', 'false', 'no', 'off', 'disabled']);
+const DISABLED_WORDS = new Set(["0", "false", "no", "off", "disabled"]);
 
 /**
  * Whether to start the scan worker in this process.
@@ -58,7 +58,7 @@ const DISABLED_WORDS = new Set(['0', 'false', 'no', 'off', 'disabled']);
  * webhook deliveries are latency-sensitive.
  */
 export function shouldStartScanWorker(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
 ): boolean {
   const raw = env[SCAN_WORKER_ENABLED_VAR];
   if (raw === undefined) return true;
@@ -70,7 +70,7 @@ export function shouldStartScanWorker(
 export class ScanWorkerConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ScanWorkerConfigError';
+    this.name = "ScanWorkerConfigError";
   }
 }
 
@@ -87,23 +87,23 @@ export class ScanWorkerConfigError extends Error {
  * Validated here and thrown at startup, where it is attributable.
  */
 export function resolveScanWorkerConcurrency(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
 ): number {
   const raw = env[SCAN_WORKER_CONCURRENCY_VAR];
 
-  if (raw === undefined || raw.trim() === '') return DEFAULT_SCAN_WORKER_CONCURRENCY;
+  if (raw === undefined || raw.trim() === "") return DEFAULT_SCAN_WORKER_CONCURRENCY;
 
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) {
     throw new ScanWorkerConfigError(
-      `${SCAN_WORKER_CONCURRENCY_VAR} must be a positive integer, received: ${JSON.stringify(raw)}`
+      `${SCAN_WORKER_CONCURRENCY_VAR} must be a positive integer, received: ${JSON.stringify(raw)}`,
     );
   }
 
   const parsed = Number(trimmed);
   if (parsed < 1 || parsed > MAX_SCAN_WORKER_CONCURRENCY) {
     throw new ScanWorkerConfigError(
-      `${SCAN_WORKER_CONCURRENCY_VAR} must be between 1 and ${MAX_SCAN_WORKER_CONCURRENCY}, received: ${parsed}`
+      `${SCAN_WORKER_CONCURRENCY_VAR} must be between 1 and ${MAX_SCAN_WORKER_CONCURRENCY}, received: ${parsed}`,
     );
   }
 
@@ -125,15 +125,15 @@ export interface WorkerStartupPlan {
  * nothing in the startup output said which workers had been attached.
  */
 export function planWorkerStartup(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
 ): WorkerStartupPlan {
   const scanWorkerEnabled = shouldStartScanWorker(env);
 
   return {
     queues: [
-      'github-webhooks',
-      'outbound-webhooks',
-      ...(scanWorkerEnabled ? ['vulnerability-scans'] : []),
+      "github-webhooks",
+      "outbound-webhooks",
+      ...(scanWorkerEnabled ? ["vulnerability-scans"] : []),
     ],
     scanWorkerEnabled,
     scanConcurrency: scanWorkerEnabled ? resolveScanWorkerConcurrency(env) : null,
@@ -146,5 +146,5 @@ export function describeWorkerStartup(plan: WorkerStartupPlan): string {
     ? `scan worker on (concurrency=${plan.scanConcurrency})`
     : `scan worker off (${SCAN_WORKER_ENABLED_VAR})`;
 
-  return `Consuming ${plan.queues.join(', ')} — ${scans}`;
+  return `Consuming ${plan.queues.join(", ")} — ${scans}`;
 }

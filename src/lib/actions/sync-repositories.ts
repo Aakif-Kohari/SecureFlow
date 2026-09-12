@@ -18,7 +18,7 @@ export async function triggerRepositorySync(): Promise<SyncUserReposResult> {
   const result = await syncUserRepositories(
     session.user.id,
     (session.user as any).githubLogin,
-    (session as any).accessToken
+    (session as any).accessToken,
   );
 
   revalidatePath("/dashboard");

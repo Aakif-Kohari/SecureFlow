@@ -4,7 +4,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-  import FindingsPage from "./page";
+import FindingsPage from "./page";
 import * as authModule from "@/auth";
 import * as findingsActions from "@/lib/actions/findings";
 

@@ -40,7 +40,7 @@
  * components can use it too.
  */
 
-import { toStoredSeverity, type Severity, type StoredSeverity } from './severity';
+import { toStoredSeverity, type Severity, type StoredSeverity } from "./severity";
 
 /**
  * The categories the dashboard reports on.
@@ -49,24 +49,24 @@ import { toStoredSeverity, type Severity, type StoredSeverity } from './severity
  * `SEVERITY_ORDER` is — nothing derives a rank from the index here — but it is
  * the display order of the tiles.
  */
-export const FINDING_CATEGORIES = ['SECRET', 'VULNERABILITY', 'MISCONFIG', 'OTHER'] as const;
+export const FINDING_CATEGORIES = ["SECRET", "VULNERABILITY", "MISCONFIG", "OTHER"] as const;
 
 export type FindingCategory = (typeof FINDING_CATEGORIES)[number];
 
 /** The spelling written to `Finding.type` for each category on new scans. */
 export const FINDING_CATEGORY_LABEL: Readonly<Record<FindingCategory, string>> = {
-  SECRET: 'Secret',
-  VULNERABILITY: 'Vulnerability',
-  MISCONFIG: 'Misconfig',
-  OTHER: 'Other',
+  SECRET: "Secret",
+  VULNERABILITY: "Vulnerability",
+  MISCONFIG: "Misconfig",
+  OTHER: "Other",
 };
 
 /** Human-readable tile heading for each category. */
 export const FINDING_CATEGORY_TITLE: Readonly<Record<FindingCategory, string>> = {
-  SECRET: 'Secrets',
-  VULNERABILITY: 'Vulnerabilities',
-  MISCONFIG: 'Misconfigs',
-  OTHER: 'Other',
+  SECRET: "Secrets",
+  VULNERABILITY: "Vulnerabilities",
+  MISCONFIG: "Misconfigs",
+  OTHER: "Other",
 };
 
 /**
@@ -82,70 +82,70 @@ export const FINDING_CATEGORY_TITLE: Readonly<Record<FindingCategory, string>> =
  */
 const TYPE_ALIASES: Readonly<Record<string, FindingCategory>> = {
   // ── Secrets ──────────────────────────────────────────────────────────────
-  SECRET: 'SECRET',
-  SECRETS: 'SECRET',
-  HARDCODEDSECRET: 'SECRET',
-  HARDCODEDSECRETS: 'SECRET',
-  HARDCODEDCREDENTIAL: 'SECRET',
-  HARDCODEDCREDENTIALS: 'SECRET',
-  HARDCODEDPASSWORD: 'SECRET',
-  HARDCODEDAPIKEY: 'SECRET',
-  DATALEAK: 'SECRET',
-  CONTEXTUALLEAK: 'SECRET',
-  CREDENTIALLEAK: 'SECRET',
-  SECRETLEAK: 'SECRET',
-  SECRETEXPOSURE: 'SECRET',
-  CREDENTIAL: 'SECRET',
-  CREDENTIALS: 'SECRET',
-  APIKEY: 'SECRET',
-  APIKEYEXPOSURE: 'SECRET',
-  ACCESSTOKEN: 'SECRET',
-  PRIVATEKEY: 'SECRET',
-  EXPOSEDSECRET: 'SECRET',
-  SENSITIVEDATAEXPOSURE: 'SECRET',
-  INFORMATIONDISCLOSURE: 'SECRET',
+  SECRET: "SECRET",
+  SECRETS: "SECRET",
+  HARDCODEDSECRET: "SECRET",
+  HARDCODEDSECRETS: "SECRET",
+  HARDCODEDCREDENTIAL: "SECRET",
+  HARDCODEDCREDENTIALS: "SECRET",
+  HARDCODEDPASSWORD: "SECRET",
+  HARDCODEDAPIKEY: "SECRET",
+  DATALEAK: "SECRET",
+  CONTEXTUALLEAK: "SECRET",
+  CREDENTIALLEAK: "SECRET",
+  SECRETLEAK: "SECRET",
+  SECRETEXPOSURE: "SECRET",
+  CREDENTIAL: "SECRET",
+  CREDENTIALS: "SECRET",
+  APIKEY: "SECRET",
+  APIKEYEXPOSURE: "SECRET",
+  ACCESSTOKEN: "SECRET",
+  PRIVATEKEY: "SECRET",
+  EXPOSEDSECRET: "SECRET",
+  SENSITIVEDATAEXPOSURE: "SECRET",
+  INFORMATIONDISCLOSURE: "SECRET",
 
   // ── Vulnerabilities ──────────────────────────────────────────────────────
-  VULNERABILITY: 'VULNERABILITY',
-  VULNERABILITIES: 'VULNERABILITY',
-  VULN: 'VULNERABILITY',
-  LOGICFLAW: 'VULNERABILITY',
-  LOGICERROR: 'VULNERABILITY',
-  INJECTION: 'VULNERABILITY',
-  SQLINJECTION: 'VULNERABILITY',
-  COMMANDINJECTION: 'VULNERABILITY',
-  CODEINJECTION: 'VULNERABILITY',
-  XSS: 'VULNERABILITY',
-  CROSSSITESCRIPTING: 'VULNERABILITY',
-  CSRF: 'VULNERABILITY',
-  SSRF: 'VULNERABILITY',
-  PATHTRAVERSAL: 'VULNERABILITY',
-  DIRECTORYTRAVERSAL: 'VULNERABILITY',
-  INSECUREDESERIALIZATION: 'VULNERABILITY',
-  BROKENACCESSCONTROL: 'VULNERABILITY',
-  BROKENAUTHENTICATION: 'VULNERABILITY',
-  RACECONDITION: 'VULNERABILITY',
-  BUFFEROVERFLOW: 'VULNERABILITY',
-  DENIALOFSERVICE: 'VULNERABILITY',
-  DOS: 'VULNERABILITY',
+  VULNERABILITY: "VULNERABILITY",
+  VULNERABILITIES: "VULNERABILITY",
+  VULN: "VULNERABILITY",
+  LOGICFLAW: "VULNERABILITY",
+  LOGICERROR: "VULNERABILITY",
+  INJECTION: "VULNERABILITY",
+  SQLINJECTION: "VULNERABILITY",
+  COMMANDINJECTION: "VULNERABILITY",
+  CODEINJECTION: "VULNERABILITY",
+  XSS: "VULNERABILITY",
+  CROSSSITESCRIPTING: "VULNERABILITY",
+  CSRF: "VULNERABILITY",
+  SSRF: "VULNERABILITY",
+  PATHTRAVERSAL: "VULNERABILITY",
+  DIRECTORYTRAVERSAL: "VULNERABILITY",
+  INSECUREDESERIALIZATION: "VULNERABILITY",
+  BROKENACCESSCONTROL: "VULNERABILITY",
+  BROKENAUTHENTICATION: "VULNERABILITY",
+  RACECONDITION: "VULNERABILITY",
+  BUFFEROVERFLOW: "VULNERABILITY",
+  DENIALOFSERVICE: "VULNERABILITY",
+  DOS: "VULNERABILITY",
 
   // ── Misconfigurations ────────────────────────────────────────────────────
-  MISCONFIG: 'MISCONFIG',
-  MISCONFIGS: 'MISCONFIG',
-  MISCONFIGURATION: 'MISCONFIG',
-  POTENTIALMISCONFIG: 'MISCONFIG',
-  SECURITYMISCONFIGURATION: 'MISCONFIG',
-  INSECURECONFIGURATION: 'MISCONFIG',
-  INSECURECONFIG: 'MISCONFIG',
-  CONFIGURATION: 'MISCONFIG',
-  CONFIGURATIONERROR: 'MISCONFIG',
-  WEAKCRYPTOGRAPHY: 'MISCONFIG',
-  WEAKCRYPTO: 'MISCONFIG',
-  INSECURETRANSPORT: 'MISCONFIG',
-  MISSINGSECURITYHEADER: 'MISCONFIG',
-  MISSINGSECURITYHEADERS: 'MISCONFIG',
-  PERMISSIVECORS: 'MISCONFIG',
-  OVERLYPERMISSIVEPERMISSIONS: 'MISCONFIG',
+  MISCONFIG: "MISCONFIG",
+  MISCONFIGS: "MISCONFIG",
+  MISCONFIGURATION: "MISCONFIG",
+  POTENTIALMISCONFIG: "MISCONFIG",
+  SECURITYMISCONFIGURATION: "MISCONFIG",
+  INSECURECONFIGURATION: "MISCONFIG",
+  INSECURECONFIG: "MISCONFIG",
+  CONFIGURATION: "MISCONFIG",
+  CONFIGURATIONERROR: "MISCONFIG",
+  WEAKCRYPTOGRAPHY: "MISCONFIG",
+  WEAKCRYPTO: "MISCONFIG",
+  INSECURETRANSPORT: "MISCONFIG",
+  MISSINGSECURITYHEADER: "MISCONFIG",
+  MISSINGSECURITYHEADERS: "MISCONFIG",
+  PERMISSIVECORS: "MISCONFIG",
+  OVERLYPERMISSIVEPERMISSIONS: "MISCONFIG",
 };
 
 /**
@@ -163,28 +163,28 @@ const TYPE_ALIASES: Readonly<Record<string, FindingCategory>> = {
  */
 const TYPE_KEYWORDS: ReadonlyArray<readonly [FindingCategory, readonly string[]]> = [
   [
-    'SECRET',
-    ['SECRET', 'CREDENTIAL', 'PASSWORD', 'APIKEY', 'TOKEN', 'PRIVATEKEY', 'LEAK', 'DISCLOSURE'],
+    "SECRET",
+    ["SECRET", "CREDENTIAL", "PASSWORD", "APIKEY", "TOKEN", "PRIVATEKEY", "LEAK", "DISCLOSURE"],
   ],
   [
-    'VULNERABILITY',
+    "VULNERABILITY",
     [
-      'VULNERAB',
-      'INJECT',
-      'TRAVERSAL',
-      'OVERFLOW',
-      'SCRIPTING',
-      'DESERIAL',
-      'FORGERY',
-      'RACECONDITION',
-      'PRIVILEGEESCALATION',
-      'EXPLOIT',
-      'FLAW',
+      "VULNERAB",
+      "INJECT",
+      "TRAVERSAL",
+      "OVERFLOW",
+      "SCRIPTING",
+      "DESERIAL",
+      "FORGERY",
+      "RACECONDITION",
+      "PRIVILEGEESCALATION",
+      "EXPLOIT",
+      "FLAW",
     ],
   ],
   [
-    'MISCONFIG',
-    ['MISCONFIG', 'CONFIG', 'HEADER', 'PERMISSION', 'CORS', 'CIPHER', 'CRYPTO', 'HARDENING'],
+    "MISCONFIG",
+    ["MISCONFIG", "CONFIG", "HEADER", "PERMISSION", "CORS", "CIPHER", "CRYPTO", "HARDENING"],
   ],
 ];
 
@@ -196,16 +196,16 @@ const TYPE_KEYWORDS: ReadonlyArray<readonly [FindingCategory, readonly string[]]
  * given".
  */
 function canonicalizeKey(value: unknown): string {
-  if (typeof value !== 'string') return '';
+  if (typeof value !== "string") return "";
   return value
     .trim()
     .toUpperCase()
-    .replace(/[\s_\-/.]+/g, '');
+    .replace(/[\s_\-/.]+/g, "");
 }
 
 /** Narrowing predicate for a value that is already a canonical category. */
 export function isFindingCategory(value: unknown): value is FindingCategory {
-  return typeof value === 'string' && (FINDING_CATEGORIES as readonly string[]).includes(value);
+  return typeof value === "string" && (FINDING_CATEGORIES as readonly string[]).includes(value);
 }
 
 /**
@@ -242,7 +242,7 @@ export function parseFindingType(value: unknown): FindingCategory | null {
  * can be extended from real data.
  */
 export function normalizeFindingType(value: unknown): FindingCategory {
-  return parseFindingType(value) ?? 'OTHER';
+  return parseFindingType(value) ?? "OTHER";
 }
 
 /** The label stored in `Finding.type` for whatever `value` classifies as. */
@@ -262,7 +262,7 @@ export function normalizeFindingTypeLabel(value: unknown): string {
  * {@link findingCategoryFilter} handles that.
  */
 export function findingTypeSpellings(category: FindingCategory): string[] {
-  if (category === 'OTHER') return [];
+  if (category === "OTHER") return [];
 
   const spellings = new Set<string>([FINDING_CATEGORY_LABEL[category]]);
 
@@ -281,7 +281,7 @@ export function findingTypeSpellings(category: FindingCategory): string[] {
  * members, so a query against the column can only name one of these three — and
  * only in this exact casing.
  */
-export const STORED_FINDING_TYPES = ['SECRET', 'VULNERABILITY', 'MISCONFIG'] as const;
+export const STORED_FINDING_TYPES = ["SECRET", "VULNERABILITY", "MISCONFIG"] as const;
 
 export type StoredFindingType = (typeof STORED_FINDING_TYPES)[number];
 
@@ -305,7 +305,7 @@ export type StoredFindingType = (typeof STORED_FINDING_TYPES)[number];
  * the filter stays correct if the enum ever grows a fourth member.
  */
 export function findingCategoryFilter(category: FindingCategory) {
-  if (category === 'OTHER') {
+  if (category === "OTHER") {
     return { notIn: [...STORED_FINDING_TYPES] };
   }
 
@@ -331,46 +331,53 @@ export function severityFilter(level: Severity | StoredSeverity) {
  * Maps arbitrary finding type strings to the valid Prisma FindingType enum values:
  * 'SECRET' | 'VULNERABILITY' | 'MISCONFIG' (#633).
  */
-export function normalizeFindingTypeEnum(value: unknown): 'SECRET' | 'VULNERABILITY' | 'MISCONFIG' {
+export function normalizeFindingTypeEnum(value: unknown): "SECRET" | "VULNERABILITY" | "MISCONFIG" {
   const category = normalizeFindingType(value);
-  if (category === 'SECRET') return 'SECRET';
-  if (category === 'MISCONFIG') return 'MISCONFIG';
-  return 'VULNERABILITY';
+  if (category === "SECRET") return "SECRET";
+  if (category === "MISCONFIG") return "MISCONFIG";
+  return "VULNERABILITY";
 }
 
 /**
  * Normalizes decision strings to the Prisma PolicyDecision enum values:
  * 'PASS' | 'REVIEW' | 'BLOCK' (#633).
  */
-export function normalizePolicyDecisionEnum(decision: unknown): 'PASS' | 'REVIEW' | 'BLOCK' {
-  if (typeof decision !== 'string') return 'REVIEW';
-  const clean = decision.trim().toUpperCase().replace(/[\s_-]+/g, '');
-  if (clean === 'PASS' || clean === 'SUCCESS' || clean === 'APPROVED') return 'PASS';
-  if (clean === 'BLOCK' || clean === 'BLOCKED' || clean === 'FAIL' || clean === 'FAILURE') return 'BLOCK';
-  return 'REVIEW';
+export function normalizePolicyDecisionEnum(decision: unknown): "PASS" | "REVIEW" | "BLOCK" {
+  if (typeof decision !== "string") return "REVIEW";
+  const clean = decision
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  if (clean === "PASS" || clean === "SUCCESS" || clean === "APPROVED") return "PASS";
+  if (clean === "BLOCK" || clean === "BLOCKED" || clean === "FAIL" || clean === "FAILURE")
+    return "BLOCK";
+  return "REVIEW";
 }
 
 /**
  * Normalizes status strings to the Prisma PRStatus enum values:
  * 'PASS' | 'REVIEW_REQUIRED' | 'BLOCKED' (#633).
  */
-export function normalizePrStatusEnum(status: unknown): 'PASS' | 'REVIEW_REQUIRED' | 'BLOCKED' {
-  if (typeof status !== 'string') return 'REVIEW_REQUIRED';
-  const clean = status.trim().toUpperCase().replace(/[\s_-]+/g, '');
-  if (clean === 'PASS' || clean === 'SUCCESS' || clean === 'APPROVED') return 'PASS';
-  if (clean === 'BLOCK' || clean === 'BLOCKED' || clean === 'FAIL' || clean === 'FAILURE') return 'BLOCKED';
-  return 'REVIEW_REQUIRED';
+export function normalizePrStatusEnum(status: unknown): "PASS" | "REVIEW_REQUIRED" | "BLOCKED" {
+  if (typeof status !== "string") return "REVIEW_REQUIRED";
+  const clean = status
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
+  if (clean === "PASS" || clean === "SUCCESS" || clean === "APPROVED") return "PASS";
+  if (clean === "BLOCK" || clean === "BLOCKED" || clean === "FAIL" || clean === "FAILURE")
+    return "BLOCKED";
+  return "REVIEW_REQUIRED";
 }
 
 /**
  * Normalizes state strings to the Prisma PRState enum values:
  * 'OPEN' | 'CLOSED' | 'MERGED' (#633).
  */
-export function normalizePrStateEnum(state: unknown): 'OPEN' | 'CLOSED' | 'MERGED' {
-  if (typeof state !== 'string') return 'OPEN';
+export function normalizePrStateEnum(state: unknown): "OPEN" | "CLOSED" | "MERGED" {
+  if (typeof state !== "string") return "OPEN";
   const clean = state.trim().toUpperCase();
-  if (clean === 'CLOSED') return 'CLOSED';
-  if (clean === 'MERGED') return 'MERGED';
-  return 'OPEN';
+  if (clean === "CLOSED") return "CLOSED";
+  if (clean === "MERGED") return "MERGED";
+  return "OPEN";
 }
-

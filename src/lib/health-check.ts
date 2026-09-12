@@ -69,7 +69,12 @@ async function probeGroq(): Promise<ComponentHealth> {
   const t0 = Date.now();
   const key = process.env.GROQ_API_KEY;
   if (!key || key === "dummy-key-for-build") {
-    return { name: "Groq LLM", status: "degraded", latencyMs: 0, message: "API key not configured" };
+    return {
+      name: "Groq LLM",
+      status: "degraded",
+      latencyMs: 0,
+      message: "API key not configured",
+    };
   }
   try {
     const res = await fetch("https://api.groq.com/openai/v1/models", {
@@ -104,11 +109,7 @@ function aggregateStatus(components: ComponentHealth[]): ComponentStatus {
  * Probes run with individual timeouts so one slow check doesn't block the rest.
  */
 export async function runHealthCheck(): Promise<HealthReport> {
-  const components = await Promise.all([
-    probeDatabase(),
-    probeRedis(),
-    probeGroq(),
-  ]);
+  const components = await Promise.all([probeDatabase(), probeRedis(), probeGroq()]);
 
   return {
     status: aggregateStatus(components),

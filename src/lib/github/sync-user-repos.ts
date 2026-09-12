@@ -43,7 +43,7 @@ export interface SyncUserReposResult {
 export async function syncUserRepositories(
   userId: string,
   githubLogin?: string | null,
-  accessToken?: string | null
+  accessToken?: string | null,
 ): Promise<SyncUserReposResult> {
   if (!userId) {
     return { synced: 0, hasInstallation: false, error: "User ID is required" };
@@ -122,7 +122,7 @@ export async function syncUserRepositories(
       });
       const targetAppId = Number(appId);
       const matched = installationsRes.data.installations.find(
-        (inst: any) => inst.app_id === targetAppId
+        (inst: any) => inst.app_id === targetAppId,
       );
       if (matched?.id) {
         installationId = matched.id;
@@ -147,7 +147,7 @@ export async function syncUserRepositories(
       installationOctokit.rest.apps.listReposAccessibleToInstallation,
       {
         per_page: 100,
-      }
+      },
     );
 
     if (!repositories || repositories.length === 0) {
@@ -182,7 +182,7 @@ export async function syncUserRepositories(
 
     if (foreign.length > 0) {
       console.warn(
-        `[RepoSync] ${foreign.length} repositories are already tracked by another user and were not claimed`
+        `[RepoSync] ${foreign.length} repositories are already tracked by another user and were not claimed`,
       );
     }
 
@@ -215,8 +215,8 @@ export async function syncUserRepositories(
               userId: userId,
               isActive: true,
             },
-          })
-        )
+          }),
+        ),
       );
 
       settled.forEach((outcome, index) => {
@@ -226,7 +226,7 @@ export async function syncUserRepositories(
           failures.push(batch[index]);
           console.error(
             `[RepoSync] Failed to sync ${batch[index].fullName}:`,
-            (outcome.reason as Error)?.message
+            (outcome.reason as Error)?.message,
           );
         }
       });

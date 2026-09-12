@@ -331,8 +331,8 @@ export default function AuditLogTable({
                           log.decision === "BLOCK"
                             ? "destructive"
                             : log.decision === "PASS"
-                            ? "default"
-                            : "secondary"
+                              ? "default"
+                              : "secondary"
                         }
                         className="text-[10px] tracking-widest px-1.5"
                       >
@@ -381,11 +381,15 @@ export default function AuditLogTable({
                                     Audit Clearance Passed
                                   </span>
                                 </div>
-                                <h4 className="font-bold text-sm text-foreground truncate" title={log.resource || "SecureFlow"}>
+                                <h4
+                                  className="font-bold text-sm text-foreground truncate"
+                                  title={log.resource || "SecureFlow"}
+                                >
                                   {log.resource || "SecureFlow"}
                                 </h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                  The vault is secured with maximum score clearance. Broadcast this achievement to the Resistance network.
+                                  The vault is secured with maximum score clearance. Broadcast this
+                                  achievement to the Resistance network.
                                 </p>
                               </div>
 
@@ -397,7 +401,8 @@ export default function AuditLogTable({
                                   onClick={() => {
                                     toast({
                                       title: "BROADCAST TRANSMISSION DISPATCHED 📢",
-                                      description: "Publishing victory briefing to the Resistance network.",
+                                      description:
+                                        "Publishing victory briefing to the Resistance network.",
                                       variant: "success",
                                     });
                                   }}
@@ -412,7 +417,8 @@ export default function AuditLogTable({
                                   onClick={() => {
                                     toast({
                                       title: "TRANSMISSION LINK READY 🔗",
-                                      description: "Opening encrypted public heist transmission channel.",
+                                      description:
+                                        "Opening encrypted public heist transmission channel.",
                                       variant: "success",
                                     });
                                   }}

@@ -1,6 +1,6 @@
-import Redis from 'ioredis';
+import Redis from "ioredis";
 
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
 const redisOptions = {
   maxRetriesPerRequest: null,
@@ -10,19 +10,19 @@ const redisOptions = {
 // Use a singleton pattern to avoid multiple connections in Next.js development
 const globalForRedis = global as unknown as { redis: any };
 
-export const redis = globalForRedis.redis || (
-  process.env.NEXT_PUBLIC_MOCK_DB === 'true'
-    ? {
+export const redis =
+  globalForRedis.redis ||
+  (process.env.NEXT_PUBLIC_MOCK_DB === "true"
+    ? ({
         on: () => {},
-        info: async () => 'redis_version:6.2.6',
+        info: async () => "redis_version:6.2.6",
         get: async () => null,
-        set: async () => 'OK',
+        set: async () => "OK",
         del: async () => 1,
-      } as any
-    : new Redis(redisUrl, redisOptions)
-);
+      } as any)
+    : new Redis(redisUrl, redisOptions));
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   globalForRedis.redis = redis;
 }
 
@@ -30,11 +30,11 @@ if (process.env.NODE_ENV !== 'production') {
  * Gracefully close Queue Redis connection if active.
  */
 export async function closeQueueRedis(): Promise<void> {
-  if (redis && typeof redis.quit === 'function') {
+  if (redis && typeof redis.quit === "function") {
     try {
       await redis.quit();
     } catch {
-      if (typeof redis.disconnect === 'function') {
+      if (typeof redis.disconnect === "function") {
         redis.disconnect();
       }
     }

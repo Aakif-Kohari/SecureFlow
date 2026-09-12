@@ -1,25 +1,25 @@
 "use client";
 
 import React, { useState, useTransition, useOptimistic } from "react";
-import { 
-  requeueDLQJob, 
-  deleteDLQJob, 
-  clearAllDLQ, 
+import {
+  requeueDLQJob,
+  deleteDLQJob,
+  clearAllDLQ,
   requeueAllDLQ,
   requeueBulkDLQJobs,
-  deleteBulkDLQJobs
+  deleteBulkDLQJobs,
 } from "@/lib/actions/queue";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Play, 
-  Trash2, 
-  RefreshCw, 
-  Trash, 
-  AlertCircle, 
-  ChevronDown, 
-  ChevronUp, 
-  Loader2, 
-  Search 
+import {
+  Play,
+  Trash2,
+  RefreshCw,
+  Trash,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { BulkDlqResult } from "@/lib/queue/dlq";
@@ -79,7 +79,7 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
         default:
           return currentJobs;
       }
-    }
+    },
   );
 
   // Local loading states for individual job actions
@@ -107,8 +107,10 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
   const currentJobs = filteredJobs.slice(startIndex, startIndex + itemsPerPage);
 
   const currentJobIds = currentJobs.map((j) => j.id);
-  const isAllCurrentSelected = currentJobIds.length > 0 && currentJobIds.every((id) => selectedJobIds.includes(id));
-  const isSomeCurrentSelected = currentJobIds.some((id) => selectedJobIds.includes(id)) && !isAllCurrentSelected;
+  const isAllCurrentSelected =
+    currentJobIds.length > 0 && currentJobIds.every((id) => selectedJobIds.includes(id));
+  const isSomeCurrentSelected =
+    currentJobIds.some((id) => selectedJobIds.includes(id)) && !isAllCurrentSelected;
 
   const handleSelectAllToggle = () => {
     if (isAllCurrentSelected) {
@@ -120,7 +122,7 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
 
   const handleJobSelectToggle = (jobId: string) => {
     setSelectedJobIds((prev) =>
-      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]
+      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId],
     );
   };
 
@@ -337,7 +339,11 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
                 disabled={isPending}
                 className="flex items-center gap-1 px-2.5 py-1 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 rounded font-bold transition-colors disabled:opacity-50"
               >
-                {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
                 Retry Selected
               </button>
               <button
@@ -345,7 +351,11 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
                 disabled={isPending}
                 className="flex items-center gap-1 px-2.5 py-1 bg-destructive/20 hover:bg-destructive/30 text-destructive border border-destructive/40 rounded font-bold transition-colors disabled:opacity-50"
               >
-                {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
                 Delete Selected
               </button>
               <button
@@ -391,7 +401,9 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
               <tr>
                 <th className="w-10 px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
-                    checked={isAllCurrentSelected ? true : isSomeCurrentSelected ? "indeterminate" : false}
+                    checked={
+                      isAllCurrentSelected ? true : isSomeCurrentSelected ? "indeterminate" : false
+                    }
                     onCheckedChange={handleSelectAllToggle}
                     aria-label="Select all jobs on page"
                   />
@@ -415,7 +427,10 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
 
                   return (
                     <React.Fragment key={job.id}>
-                      <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${isSelected ? "bg-white/[0.03]" : ""}`} onClick={() => toggleExpand(job.id)}>
+                      <tr
+                        className={`border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer ${isSelected ? "bg-white/[0.03]" : ""}`}
+                        onClick={() => toggleExpand(job.id)}
+                      >
                         <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={isSelected}
@@ -443,7 +458,9 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-xs font-mono">
-                          {job.data?.failedAt ? new Date(job.data.failedAt).toLocaleString() : "Unknown"}
+                          {job.data?.failedAt
+                            ? new Date(job.data.failedAt).toLocaleString()
+                            : "Unknown"}
                         </td>
                         <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex gap-2 justify-end">
@@ -512,7 +529,9 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-8 h-8 text-zinc-600" />
                       <span className="text-sm font-medium">No failed jobs in the DLQ.</span>
-                      <span className="text-xs text-zinc-600">The Resistance is operating smoothly.</span>
+                      <span className="text-xs text-zinc-600">
+                        The Resistance is operating smoothly.
+                      </span>
                     </div>
                   </td>
                 </tr>
@@ -524,7 +543,8 @@ export default function DLQTable({ initialJobs }: DLQTableProps) {
         {totalItems > itemsPerPage && (
           <div className="p-4 border-t border-white/5 flex justify-between items-center text-sm">
             <span>
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} results
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of{" "}
+              {totalItems} results
             </span>
             <div className="space-x-2">
               <button

@@ -16,7 +16,7 @@ describe("Tabs component", () => {
         </TabsList>
         <TabsContent value="tab1">Overview Content</TabsContent>
         <TabsContent value="tab2">Findings Content</TabsContent>
-      </Tabs>
+      </Tabs>,
     );
 
     expect(screen.getByRole("tab", { name: /overview/i })).toBeInTheDocument();
@@ -33,7 +33,7 @@ describe("Tabs component", () => {
         </TabsList>
         <TabsContent value="tab1">Overview Content</TabsContent>
         <TabsContent value="tab2">Findings Content</TabsContent>
-      </Tabs>
+      </Tabs>,
     );
 
     expect(screen.getByText("Findings Content")).toBeInTheDocument();
@@ -43,10 +43,14 @@ describe("Tabs component", () => {
     const { container } = render(
       <Tabs defaultValue="tab1" className="custom-tabs">
         <TabsList className="custom-list">
-          <TabsTrigger value="tab1" className="custom-trigger">Tab 1</TabsTrigger>
+          <TabsTrigger value="tab1" className="custom-trigger">
+            Tab 1
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="tab1" className="custom-content">Content 1</TabsContent>
-      </Tabs>
+        <TabsContent value="tab1" className="custom-content">
+          Content 1
+        </TabsContent>
+      </Tabs>,
     );
 
     expect(container.querySelector(".custom-tabs")).toBeInTheDocument();

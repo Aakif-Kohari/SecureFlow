@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
 export class HashChain {
   /**
@@ -8,16 +8,16 @@ export class HashChain {
     previousHash: string,
     timestamp: Date,
     action: string,
-    payloadString: string
+    payloadString: string,
   ): string {
     const data = `${previousHash}|${timestamp.toISOString()}|${action}|${payloadString}`;
-    return crypto.createHash('sha256').update(data).digest('hex');
+    return crypto.createHash("sha256").update(data).digest("hex");
   }
 
   /**
    * Genesis hash for the start of the ledger.
    */
   static getGenesisHash(): string {
-    return crypto.createHash('sha256').update('SECUREFLOW_GENESIS').digest('hex');
+    return crypto.createHash("sha256").update("SECUREFLOW_GENESIS").digest("hex");
   }
 }

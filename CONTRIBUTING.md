@@ -1,4 +1,3 @@
-
 # 🤝 Contributing to SecureFlow
 
 <div align="center">
@@ -92,14 +91,14 @@ Before diving in, please ensure you're familiar with our core stack:
 
 Please follow these naming conventions for your branches:
 
-| Branch Type | Naming Format | Example |
-|-------------|---------------|---------|
-| **Feature** | `feature/your-feature-name` | `feature/add-policy-engine` |
-| **Bug Fix** | `fix/issue-name` | `fix/webhook-timeout` |
-| **Documentation** | `docs/documentation-update` | `docs/update-readme` |
-| **Refactoring** | `refactor/component-name` | `refactor/dashboard-ui` |
-| **Hotfix** | `hotfix/urgent-fix` | `hotfix/auth-bypass` |
-| **Chore** | `chore/task-name` | `chore/update-dependencies` |
+| Branch Type       | Naming Format               | Example                     |
+| ----------------- | --------------------------- | --------------------------- |
+| **Feature**       | `feature/your-feature-name` | `feature/add-policy-engine` |
+| **Bug Fix**       | `fix/issue-name`            | `fix/webhook-timeout`       |
+| **Documentation** | `docs/documentation-update` | `docs/update-readme`        |
+| **Refactoring**   | `refactor/component-name`   | `refactor/dashboard-ui`     |
+| **Hotfix**        | `hotfix/urgent-fix`         | `hotfix/auth-bypass`        |
+| **Chore**         | `chore/task-name`           | `chore/update-dependencies` |
 
 > ⚠️ **Important**: Always branch from `main` and never commit directly to `main`.
 
@@ -111,18 +110,18 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) for consiste
 
 ### Commit Types
 
-| Type | Description | Example |
-|------|-------------|---------|
-| `feat` | New feature | `feat: add GitHub webhook authentication` |
-| `fix` | Bug fix | `fix: resolve PR scanning timeout issue` |
-| `docs` | Documentation changes | `docs: update API documentation` |
-| `style` | Code style (formatting, whitespace) | `style: format code with Prettier` |
-| `refactor` | Code refactoring | `refactor: optimize database queries` |
-| `test` | Adding or fixing tests | `test: add unit tests for scanner` |
-| `chore` | Build, tooling, dependencies | `chore: update Prisma to v5.0` |
-| `perf` | Performance improvements | `perf: improve LLM response time` |
-| `ci` | CI/CD changes | `ci: update GitHub Actions workflow` |
-| `security` | Security fixes | `security: fix vulnerability in auth` |
+| Type       | Description                         | Example                                   |
+| ---------- | ----------------------------------- | ----------------------------------------- |
+| `feat`     | New feature                         | `feat: add GitHub webhook authentication` |
+| `fix`      | Bug fix                             | `fix: resolve PR scanning timeout issue`  |
+| `docs`     | Documentation changes               | `docs: update API documentation`          |
+| `style`    | Code style (formatting, whitespace) | `style: format code with Prettier`        |
+| `refactor` | Code refactoring                    | `refactor: optimize database queries`     |
+| `test`     | Adding or fixing tests              | `test: add unit tests for scanner`        |
+| `chore`    | Build, tooling, dependencies        | `chore: update Prisma to v5.0`            |
+| `perf`     | Performance improvements            | `perf: improve LLM response time`         |
+| `ci`       | CI/CD changes                       | `ci: update GitHub Actions workflow`      |
+| `security` | Security fixes                      | `security: fix vulnerability in auth`     |
 
 ### Commit Examples
 
@@ -255,9 +254,11 @@ Open [http://localhost:9002](http://localhost:9002) with your browser to see the
 
 ```markdown
 ## Description
+
 <!-- Briefly describe what you've changed and why -->
 
 ## Type of Change
+
 - [ ] New feature
 - [ ] Bug fix
 - [ ] Documentation update
@@ -265,22 +266,28 @@ Open [http://localhost:9002](http://localhost:9002) with your browser to see the
 - [ ] Performance improvement
 
 ## Screenshots (if applicable)
+
 <!-- Add before/after screenshots or recordings -->
 
 ## Testing
+
 <!-- Describe how you've tested these changes -->
 
 ## Related Issues
+
 <!-- Link to related issues using #issue-number -->
+
 Closes #XXX
 
 ## Checklist
+
 - [ ] My code follows the project's style guidelines
 - [ ] I have performed a self-review of my code
 - [ ] I have added tests that prove my fix/feature works
 - [ ] My commits follow the Conventional Commits format
 
 ## Additional Notes
+
 <!-- Any additional information that might be helpful for reviewers -->
 ```
 
@@ -300,7 +307,7 @@ Closes #XXX
 interface SecurityFinding {
   id: string;
   type: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   file: string;
   line: number;
   description: string;
@@ -371,14 +378,14 @@ In the summary, mention new features, Prisma migration folder names, and AI flow
 
 ```typescript
 // Example unit test
-import { scanForSecrets } from '@/lib/armor/scanner';
+import { scanForSecrets } from "@/lib/armor/scanner";
 
-describe('scanForSecrets', () => {
-  it('should detect hardcoded API keys', () => {
+describe("scanForSecrets", () => {
+  it("should detect hardcoded API keys", () => {
     const code = 'const apiKey = "sk-1234567890";';
     const findings = scanForSecrets(code);
     expect(findings).toHaveLength(1);
-    expect(findings[0].type).toBe('HARDCODED_SECRET');
+    expect(findings[0].type).toBe("HARDCODED_SECRET");
   });
 });
 ```
@@ -444,6 +451,7 @@ Yes! All new features and bug fixes should include appropriate tests. This ensur
 
 **How do I get help if I'm stuck?**  
 You can:
+
 - Join our community chat
 - Comment on the issue/PR
 - Send a message to the maintainers

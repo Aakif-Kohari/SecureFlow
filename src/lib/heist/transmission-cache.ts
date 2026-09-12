@@ -59,10 +59,10 @@ export interface TransmissionKeyParts {
 export function transmissionKey(parts: TransmissionKeyParts): string {
   return [
     parts.projectName.toLowerCase(),
-    parts.score ?? '',
-    (parts.rank ?? '').toUpperCase(),
-    parts.findingsCount ?? '',
-  ].join('\0');
+    parts.score ?? "",
+    (parts.rank ?? "").toUpperCase(),
+    parts.findingsCount ?? "",
+  ].join("\0");
 }
 
 export class TransmissionCache {

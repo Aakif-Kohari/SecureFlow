@@ -35,9 +35,9 @@ describe("generateDateRange", () => {
   it("ends with today's date", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-12T12:00:00Z"));
-    
+
     const range = generateDateRange(1);
-    
+
     // Depending on whether the dashboard shows "today" or "completed days only" (yesterday),
     // the function will return either the 12th or the 11th based on our frozen time.
     expect(["2026-09-12", "2026-09-11"]).toContain(range[range.length - 1]);

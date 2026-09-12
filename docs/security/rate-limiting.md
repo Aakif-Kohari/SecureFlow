@@ -2,10 +2,10 @@
 
 SecureFlow limits API traffic in two places, and they now agree with each other.
 
-| Layer | Where | Applies to |
-| --- | --- | --- |
-| Middleware | `src/proxy.ts` | every `/api` request, before routing |
-| Route handler | `withRateLimit` in `src/lib/middleware/rate-limit.ts` | the routes that opt in |
+| Layer         | Where                                                 | Applies to                           |
+| ------------- | ----------------------------------------------------- | ------------------------------------ |
+| Middleware    | `src/proxy.ts`                                        | every `/api` request, before routing |
+| Route handler | `withRateLimit` in `src/lib/middleware/rate-limit.ts` | the routes that opt in               |
 
 The middleware layer is the one that fires for essentially every request, so its
 policy is what most callers actually experience.
@@ -16,12 +16,12 @@ policy is what most callers actually experience.
 a pure function of the path, so it is testable without a request, a Redis or a
 session.
 
-| Class | Paths | Budget | Redis prefix |
-| --- | --- | --- | --- |
-| `exempt` | `/api/webhooks/**`, `/api/health`, `/api/ready`, anything outside `/api` | — | — |
-| `auth` | `/api/auth/**` | 60 / 60s | `api:auth` |
-| `stream` | `/api/heist-transmission`, `/api/og/heist`, `**/explain-stream` | 20 / 60s | `api:stream` |
-| `standard` | everything else under `/api` | 20 / 60s | `api:standard` |
+| Class      | Paths                                                                    | Budget   | Redis prefix   |
+| ---------- | ------------------------------------------------------------------------ | -------- | -------------- |
+| `exempt`   | `/api/webhooks/**`, `/api/health`, `/api/ready`, anything outside `/api` | —        | —              |
+| `auth`     | `/api/auth/**`                                                           | 60 / 60s | `api:auth`     |
+| `stream`   | `/api/heist-transmission`, `/api/og/heist`, `**/explain-stream`          | 20 / 60s | `api:stream`   |
+| `standard` | everything else under `/api`                                             | 20 / 60s | `api:standard` |
 
 Each class gets its own Upstash limiter with its own key prefix. Sharing a
 prefix would put the classes back into one bucket, which is the thing the
@@ -58,7 +58,7 @@ opposite of what a probe is for.
 `/api/auth/session` is polled by the client and `/api/auth/callback/github` is
 the OAuth return leg. On a shared egress IP — an office, a university lab, a
 corporate VPN, which is exactly where a team of reviewers sits — twenty requests
-a minute across *all* users behind that NAT is not much.
+a minute across _all_ users behind that NAT is not much.
 
 When the limit trips mid-callback, the user receives a JSON `429` body where the
 OAuth redirect should have been. That reads as "login is broken", not "you are

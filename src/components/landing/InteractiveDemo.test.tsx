@@ -21,14 +21,7 @@ vi.mock("react-countup", () => {
 
 describe("InteractiveDemo Component (#632)", () => {
   it("renders with custom numerical metrics correctly", () => {
-    render(
-      <InteractiveDemo
-        prsCount={1500}
-        secretsCount={88}
-        reposCount={34}
-        scanAverage={1.2}
-      />
-    );
+    render(<InteractiveDemo prsCount={1500} secretsCount={88} reposCount={34} scanAverage={1.2} />);
 
     expect(screen.getByText("PRs Protected")).toBeInTheDocument();
     expect(screen.getByText("Secrets Blocked")).toBeInTheDocument();

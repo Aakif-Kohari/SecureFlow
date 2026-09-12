@@ -16,13 +16,13 @@
  *   WEBHOOK_SECRET - Shared HMAC secret for signature verification.
  */
 
-import { withRateLimit } from '@/lib/middleware/rate-limit';
-import { createInboundWebhookHandler } from '@/lib/webhooks/inbound-handler';
+import { withRateLimit } from "@/lib/middleware/rate-limit";
+import { createInboundWebhookHandler } from "@/lib/webhooks/inbound-handler";
 
 const handler = createInboundWebhookHandler({
   readSecret: () => process.env.WEBHOOK_SECRET,
-  secretEnvVar: 'WEBHOOK_SECRET',
-  logComponent: 'webhook-default',
+  secretEnvVar: "WEBHOOK_SECRET",
+  logComponent: "webhook-default",
 });
 
 export const POST = withRateLimit(handler, {
@@ -32,7 +32,7 @@ export const POST = withRateLimit(handler, {
   // `webhook:generic`, and `withRateLimit` keys on
   // `rate-limit:${keyPrefix}:${ip}` -- so traffic to either endpoint spent the
   // other's budget (#720).
-  keyPrefix: 'webhook:default',
+  keyPrefix: "webhook:default",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";

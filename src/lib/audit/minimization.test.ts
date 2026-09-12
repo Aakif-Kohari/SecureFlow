@@ -222,15 +222,15 @@ describe("sanitizeAuditLogInput", () => {
     expect(result.action).toBe("ADMIN_ROLE_UPDATE");
   });
 
-  it('masks email addresses embedded in resource strings', () => {
+  it("masks email addresses embedded in resource strings", () => {
     const result = sanitizeAuditLogInput({
-      action: 'ADMIN_USER_DELETE',
-      resource: 'user:admin@secureflow.test',
+      action: "ADMIN_USER_DELETE",
+      resource: "user:admin@secureflow.test",
     });
-    expect(result.resource).not.toContain('admin@secureflow.test');
+    expect(result.resource).not.toContain("admin@secureflow.test");
     // The regex captures "user:admin" as the local-part, so maskEmail produces
     // first char "u" + "***" + last char "n" → "u***n@secureflow.test".
-    expect(result.resource).toContain('u***n@secureflow.test');
+    expect(result.resource).toContain("u***n@secureflow.test");
   });
 
   it("sanitises the metadata object", () => {

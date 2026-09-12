@@ -107,15 +107,17 @@ describe("FindingsClient Component (#633)", () => {
 
   it("renders empty state when findings array is empty", () => {
     render(
-      <FindingsClient 
-        {...defaultProps} 
-        findings={[]} 
-        total={0} 
-        stats={{ ...mockStats, criticalSecrets: 0, vulnerabilities: 0, misconfigs: 0 }} 
-      />
+      <FindingsClient
+        {...defaultProps}
+        findings={[]}
+        total={0}
+        stats={{ ...mockStats, criticalSecrets: 0, vulnerabilities: 0, misconfigs: 0 }}
+      />,
     );
 
     expect(screen.getByText("No Security Findings")).toBeInTheDocument();
-    expect(screen.getByText("Great news! Your repositories are currently secure.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Great news! Your repositories are currently secure."),
+    ).toBeInTheDocument();
   });
 });

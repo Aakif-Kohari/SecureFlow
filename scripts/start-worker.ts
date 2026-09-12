@@ -1,11 +1,8 @@
-import { worker } from '../src/lib/queue/worker';
-import { outboundWorker } from '../src/lib/queue/outboundWorker';
-import { scanWorkerPool } from '../src/lib/queue/workerPool';
-import { setupWorkerSignalHandlers } from '../src/lib/queue/shutdown';
-import {
-  describeWorkerStartup,
-  planWorkerStartup,
-} from '../src/lib/queue/scan-worker-bootstrap';
+import { worker } from "../src/lib/queue/worker";
+import { outboundWorker } from "../src/lib/queue/outboundWorker";
+import { scanWorkerPool } from "../src/lib/queue/workerPool";
+import { setupWorkerSignalHandlers } from "../src/lib/queue/shutdown";
+import { describeWorkerStartup, planWorkerStartup } from "../src/lib/queue/scan-worker-bootstrap";
 import express from "express";
 
 const app = express();
@@ -14,20 +11,20 @@ const app = express();
 // here with a message rather than reaching BullMQ as NaN.
 const plan = planWorkerStartup();
 
-worker.on('ready', () => {
-  console.log('🚀 BullMQ Worker (Inbound) successfully initialized and waiting for jobs...');
+worker.on("ready", () => {
+  console.log("🚀 BullMQ Worker (Inbound) successfully initialized and waiting for jobs...");
 });
 
-worker.on('error', (err) => {
-  console.error('❌ BullMQ Worker (Inbound) Error:', err);
+worker.on("error", (err) => {
+  console.error("❌ BullMQ Worker (Inbound) Error:", err);
 });
 
-outboundWorker.on('ready', () => {
-  console.log('🚀 BullMQ Worker (Outbound) successfully initialized and waiting for jobs...');
+outboundWorker.on("ready", () => {
+  console.log("🚀 BullMQ Worker (Outbound) successfully initialized and waiting for jobs...");
 });
 
-outboundWorker.on('error', (err) => {
-  console.error('❌ BullMQ Worker (Outbound) Error:', err);
+outboundWorker.on("error", (err) => {
+  console.error("❌ BullMQ Worker (Outbound) Error:", err);
 });
 
 // The `vulnerability-scans` queue had a producer — `POST /api/findings` via
@@ -35,9 +32,7 @@ outboundWorker.on('error', (err) => {
 // its ScanJob row stayed PENDING forever (#750).
 if (plan.scanWorkerEnabled) {
   scanWorkerPool.start();
-  console.log(
-    `🚀 BullMQ Worker (Scans) started with concurrency=${plan.scanConcurrency}`
-  );
+  console.log(`🚀 BullMQ Worker (Scans) started with concurrency=${plan.scanConcurrency}`);
 }
 
 const server = app.listen(3000, () => {

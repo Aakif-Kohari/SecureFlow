@@ -10,10 +10,10 @@
  *   const status = await getScanJobStatus(job.id);
  */
 
-import { Queue, Job } from 'bullmq';
-import { redis } from './redis';
-import prisma from '@/lib/prisma';
-import type { ScanJobStatus } from '@prisma/client';
+import { Queue, Job } from "bullmq";
+import { redis } from "./redis";
+import prisma from "@/lib/prisma";
+import type { ScanJobStatus } from "@prisma/client";
 
 // --- Job data types ---
 
@@ -44,19 +44,19 @@ export interface ScanJobData {
 
 // --- Queue setup ---
 
-const SCAN_QUEUE_NAME = 'vulnerability-scans';
-const SCAN_DLQ_NAME = 'vulnerability-scans-dlq';
+const SCAN_QUEUE_NAME = "vulnerability-scans";
+const SCAN_DLQ_NAME = "vulnerability-scans-dlq";
 
 export const scanQueue = new Queue<ScanJobData>(SCAN_QUEUE_NAME, {
   connection: redis as any,
   defaultJobOptions: {
     attempts: 2,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 10_000,
     },
     removeOnComplete: { age: 86_400 }, // 24 hours
-    removeOnFail: { age: 172_800 },   // 48 hours
+    removeOnFail: { age: 172_800 }, // 48 hours
   },
 });
 
@@ -78,13 +78,13 @@ export interface EnqueueScanOptions {
  */
 export async function enqueueScan(
   data: ScanJobData,
-  options: EnqueueScanOptions = {}
+  options: EnqueueScanOptions = {},
 ): Promise<{ jobId: string; scanJobId: string }> {
   // Create the persistent scan job record
   const scanJob = await prisma.scanJob.create({
     data: {
       repositoryId: data.repositoryId || null,
-      status: 'PENDING',
+      status: "PENDING",
       totalFiles: data.fileChanges.length,
       scannedFiles: 0,
       vulnerabilitiesFound: 0,
@@ -93,14 +93,16 @@ export async function enqueueScan(
 
   const jobId = options.jobId ?? `scan-${scanJob.id}`;
 
-  await scanQueue.add('scan-repository', data, {
+  await scanQueue.add("scan-repository", data, {
     jobId,
     priority: 1, // Normal priority
     attempts: 2,
-    backoff: { type: 'exponential', delay: 10_000 },
+    backoff: { type: "exponential", delay: 10_000 },
   });
 
-  console.log(`[ScanQueue] Enqueued scan job ${jobId} for ${data.repositoryFullName}#${data.prNumber}`);
+  console.log(
+    `[ScanQueue] Enqueued scan job ${jobId} for ${data.repositoryFullName}#${data.prNumber}`,
+  );
 
   return { jobId, scanJobId: scanJob.id };
 }
@@ -126,18 +128,14 @@ export interface ScanJobStatusInfo {
 /**
  * Get the status of a scan job from the database.
  */
-export async function getScanJobStatus(
-  scanJobId: string
-): Promise<ScanJobStatusInfo | null> {
+export async function getScanJobStatus(scanJobId: string): Promise<ScanJobStatusInfo | null> {
   const job = await prisma.scanJob.findUnique({
     where: { id: scanJobId },
   });
 
   if (!job) return null;
 
-  const progress = job.totalFiles > 0
-    ? Math.round((job.scannedFiles / job.totalFiles) * 100)
-    : 0;
+  const progress = job.totalFiles > 0 ? Math.round((job.scannedFiles / job.totalFiles) * 100) : 0;
 
   return {
     scanJobId: job.id,
@@ -169,10 +167,10 @@ export async function updateScanJobProgress(
     // The Prisma `PolicyDecision` members, not the scanner's phrasing. Typed as
     // `string` this accepted `'REVIEW REQUIRED'`, which Postgres then rejected
     // and the caller's `catch` turned into a FAILED job (#747).
-    policyDecision?: 'PASS' | 'REVIEW' | 'BLOCK';
+    policyDecision?: "PASS" | "REVIEW" | "BLOCK";
     startedAt?: Date;
     completedAt?: Date;
-  }
+  },
 ): Promise<void> {
   await prisma.scanJob.update({
     where: { id: scanJobId },

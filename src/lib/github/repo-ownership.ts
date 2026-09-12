@@ -46,18 +46,18 @@ export interface OwnershipRow {
 export function normalizeRepo(repo: GithubRepoSummary | null | undefined): NormalizedRepo | null {
   if (!repo) return null;
 
-  const fullName = typeof repo.full_name === 'string' ? repo.full_name.trim() : '';
-  if (!fullName || !fullName.includes('/')) return null;
+  const fullName = typeof repo.full_name === "string" ? repo.full_name.trim() : "";
+  if (!fullName || !fullName.includes("/")) return null;
 
   let githubId: bigint;
   try {
-    if (repo.id === null || repo.id === undefined || repo.id === '') return null;
+    if (repo.id === null || repo.id === undefined || repo.id === "") return null;
     githubId = BigInt(repo.id);
   } catch {
     return null;
   }
 
-  const owner = repo.owner?.login?.trim() || fullName.split('/')[0];
+  const owner = repo.owner?.login?.trim() || fullName.split("/")[0];
   if (!owner) return null;
 
   return { githubId, fullName, owner };
@@ -100,7 +100,7 @@ export interface RepoPartition {
 export function partitionByOwnership(
   repos: NormalizedRepo[],
   existing: OwnershipRow[],
-  userId: string
+  userId: string,
 ): RepoPartition {
   // Keyed by string: two `bigint`s of equal value are not the same Map key
   // unless they are compared by value, which `Map` does not do for objects but
@@ -139,7 +139,7 @@ export const REPO_SYNC_CONCURRENCY = 10;
 
 /** Split `items` into consecutive groups of at most `size`. */
 export function chunk<T>(items: T[], size: number): T[][] {
-  if (size < 1) throw new RangeError('chunk size must be at least 1');
+  if (size < 1) throw new RangeError("chunk size must be at least 1");
 
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -159,7 +159,7 @@ export function chunk<T>(items: T[], size: number): T[][] {
  * `/admin/logs`. The count was already in `metadata.count` directly below.
  */
 export function syncAuditResource(count: number, installationId: number | null): string {
-  const scope = installationId === null ? 'unknown' : String(installationId);
+  const scope = installationId === null ? "unknown" : String(installationId);
   return `installation:${scope}:${count}`;
 }
 

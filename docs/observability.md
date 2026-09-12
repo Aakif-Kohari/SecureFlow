@@ -8,10 +8,10 @@ works in one of those and not the others is worse than `console`.
 ## Using it
 
 ```ts
-import { logger } from '@/lib/logger';
+import { logger } from "@/lib/logger";
 
-logger.info('Scan complete', { repository: repo.fullName, findings: findings.length });
-logger.error('Scan failed', { error, deliveryId });
+logger.info("Scan complete", { repository: repo.fullName, findings: findings.length });
+logger.error("Scan failed", { error, deliveryId });
 ```
 
 ### Correlation
@@ -22,27 +22,27 @@ and every record from that chain carries it:
 
 ```ts
 const log = logger.child({ deliveryId });
-log.info('Processing delivery');   // → { ..., "deliveryId": "72d3162e-…" }
+log.info("Processing delivery"); // → { ..., "deliveryId": "72d3162e-…" }
 ```
 
 Child contexts merge and never leak back to the parent.
 
 ## Levels
 
-| Level | Use |
-| --- | --- |
+| Level   | Use                                                                      |
+| ------- | ------------------------------------------------------------------------ |
 | `debug` | Query shapes, cache hits, per-file scanner decisions. Off in production. |
-| `info` | Lifecycle events worth keeping: delivery queued, scan complete. |
-| `warn` | Degraded but handled: rate-limit fallback, AI timeout with a retry. |
-| `error` | Something failed and a human may need to act. |
+| `info`  | Lifecycle events worth keeping: delivery queued, scan complete.          |
+| `warn`  | Degraded but handled: rate-limit fallback, AI timeout with a retry.      |
+| `error` | Something failed and a human may need to act.                            |
 
 `LOG_LEVEL` sets the threshold. Defaults:
 
-| Environment | Default |
-| --- | --- |
-| `NODE_ENV=development` | `debug` |
+| Environment                     | Default |
+| ------------------------------- | ------- |
+| `NODE_ENV=development`          | `debug` |
 | `VITEST=true` / `NODE_ENV=test` | `error` |
-| anything else | `info` |
+| anything else                   | `info`  |
 
 Under test the threshold is `error` rather than `silent`: quiet enough that
 `vitest run` is not interleaved with worker and scanner chatter, but a test that
@@ -79,7 +79,7 @@ friends are replaced wholesale; values are run through `scrubCredentials()` from
 `src/lib/redaction.ts`, which catches connection strings and `KEY=value` pairs
 that appear in free text.
 
-Note the asymmetry with client-facing errors: `scrubSensitiveData()` *also*
+Note the asymmetry with client-facing errors: `scrubSensitiveData()` _also_
 strips filesystem paths, which is right for a message shown to a caller but
 wrong here — in a scanner log, `src/lib/armor/scanner.ts` is the single most
 useful field in the record. The logger applies only the credential pass.
@@ -96,4 +96,4 @@ logger is the thing that crashes.
 - Don't log a whole webhook payload or an AI response body. Log the identifiers
   and the counts.
 - Don't pre-format metadata into the message string. `logger.info('scan done',
-  { repo })` is queryable; `logger.info(\`scan done for ${repo}\`)` is not.
+{ repo })` is queryable; `logger.info(\`scan done for ${repo}\`)` is not.

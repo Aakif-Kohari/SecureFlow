@@ -12,7 +12,7 @@ describe("Alert component", () => {
       <Alert>
         <AlertTitle>Security Warning</AlertTitle>
         <AlertDescription>Secret leaked in commit.</AlertDescription>
-      </Alert>
+      </Alert>,
     );
 
     expect(screen.getByRole("alert")).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe("Alert component", () => {
     render(
       <Alert>
         <AlertTitle>Default</AlertTitle>
-      </Alert>
+      </Alert>,
     );
 
     const alert = screen.getByRole("alert");
@@ -36,7 +36,7 @@ describe("Alert component", () => {
     render(
       <Alert variant="destructive">
         <AlertTitle>Critical Alert</AlertTitle>
-      </Alert>
+      </Alert>,
     );
 
     const alert = screen.getByRole("alert");
@@ -48,7 +48,7 @@ describe("Alert component", () => {
       <Alert className="custom-alert-class">
         <AlertTitle className="custom-title-class">Title</AlertTitle>
         <AlertDescription className="custom-desc-class">Desc</AlertDescription>
-      </Alert>
+      </Alert>,
     );
 
     expect(screen.getByRole("alert")).toHaveClass("custom-alert-class");

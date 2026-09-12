@@ -29,6 +29,7 @@ This guide walks you through acquiring every credential required to run SecureFl
 3. Set `DB_POOL_MAX=10` (or adjust based on your plan's connection limit).
 
 After setting the URLs, run:
+
 ```bash
 npm run db:gen
 npm run db:migrate
@@ -172,4 +173,3 @@ SecureFlow is organized as an **npm workspace** monorepo with the root project a
 [ ] npm install completed with single root package-lock.json
 [ ] npm run dev starts without errors at http://localhost:9002
 ```
-

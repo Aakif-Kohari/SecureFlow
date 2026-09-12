@@ -222,7 +222,10 @@ export function BulkTriageBar({ targets, onDone }: BulkTriageBarProps) {
   const pendingLabel = pendingStatus ? statusLabel(pendingStatus) : "";
 
   return (
-    <div className="space-y-3 rounded-xl border border-white/5 bg-white/5 p-4" data-testid="bulk-triage-bar">
+    <div
+      className="space-y-3 rounded-xl border border-white/5 bg-white/5 p-4"
+      data-testid="bulk-triage-bar"
+    >
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Bulk triage
@@ -270,8 +273,8 @@ export function BulkTriageBar({ targets, onDone }: BulkTriageBarProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Apply bulk triage?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will mark {count} {count === 1 ? "finding" : "findings"} on
-              this page as {pendingLabel}.
+              This will mark {count} {count === 1 ? "finding" : "findings"} on this page as{" "}
+              {pendingLabel}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

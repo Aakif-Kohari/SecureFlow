@@ -37,17 +37,9 @@ const DISABLED_BUTTON_CLASSES =
  * `aria-hidden` is deliberately not set: the span is presentational, and the
  * button inside keeps its own label and `disabled` state for assistive tech.
  */
-function PageButtonSlot({
-  disabled,
-  children,
-}: {
-  disabled: boolean;
-  children: React.ReactNode;
-}) {
+function PageButtonSlot({ disabled, children }: { disabled: boolean; children: React.ReactNode }) {
   return (
-    <span className={disabled ? "inline-flex cursor-not-allowed" : "inline-flex"}>
-      {children}
-    </span>
+    <span className={disabled ? "inline-flex cursor-not-allowed" : "inline-flex"}>{children}</span>
   );
 }
 
@@ -82,7 +74,7 @@ export default function FindingsPagination({
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
       });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   if (total === 0) return null;

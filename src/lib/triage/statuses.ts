@@ -27,7 +27,7 @@
  * is open, which is why the status filter in `findings/query.ts` resolves it as
  * "not in the triaged set" rather than as a value to match.
  */
-export const TRIAGE_STATUSES = ['OPEN', 'RESOLVED', 'FALSE_POSITIVE', 'IGNORED'] as const;
+export const TRIAGE_STATUSES = ["OPEN", "RESOLVED", "FALSE_POSITIVE", "IGNORED"] as const;
 
 /**
  * The most findings one bulk-triage call may carry.
@@ -59,7 +59,7 @@ export type TriageStatus = (typeof TRIAGE_STATUSES)[number];
  * decision. `RESOLVED` is deliberately not one of them: a resolved finding was
  * real and was fixed, so it still counts toward the author's history.
  */
-export const SUPPRESSED_STATUSES = ['FALSE_POSITIVE', 'IGNORED'] as const;
+export const SUPPRESSED_STATUSES = ["FALSE_POSITIVE", "IGNORED"] as const;
 
 export type SuppressedStatus = (typeof SUPPRESSED_STATUSES)[number];
 
@@ -68,10 +68,10 @@ const ALL = new Set<string>(TRIAGE_STATUSES);
 
 /** True when `status` takes a finding out of enforcement. */
 export function isSuppressedStatus(status: unknown): status is SuppressedStatus {
-  return typeof status === 'string' && SUPPRESSED.has(status);
+  return typeof status === "string" && SUPPRESSED.has(status);
 }
 
 /** Narrowing predicate for a recognised triage status. */
 export function isTriageStatus(status: unknown): status is TriageStatus {
-  return typeof status === 'string' && ALL.has(status);
+  return typeof status === "string" && ALL.has(status);
 }

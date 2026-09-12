@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimitDetailed, FallbackStrategy, RateLimitResult } from '../redis';
-import { getClientIp } from '../client-ip';
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimitDetailed, FallbackStrategy, RateLimitResult } from "../redis";
+import { getClientIp } from "../client-ip";
 
 export interface RateLimitConfig {
   limit: number;
@@ -24,12 +24,37 @@ export interface RateLimitConfig {
  *               the cost is per account rather than per connection (#690).
  */
 export const TIERS = {
-  AUTH:           { limit: 10,  windowSeconds: 60,  fallbackStrategy: 'fail-closed' as FallbackStrategy, timeoutMs: 1000 },
-  AI_STREAM:      { limit: 20,  windowSeconds: 60,  fallbackStrategy: 'fail-closed' as FallbackStrategy, timeoutMs: 1000 },
-  AI_STREAM_USER: { limit: 10,  windowSeconds: 60,  fallbackStrategy: 'fail-closed' as FallbackStrategy, timeoutMs: 1000 },
-  STANDARD:       { limit: 120, windowSeconds: 60,  fallbackStrategy: 'fail-open'   as FallbackStrategy },
-  ADMIN:          { limit: 30,  windowSeconds: 60,  fallbackStrategy: 'fail-closed' as FallbackStrategy, timeoutMs: 1000 },
-  REPO_SYNC:      { limit: 6,   windowSeconds: 60,  fallbackStrategy: 'fail-closed' as FallbackStrategy, timeoutMs: 1000 },
+  AUTH: {
+    limit: 10,
+    windowSeconds: 60,
+    fallbackStrategy: "fail-closed" as FallbackStrategy,
+    timeoutMs: 1000,
+  },
+  AI_STREAM: {
+    limit: 20,
+    windowSeconds: 60,
+    fallbackStrategy: "fail-closed" as FallbackStrategy,
+    timeoutMs: 1000,
+  },
+  AI_STREAM_USER: {
+    limit: 10,
+    windowSeconds: 60,
+    fallbackStrategy: "fail-closed" as FallbackStrategy,
+    timeoutMs: 1000,
+  },
+  STANDARD: { limit: 120, windowSeconds: 60, fallbackStrategy: "fail-open" as FallbackStrategy },
+  ADMIN: {
+    limit: 30,
+    windowSeconds: 60,
+    fallbackStrategy: "fail-closed" as FallbackStrategy,
+    timeoutMs: 1000,
+  },
+  REPO_SYNC: {
+    limit: 6,
+    windowSeconds: 60,
+    fallbackStrategy: "fail-closed" as FallbackStrategy,
+    timeoutMs: 1000,
+  },
 } as const;
 
 /** Seconds remaining until the window rolls over, floored at 1 so we never say "retry in 0s". */
@@ -45,15 +70,15 @@ export function secondsUntilReset(resetAt: number, now: number = Date.now()): nu
  */
 export function buildRateLimitHeaders(result: RateLimitResult): Record<string, string> {
   return {
-    'X-RateLimit-Limit': String(result.limit),
-    'X-RateLimit-Remaining': String(result.remaining),
-    'X-RateLimit-Reset': String(Math.ceil(result.resetAt / 1000)),
+    "X-RateLimit-Limit": String(result.limit),
+    "X-RateLimit-Remaining": String(result.remaining),
+    "X-RateLimit-Reset": String(Math.ceil(result.resetAt / 1000)),
   };
 }
 
 export function withRateLimit(
   handler: (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
-  config: RateLimitConfig
+  config: RateLimitConfig,
 ) {
   return async (req: NextRequest, ...args: any[]) => {
     // Resolve the client IP from the trusted portion of the forwarding chain
@@ -66,13 +91,13 @@ export function withRateLimit(
     let result: RateLimitResult;
     try {
       result = await checkRateLimitDetailed(key, config.limit, config.windowSeconds, {
-        fallbackStrategy: config.fallbackStrategy ?? 'fail-open',
+        fallbackStrategy: config.fallbackStrategy ?? "fail-open",
         timeoutMs: config.timeoutMs,
       });
     } catch (err) {
-      console.error('Rate limiting middleware error:', err);
+      console.error("Rate limiting middleware error:", err);
       // Fail open by default if an unexpected exception escapes
-      const allowed = config.fallbackStrategy !== 'fail-closed';
+      const allowed = config.fallbackStrategy !== "fail-closed";
       result = {
         allowed,
         limit: config.limit,
@@ -84,7 +109,10 @@ export function withRateLimit(
 
     if (!result.allowed) {
       return NextResponse.json(
-        { error: 'Too Many Requests', message: 'You have exceeded the rate limit. Please try again later.' },
+        {
+          error: "Too Many Requests",
+          message: "You have exceeded the rate limit. Please try again later.",
+        },
         {
           status: 429,
           headers: {
@@ -92,9 +120,9 @@ export function withRateLimit(
             // The real time left in the window, not the full window length. A
             // caller blocked one second into a 60s window was previously told to
             // wait the whole 60 seconds.
-            'Retry-After': String(secondsUntilReset(result.resetAt)),
+            "Retry-After": String(secondsUntilReset(result.resetAt)),
           },
-        }
+        },
       );
     }
 
@@ -103,7 +131,11 @@ export function withRateLimit(
     // Advertise the budget on successful responses so clients can back off before
     // being blocked. Skipped when the decision came from the fallback strategy,
     // since the numbers would be invented rather than measured.
-    if (!result.degraded && response && typeof (response as NextResponse).headers?.set === 'function') {
+    if (
+      !result.degraded &&
+      response &&
+      typeof (response as NextResponse).headers?.set === "function"
+    ) {
       for (const [header, value] of Object.entries(buildRateLimitHeaders(result))) {
         response.headers.set(header, value);
       }
