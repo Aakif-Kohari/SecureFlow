@@ -1,9 +1,10 @@
 import Groq from 'groq-sdk';
 import type { AISecurityExplanationInput } from "./security-explanation-schemas";
 import { isAtLeast } from '@/lib/severity';
+import { env } from "@/lib/env";
 
 const _groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build',
+  apiKey: env.GROQ_API_KEY,
 });
 
 /**
@@ -18,7 +19,7 @@ const _groq = new Groq({
 async function llmInjectionCheck(text: string): Promise<boolean> {
   try {
     const response = await _groq.chat.completions.create({
-      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+      model: env.GROQ_MODEL || 'llama-3.1-8b-instant',
       temperature: 0,
       max_tokens: 5,
       messages: [

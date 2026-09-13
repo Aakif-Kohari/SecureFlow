@@ -3,6 +3,7 @@ import Groq from 'groq-sdk';
 import { getVulnerabilityMetadata } from '../../database/vulnerabilityDb';
 import { __internal, isRateLimitError, isTimeoutError, withRetry } from './security-helpers';
 import { ai, securityExplanationModel, getSecurityExplanationModelChain } from '@/ai/genkit';
+import { env } from "@/lib/env";
 import { executeWithFallbackAndRetry } from '../resilience';
 import {
   AISecurityExplanationApiSchema,
@@ -13,7 +14,7 @@ import {
   type AISecurityExplanationOutput,
 } from './security-explanation-schemas';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build' });
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 interface StreamOptions {
   vulnerabilityId: string;
@@ -26,7 +27,7 @@ interface StreamOptions {
  */
 export async function streamSecurityExplanation({ vulnerabilityId, sourceCode, onChunk }: StreamOptions): Promise<void> {
   try {
-    // Optimization 1: Execute local metadata lookups concurrently with the initial stream preparation 
+    // Optimization 1: Execute local metadata lookups concurrently with the initial stream preparation
     const metadataPromise = getVulnerabilityMetadata(vulnerabilityId);
 
     const systemPrompt = `You are an expert security engineer. Analyze the provided source code for the specified vulnerability.
@@ -36,7 +37,7 @@ Provide a concise explanation, architectural impact, and immediate remediation s
 
     // Resolve concurrent metadata lookup
     const metadata = await metadataPromise;
-    const contextualPrompt = metadata 
+    const contextualPrompt = metadata
       ? `${userPrompt}\nContextual Details: ${metadata.description} (CVSS: ${metadata.cvss})`
       : userPrompt;
 
