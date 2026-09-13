@@ -123,16 +123,14 @@ describe("POST /api/repositories/sync route (#634)", () => {
     expect(syncEngine.syncUserRepositories).toHaveBeenCalledWith(
       "user-123",
       "octocat",
-      "gho_secret123"
+      "gho_secret123",
     );
   });
 
   it("returns 500 when synchronization engine throws an unexpected error", async () => {
     vi.mocked(authModule.auth).mockResolvedValue(session({ user: { id: "user-123" } }));
 
-    vi.spyOn(syncEngine, "syncUserRepositories").mockRejectedValue(
-      new Error("Database deadlock")
-    );
+    vi.spyOn(syncEngine, "syncUserRepositories").mockRejectedValue(new Error("Database deadlock"));
 
     const response = await POST(request());
     expect(response.status).toBe(500);
@@ -303,7 +301,7 @@ describe("rate limiting (#690)", () => {
       "rate-limit:repo-sync:user:user-123",
       TIERS.REPO_SYNC.limit,
       TIERS.REPO_SYNC.windowSeconds,
-      expect.objectContaining({ fallbackStrategy: "fail-closed" })
+      expect.objectContaining({ fallbackStrategy: "fail-closed" }),
     );
   });
 
@@ -375,7 +373,7 @@ describe("error handling (#690)", () => {
     // and those messages come from Octokit, from the GitHub App private-key
     // parser, or from Prisma.
     vi.spyOn(syncEngine, "syncUserRepositories").mockRejectedValue(
-      new Error("error:0909006C:PEM routines:get_name:no start line — GITHUB_APP_PRIVATE_KEY")
+      new Error("error:0909006C:PEM routines:get_name:no start line — GITHUB_APP_PRIVATE_KEY"),
     );
 
     const response = await POST(request());
@@ -388,7 +386,7 @@ describe("error handling (#690)", () => {
 
   it("keeps the raw error in the log, where it is useful", async () => {
     vi.spyOn(syncEngine, "syncUserRepositories").mockRejectedValue(
-      new Error("connect ECONNREFUSED 10.0.0.5:5432")
+      new Error("connect ECONNREFUSED 10.0.0.5:5432"),
     );
 
     await POST(request());

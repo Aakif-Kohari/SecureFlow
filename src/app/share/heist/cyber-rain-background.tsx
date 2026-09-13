@@ -28,8 +28,7 @@ import { useEffect, useRef } from "react";
  * interactive.
  */
 
-const SCRAMBLE_CHARS =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%!<>/\\|";
+const SCRAMBLE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@#$%!<>/\\|";
 
 /** Heist-themed words that occasionally fall as a vertical column. */
 const HEIST_WORDS = [
@@ -48,15 +47,15 @@ const HEIST_WORDS = [
 ];
 
 interface Column {
-  x: number;          // pixel x of the column's left edge
-  y: number;          // pixel y of the falling head
-  speed: number;      // px/frame — varies per column for parallax depth
-  chars: string[];    // trail of characters behind the head
+  x: number; // pixel x of the column's left edge
+  y: number; // pixel y of the falling head
+  speed: number; // px/frame — varies per column for parallax depth
+  chars: string[]; // trail of characters behind the head
   trailLength: number;
-  isWord: boolean;    // word columns spell a heist term instead of noise
-  word: string;       // the word being spelled (word columns only)
-  wordIndex: number;  // next char index in `word`
-  dim: boolean;       // dimmer columns add depth
+  isWord: boolean; // word columns spell a heist term instead of noise
+  word: string; // the word being spelled (word columns only)
+  wordIndex: number; // next char index in `word`
+  dim: boolean; // dimmer columns add depth
   /** Counter for how many frames before the head char re-rolls. */
   headFlicker: number;
 }
@@ -107,19 +106,29 @@ export function CyberRainBackground({
     isTyping: isTyping,
     tokensPerSecond: tokensPerSecond,
   });
-  
+
   // Update refs on prop changes
   useEffect(() => {
     configRef.current.theme = theme;
     // Calculate dynamic speed scaling based on speedMultiplier or active token stream rate
-    const tokenSpeedBoost = isTyping ? Math.min(4.0, Math.max(1.5, 1.0 + tokensPerSecond * 0.05)) : 1.0;
+    const tokenSpeedBoost = isTyping
+      ? Math.min(4.0, Math.max(1.5, 1.0 + tokensPerSecond * 0.05))
+      : 1.0;
     configRef.current.speedMultiplier = speedMultiplier * tokenSpeedBoost;
     configRef.current.densityMultiplier = densityMultiplier;
     configRef.current.isPaused = isPaused;
     configRef.current.glitchActive = glitchActive;
     configRef.current.isTyping = isTyping;
     configRef.current.tokensPerSecond = tokensPerSecond;
-  }, [theme, speedMultiplier, densityMultiplier, isPaused, glitchActive, isTyping, tokensPerSecond]);
+  }, [
+    theme,
+    speedMultiplier,
+    densityMultiplier,
+    isPaused,
+    glitchActive,
+    isTyping,
+    tokensPerSecond,
+  ]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -222,7 +231,7 @@ export function CyberRainBackground({
 
     function drawColumn(col: Column) {
       const { fontSize, theme, glitchActive } = configRef.current;
-      
+
       let headColor: string, bodyColor: string, tailColor: string;
       if (theme === "matrix") {
         headColor = col.dim ? "rgba(74, 222, 128, 0.95)" : "rgba(34, 197, 94, 1)";
@@ -247,7 +256,9 @@ export function CyberRainBackground({
         else color = tailColor;
         ctx!.fillStyle = color;
         const ch = col.chars[i];
-        const glitchX = glitchActive ? col.x + (Math.random() > 0.8 ? (Math.random() - 0.5) * 8 : 0) : col.x;
+        const glitchX = glitchActive
+          ? col.x + (Math.random() > 0.8 ? (Math.random() - 0.5) * 8 : 0)
+          : col.x;
         if (ch !== " ") ctx!.fillText(ch, glitchX, y);
       }
     }
@@ -281,19 +292,11 @@ export function CyberRainBackground({
         for (let i = 0; i < count; i++) {
           const y = Math.random() * window.innerHeight;
           if (configRef.current.theme === "matrix") {
-            ctx.fillStyle = col.dim
-              ? "rgba(74, 222, 128, 0.15)"
-              : "rgba(34, 197, 94, 0.25)";
+            ctx.fillStyle = col.dim ? "rgba(74, 222, 128, 0.15)" : "rgba(34, 197, 94, 0.25)";
           } else {
-            ctx.fillStyle = col.dim
-              ? "rgba(244, 63, 94, 0.15)"
-              : "rgba(239, 68, 68, 0.25)";
+            ctx.fillStyle = col.dim ? "rgba(244, 63, 94, 0.15)" : "rgba(239, 68, 68, 0.25)";
           }
-          ctx.fillText(
-            SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)],
-            col.x,
-            y,
-          );
+          ctx.fillText(SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)], col.x, y);
         }
       }
     }

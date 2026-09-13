@@ -46,7 +46,7 @@
  * without a real address — but it is visible in metrics and in the Redis
  * keyspace as the misconfiguration it represents.
  */
-export const UNKNOWN_CLIENT_IP = 'unknown';
+export const UNKNOWN_CLIENT_IP = "unknown";
 
 /**
  * Longest header value worth parsing.
@@ -74,7 +74,7 @@ function isIpv4(value: string): boolean {
     const octet = match[i];
     // "01.2.3.4" and "1.2.3.4" are the same host to some parsers and different
     // strings to Redis; rejecting leading zeros keeps one client to one bucket.
-    if (octet.length > 1 && octet.startsWith('0')) return false;
+    if (octet.length > 1 && octet.startsWith("0")) return false;
     if (Number(octet) > 255) return false;
   }
 
@@ -90,21 +90,21 @@ function isIpv4(value: string): boolean {
  * spelling.
  */
 function isIpv6(value: string): boolean {
-  if (!value.includes(':')) return false;
+  if (!value.includes(":")) return false;
   if ((value.match(/::/g) ?? []).length > 1) return false;
 
-  const groups = value.split(':');
+  const groups = value.split(":");
   if (groups.length > 9) return false;
 
-  const compressed = value.includes('::');
+  const compressed = value.includes("::");
   let seen = 0;
 
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
-    if (group === '') continue; // part of a `::` run, or a leading/trailing colon
+    if (group === "") continue; // part of a `::` run, or a leading/trailing colon
 
     // An IPv4 tail (::ffff:192.0.2.1) is only legal in the final position.
-    if (group.includes('.')) {
+    if (group.includes(".")) {
       if (i !== groups.length - 1) return false;
       if (!isIpv4(group)) return false;
       seen += 2;
@@ -128,28 +128,28 @@ function isIpv6(value: string): boolean {
  * keeps header junk out of the key.
  */
 export function normalizeIp(raw: string | null | undefined): string | null {
-  if (typeof raw !== 'string') return null;
+  if (typeof raw !== "string") return null;
 
   let value = raw.trim();
   if (!value || value.length > MAX_ADDRESS_LENGTH) return null;
 
   // Bracketed IPv6, with or without a port: "[::1]" / "[::1]:443"
-  if (value.startsWith('[')) {
-    const close = value.indexOf(']');
+  if (value.startsWith("[")) {
+    const close = value.indexOf("]");
     if (close === -1) return null;
     value = value.slice(1, close);
-  } else if (value.includes(':')) {
+  } else if (value.includes(":")) {
     // Exactly one colon means "host:port"; more than one means a bare IPv6
     // literal, which must not be truncated.
-    const firstColon = value.indexOf(':');
-    if (firstColon === value.lastIndexOf(':')) {
+    const firstColon = value.indexOf(":");
+    if (firstColon === value.lastIndexOf(":")) {
       value = value.slice(0, firstColon);
     }
   }
 
   // Drop an IPv6 zone index: it names a local interface rather than the client,
   // and it is free text that would otherwise reach the key.
-  const zone = value.indexOf('%');
+  const zone = value.indexOf("%");
   if (zone !== -1) value = value.slice(0, zone);
 
   if (!value) return null;
@@ -170,12 +170,11 @@ export function normalizeIp(raw: string | null | undefined): string | null {
 
 /** Parsed trusted-proxy allowlist entry. */
 export type TrustedEntry =
-  | { kind: 'exact'; value: string }
-  | { kind: 'cidr4'; base: number; mask: number };
+  { kind: "exact"; value: string } | { kind: "cidr4"; base: number; mask: number };
 
 function ipv4ToInt(value: string): number | null {
   if (!isIpv4(value)) return null;
-  return value.split('.').reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
+  return value.split(".").reduce((acc, octet) => (acc << 8) + Number(octet), 0) >>> 0;
 }
 
 /**
@@ -192,14 +191,14 @@ export function parseTrustedProxies(raw: string | null | undefined): TrustedEntr
 
   const entries: TrustedEntry[] = [];
 
-  for (const part of raw.split(',')) {
+  for (const part of raw.split(",")) {
     const token = part.trim();
     if (!token) continue;
 
-    const slash = token.indexOf('/');
+    const slash = token.indexOf("/");
     if (slash === -1) {
       const normalized = normalizeIp(token);
-      if (normalized) entries.push({ kind: 'exact', value: normalized });
+      if (normalized) entries.push({ kind: "exact", value: normalized });
       continue;
     }
 
@@ -209,7 +208,7 @@ export function parseTrustedProxies(raw: string | null | undefined): TrustedEntr
 
     // `x << 32` is a no-op in JavaScript, so /0 is special-cased.
     const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
-    entries.push({ kind: 'cidr4', base: (base & mask) >>> 0, mask });
+    entries.push({ kind: "cidr4", base: (base & mask) >>> 0, mask });
   }
 
   return entries;
@@ -221,11 +220,11 @@ function isTrustedProxy(ip: string, trusted: TrustedEntry[]): boolean {
   const asInt = ipv4ToInt(ip);
 
   for (const entry of trusted) {
-    if (entry.kind === 'exact') {
+    if (entry.kind === "exact") {
       if (entry.value === ip) return true;
       continue;
     }
-    if (asInt !== null && ((asInt & entry.mask) >>> 0) === entry.base) return true;
+    if (asInt !== null && (asInt & entry.mask) >>> 0 === entry.base) return true;
   }
 
   return false;
@@ -243,7 +242,7 @@ export function parseForwardedChain(header: string | null | undefined): string[]
 
   const chain: string[] = [];
 
-  for (const part of header.split(',')) {
+  for (const part of header.split(",")) {
     if (chain.length >= MAX_CHAIN_ENTRIES) break;
     const normalized = normalizeIp(part);
     if (normalized) chain.push(normalized);
@@ -260,7 +259,7 @@ export function parseForwardedChain(header: string | null | undefined): string[]
  * number (which would trust the whole chain).
  */
 export function resolveHopCount(raw: string | undefined): number {
-  if (raw === undefined || raw.trim() === '') return 1;
+  if (raw === undefined || raw.trim() === "") return 1;
 
   const parsed = Number(raw.trim());
   if (!Number.isInteger(parsed) || parsed < 0 || parsed > MAX_CHAIN_ENTRIES) return 1;
@@ -303,7 +302,7 @@ export function getClientIp(headers: Headers, options: ClientIpOptions = {}): st
     return UNKNOWN_CLIENT_IP;
   }
 
-  const chain = parseForwardedChain(headers.get('x-forwarded-for'));
+  const chain = parseForwardedChain(headers.get("x-forwarded-for"));
 
   if (chain.length > 0) {
     if (trustedProxies.length > 0) {
@@ -329,7 +328,7 @@ export function getClientIp(headers: Headers, options: ClientIpOptions = {}): st
   // when a trusted hop is configured, so a directly exposed deployment never
   // honours a client-supplied `x-real-ip`.
   if (trustedHopCount > 0 || trustedProxies.length > 0) {
-    const realIp = normalizeIp(headers.get('x-real-ip'));
+    const realIp = normalizeIp(headers.get("x-real-ip"));
     if (realIp) return realIp;
   }
 

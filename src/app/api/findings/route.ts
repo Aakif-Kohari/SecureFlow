@@ -16,25 +16,25 @@
  * the resulting audit row.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import prisma from '@/lib/prisma';
-import { withErrorHandler, AppError } from '@/lib/middleware/error-handler';
-import { withRateLimit } from '@/lib/middleware/rate-limit';
-import { enqueueScan } from '@/lib/queue/scanQueue';
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+import { withErrorHandler, AppError } from "@/lib/middleware/error-handler";
+import { withRateLimit } from "@/lib/middleware/rate-limit";
+import { enqueueScan } from "@/lib/queue/scanQueue";
 import {
   buildScanJobData,
   loadOwnedRepository,
   scanRequestSchema,
-} from '@/lib/findings/scan-authorization';
+} from "@/lib/findings/scan-authorization";
 
 /** Never cached: a POST result, and a per-user job handle. */
-const NO_STORE = { 'Cache-Control': 'no-store' } as const;
+const NO_STORE = { "Cache-Control": "no-store" } as const;
 
 const handler = withErrorHandler(async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    throw new AppError('Unauthorized', 401);
+    throw new AppError("Unauthorized", 401);
   }
   const userId = session.user.id;
 
@@ -42,14 +42,14 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    throw new AppError('Request body is not valid JSON', 400);
+    throw new AppError("Request body is not valid JSON", 400);
   }
 
   const parsed = scanRequestSchema.safeParse(body);
   if (!parsed.success) {
     throw new AppError(
-      `Invalid scan request: ${parsed.error.issues.map((i) => i.message).join(', ')}`,
-      400
+      `Invalid scan request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+      400,
     );
   }
 
@@ -60,33 +60,33 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   const repository = await loadOwnedRepository(
     prisma.repository as never,
     parsed.data.repositoryId,
-    userId
+    userId,
   );
 
   if (!repository) {
-    throw new AppError('Repository not found', 404);
+    throw new AppError("Repository not found", 404);
   }
 
   const { jobId, scanJobId } = await enqueueScan(
-    buildScanJobData({ body: parsed.data, repository, userId })
+    buildScanJobData({ body: parsed.data, repository, userId }),
   );
 
   return NextResponse.json(
     {
-      status: 'queued',
+      status: "queued",
       jobId,
       scanJobId,
-      message: 'Scan job enqueued successfully',
+      message: "Scan job enqueued successfully",
       pollingUrl: `/api/findings/status/${scanJobId}`,
     },
-    { status: 202, headers: NO_STORE }
+    { status: 202, headers: NO_STORE },
   );
 });
 
 export const POST = withRateLimit(handler, {
   limit: 10,
   windowSeconds: 60,
-  keyPrefix: 'findings:scan',
+  keyPrefix: "findings:scan",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";

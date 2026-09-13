@@ -88,14 +88,18 @@ export function CodenameForm({ initialName }: { initialName?: string | null }) {
           <span className="font-mono font-bold uppercase tracking-wider block mb-0.5">
             Security Protocol 0x01: Identity Minimization
           </span>
-          No real names or personal identities allowed in Vault logs. All crew members must operate under a designated city codename.
+          No real names or personal identities allowed in Vault logs. All crew members must operate
+          under a designated city codename.
         </div>
       </div>
 
       {/* Codename Input Group */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <label htmlFor="codename-input" className="font-mono font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <label
+            htmlFor="codename-input"
+            className="font-mono font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"
+          >
             <Globe className="w-3.5 h-3.5 text-primary" /> City Codename
           </label>
           <span className="text-[10px] font-mono text-muted-foreground/80">
@@ -146,7 +150,9 @@ export function CodenameForm({ initialName }: { initialName?: string | null }) {
       <div className="space-y-2 pt-1">
         <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
           <span>Resistance City Registry (Quick Pick)</span>
-          <span className="text-[9px] text-muted-foreground/60">{RESISTANCE_CITIES.length} Available</span>
+          <span className="text-[9px] text-muted-foreground/60">
+            {RESISTANCE_CITIES.length} Available
+          </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1 p-0.5">
           {RESISTANCE_CITIES.map((city) => {
@@ -183,7 +189,8 @@ export function CodenameForm({ initialName }: { initialName?: string | null }) {
             </>
           ) : (
             <>
-              <CheckCircle2 className="w-4 h-4" /> Finalize Naming Ceremony & Enter Vault <ArrowRight className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4" /> Finalize Naming Ceremony & Enter Vault{" "}
+              <ArrowRight className="w-4 h-4" />
             </>
           )}
         </Button>

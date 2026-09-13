@@ -44,26 +44,26 @@ const ALLOWED_CHARACTERS = /^[a-zA-Z0-9 _-]+$/;
  * are all the same reservation.
  */
 const RESERVED = [
-  'SecureFlow',
-  'Secure Flow',
-  'Admin',
-  'Administrator',
-  'Moderator',
-  'Support',
-  'System',
-  'Root',
-  'Owner',
-  'Staff',
-  'Official',
-  'The Professor',
-  'Professor',
-  'Anonymous',
-  'Unknown',
-  'Deleted User',
-  'Deleted',
-  'Null',
-  'Undefined',
-  'None',
+  "SecureFlow",
+  "Secure Flow",
+  "Admin",
+  "Administrator",
+  "Moderator",
+  "Support",
+  "System",
+  "Root",
+  "Owner",
+  "Staff",
+  "Official",
+  "The Professor",
+  "Professor",
+  "Anonymous",
+  "Unknown",
+  "Deleted User",
+  "Deleted",
+  "Null",
+  "Undefined",
+  "None",
 ];
 
 /**
@@ -86,14 +86,9 @@ function titleCaseRuns(word: string): string {
  * application claims to enforce.
  */
 export function normalizeCodename(raw: string | null | undefined): string {
-  if (typeof raw !== 'string') return '';
+  if (typeof raw !== "string") return "";
 
-  return raw
-    .trim()
-    .replace(/\s+/g, ' ')
-    .split(' ')
-    .map(titleCaseRuns)
-    .join(' ');
+  return raw.trim().replace(/\s+/g, " ").split(" ").map(titleCaseRuns).join(" ");
 }
 
 /**
@@ -105,7 +100,9 @@ export function normalizeCodename(raw: string | null | undefined): string {
  * only the database can answer it without a race.
  */
 export function codenameKey(value: string): string {
-  return normalizeCodename(value).toLowerCase().replace(/[\s_-]/g, '');
+  return normalizeCodename(value)
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
 }
 
 const RESERVED_KEYS = new Set(RESERVED.map(codenameKey));
@@ -120,9 +117,7 @@ export function reservedCodenames(): string[] {
   return [...RESERVED];
 }
 
-export type CodenameValidation =
-  | { ok: true; codename: string }
-  | { ok: false; error: string };
+export type CodenameValidation = { ok: true; codename: string } | { ok: false; error: string };
 
 /**
  * Validate and canonicalise a submitted codename.
@@ -132,10 +127,10 @@ export type CodenameValidation =
  * contract.
  */
 export function validateCodename(raw: string | null | undefined): CodenameValidation {
-  const trimmed = typeof raw === 'string' ? raw.trim() : '';
+  const trimmed = typeof raw === "string" ? raw.trim() : "";
 
   if (!trimmed) {
-    return { ok: false, error: 'Codename cannot be empty.' };
+    return { ok: false, error: "Codename cannot be empty." };
   }
 
   // Length is checked on the trimmed input rather than the normalised form so
@@ -151,7 +146,7 @@ export function validateCodename(raw: string | null | undefined): CodenameValida
   if (!ALLOWED_CHARACTERS.test(trimmed)) {
     return {
       ok: false,
-      error: 'Codename can only contain letters, numbers, spaces, hyphens, and underscores.',
+      error: "Codename can only contain letters, numbers, spaces, hyphens, and underscores.",
     };
   }
 
@@ -159,8 +154,8 @@ export function validateCodename(raw: string | null | undefined): CodenameValida
 
   // Possible when the input was all separators: "- -" passes the character
   // check but normalises to something with no substance.
-  if (codename.replace(/[\s_-]/g, '').length === 0) {
-    return { ok: false, error: 'Codename must contain at least one letter or number.' };
+  if (codename.replace(/[\s_-]/g, "").length === 0) {
+    return { ok: false, error: "Codename must contain at least one letter or number." };
   }
 
   if (isReservedCodename(codename)) {
@@ -193,12 +188,12 @@ export function codenameTakenError(codename: string): string {
  * update can only have come from `codename` regardless.
  */
 export function isCodenameConflict(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  if ((error as { code?: string }).code !== 'P2002') return false;
+  if (!error || typeof error !== "object") return false;
+  if ((error as { code?: string }).code !== "P2002") return false;
 
   const target = (error as { meta?: { target?: unknown } }).meta?.target;
   if (target === undefined) return true;
 
   const fields = Array.isArray(target) ? target : [target];
-  return fields.some((field) => String(field).toLowerCase().includes('codename'));
+  return fields.some((field) => String(field).toLowerCase().includes("codename"));
 }

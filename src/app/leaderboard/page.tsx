@@ -21,9 +21,17 @@ export default async function LeaderboardPage() {
       <nav className="border-b border-white/10 px-4 sm:px-6 py-4 flex items-center justify-between glass-card sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary glow-primary">
-            <Image src="/logo.png" alt="SecureFlow Logo" width={64} height={64} className="object-contain" />
+            <Image
+              src="/logo.png"
+              alt="SecureFlow Logo"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
           </div>
-          <span className="font-headline font-bold text-xl tracking-widest uppercase">SecureFlow</span>
+          <span className="font-headline font-bold text-xl tracking-widest uppercase">
+            SecureFlow
+          </span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -36,7 +44,7 @@ export default async function LeaderboardPage() {
             Home
           </Link>
           <LoginButton />
-          <Link href={process.env.GITHUB_APP_URL || '/setup'}>
+          <Link href={process.env.GITHUB_APP_URL || "/setup"}>
             <Button className="bg-primary text-background hover:bg-primary/90 glow-primary rounded-sm font-bold uppercase tracking-wide">
               <GitBranch className="w-4 h-4 mr-2" />
               Engage System

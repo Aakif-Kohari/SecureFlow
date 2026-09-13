@@ -30,8 +30,8 @@
  * without a database.
  */
 
-import { z } from 'zod';
-import type { ScanJobData } from '@/lib/queue/scanQueue';
+import { z } from "zod";
+import type { ScanJobData } from "@/lib/queue/scanQueue";
 
 /** The columns the scan needs from the repository it was authorised against. */
 export interface OwnedRepository {
@@ -57,7 +57,7 @@ export interface RepositoryStore {
 export async function loadOwnedRepository(
   store: RepositoryStore,
   repositoryId: string,
-  userId: string
+  userId: string,
 ): Promise<OwnedRepository | null> {
   if (!repositoryId || !userId) return null;
 
@@ -92,12 +92,10 @@ export const scanRequestSchema = z.object({
       z.object({
         filename: z.string(),
         patch: z.string(),
-      })
+      }),
     )
     .default([]),
-  activePolicies: z
-    .array(z.object({ description: z.string() }).passthrough())
-    .default([]),
+  activePolicies: z.array(z.object({ description: z.string() }).passthrough()).default([]),
   customIgnores: z.array(z.string()).default([]),
   customPlaceholders: z.array(z.string()).default([]),
 });
@@ -120,7 +118,7 @@ export function buildScanJobData(args: {
 
   return {
     // Replaced by `enqueueScan`, which creates the row this refers to.
-    scanJobId: '',
+    scanJobId: "",
     repositoryId: repository.id,
     repositoryFullName: repository.fullName,
     installationId: body.installationId,
@@ -162,12 +160,12 @@ export interface ScanJobOwnershipStore {
  */
 export function scanJobVisibility(
   job: ScanJobOwnership | null | undefined,
-  userId: string
-): 'visible' | 'not-found' {
-  if (!job) return 'not-found';
-  if (!job.repositoryId || !job.repository) return 'not-found';
+  userId: string,
+): "visible" | "not-found" {
+  if (!job) return "not-found";
+  if (!job.repositoryId || !job.repository) return "not-found";
 
-  return job.repository.userId === userId ? 'visible' : 'not-found';
+  return job.repository.userId === userId ? "visible" : "not-found";
 }
 
 /**
@@ -179,7 +177,7 @@ export function scanJobVisibility(
  */
 export async function loadScanJobOwnership(
   store: ScanJobOwnershipStore,
-  scanJobId: string
+  scanJobId: string,
 ): Promise<ScanJobOwnership | null> {
   if (!scanJobId) return null;
 

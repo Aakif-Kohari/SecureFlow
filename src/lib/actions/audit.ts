@@ -46,7 +46,7 @@ export interface UserAuditLogQuery {
 
 function buildUserAuditLogWhere(
   userId: string,
-  query: Pick<UserAuditLogQuery, "action" | "decision" | "search" | "startDate" | "endDate">
+  query: Pick<UserAuditLogQuery, "action" | "decision" | "search" | "startDate" | "endDate">,
 ) {
   const { action, decision, search, startDate, endDate } = query;
 
@@ -80,9 +80,7 @@ function buildUserAuditLogWhere(
   return where;
 }
 
-export async function getUserAuditLogs(
-  query: UserAuditLogQuery = {}
-): Promise<UserAuditLogResult> {
+export async function getUserAuditLogs(query: UserAuditLogQuery = {}): Promise<UserAuditLogResult> {
   const userId = await requireUser();
 
   const page = Math.max(1, query.page ?? 1);
@@ -125,7 +123,7 @@ export async function getUserAuditLogs(
  * only export async functions.
  */
 export async function getUserAuditLogsForExport(
-  query: Pick<UserAuditLogQuery, "action" | "decision" | "search" | "startDate" | "endDate"> = {}
+  query: Pick<UserAuditLogQuery, "action" | "decision" | "search" | "startDate" | "endDate"> = {},
 ): Promise<UserAuditLogExport> {
   const userId = await requireUser();
   const where = buildUserAuditLogWhere(userId, query);

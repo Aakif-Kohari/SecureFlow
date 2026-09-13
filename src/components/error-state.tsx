@@ -69,7 +69,7 @@ export function ErrorState({
       data-testid="error-state"
       className={cn(
         "flex min-h-[60vh] w-full flex-col items-center justify-center px-6 py-16 text-center",
-        className
+        className,
       )}
     >
       <div className="glass-card w-full max-w-lg rounded-2xl p-8 sm:p-10">

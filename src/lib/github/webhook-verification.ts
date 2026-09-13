@@ -11,14 +11,14 @@
  * `src/lib/client-ip.ts` and `src/lib/middleware/http-status.ts`.
  */
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from "crypto";
 
 /** Events the worker knows how to process. Anything else is acknowledged and dropped. */
 export const TRACKED_EVENTS = [
-  'pull_request',
-  'installation',
-  'installation_repositories',
-  'branch_protection_rule',
+  "pull_request",
+  "installation",
+  "installation_repositories",
+  "branch_protection_rule",
 ] as const;
 
 export type TrackedEvent = (typeof TRACKED_EVENTS)[number];
@@ -35,7 +35,7 @@ export const DEFAULT_MAX_WEBHOOK_BYTES = 5 * 1024 * 1024;
 
 /** A `sha256=` header carries exactly 64 hex characters. */
 const SIGNATURE_HEX_LENGTH = 64;
-const SIGNATURE_PREFIX = 'sha256=';
+const SIGNATURE_PREFIX = "sha256=";
 
 /**
  * Extract the hex digest from an `x-hub-signature-256` header.
@@ -51,7 +51,7 @@ const SIGNATURE_PREFIX = 'sha256=';
  * Returns `null` for anything that is not a well-formed signature.
  */
 export function parseGithubSignature(signatureHeader: string | null | undefined): string | null {
-  if (typeof signatureHeader !== 'string') return null;
+  if (typeof signatureHeader !== "string") return null;
   if (!signatureHeader.startsWith(SIGNATURE_PREFIX)) return null;
 
   const hex = signatureHeader.slice(SIGNATURE_PREFIX.length);
@@ -71,12 +71,12 @@ export function parseGithubSignature(signatureHeader: string | null | undefined)
 export function verifySignature(
   payloadText: string,
   secret: string,
-  signatureHex: string
+  signatureHex: string,
 ): boolean {
-  const digest = createHmac('sha256', secret).update(payloadText, 'utf8').digest('hex');
+  const digest = createHmac("sha256", secret).update(payloadText, "utf8").digest("hex");
 
-  const provided = Buffer.from(signatureHex, 'hex');
-  const expected = Buffer.from(digest, 'hex');
+  const provided = Buffer.from(signatureHex, "hex");
+  const expected = Buffer.from(digest, "hex");
 
   if (provided.length !== expected.length) return false;
 
@@ -85,7 +85,7 @@ export function verifySignature(
 
 /** Read `GITHUB_WEBHOOK_MAX_BYTES`, falling back to the default for junk values. */
 export function parseMaxWebhookBytes(raw: string | undefined): number {
-  if (raw === undefined || raw.trim() === '') return DEFAULT_MAX_WEBHOOK_BYTES;
+  if (raw === undefined || raw.trim() === "") return DEFAULT_MAX_WEBHOOK_BYTES;
 
   const parsed = Number(raw.trim());
   if (!Number.isInteger(parsed) || parsed <= 0) return DEFAULT_MAX_WEBHOOK_BYTES;
@@ -112,12 +112,12 @@ export function parseMaxWebhookBytes(raw: string | undefined): number {
  */
 export function isPayloadTooLarge(
   reportedLength: string | number | null | undefined,
-  maxBytes: number = DEFAULT_MAX_WEBHOOK_BYTES
+  maxBytes: number = DEFAULT_MAX_WEBHOOK_BYTES,
 ): boolean {
   if (reportedLength === null || reportedLength === undefined) return false;
 
   const parsed =
-    typeof reportedLength === 'number' ? reportedLength : Number(String(reportedLength).trim());
+    typeof reportedLength === "number" ? reportedLength : Number(String(reportedLength).trim());
 
   if (!Number.isFinite(parsed) || parsed < 0) return false;
 
@@ -126,12 +126,11 @@ export function isPayloadTooLarge(
 
 /** Byte length of a payload, which is what the cap is expressed in. */
 export function payloadByteLength(payloadText: string): number {
-  return Buffer.byteLength(payloadText, 'utf8');
+  return Buffer.byteLength(payloadText, "utf8");
 }
 
 export type WebhookPayloadResult =
-  | { ok: true; payload: Record<string, unknown> }
-  | { ok: false; reason: string };
+  { ok: true; payload: Record<string, unknown> } | { ok: false; reason: string };
 
 /**
  * Parse a verified body into an object.
@@ -153,11 +152,11 @@ export function parseWebhookPayload(payloadText: string): WebhookPayloadResult {
   try {
     parsed = JSON.parse(payloadText);
   } catch {
-    return { ok: false, reason: 'Request body is not valid JSON' };
+    return { ok: false, reason: "Request body is not valid JSON" };
   }
 
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    return { ok: false, reason: 'Request body must be a JSON object' };
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { ok: false, reason: "Request body must be a JSON object" };
   }
 
   return { ok: true, payload: parsed as Record<string, unknown> };
@@ -165,7 +164,7 @@ export function parseWebhookPayload(payloadText: string): WebhookPayloadResult {
 
 /** True for an event the worker can process. */
 export function isTrackedEvent(event: string | null | undefined): event is TrackedEvent {
-  return typeof event === 'string' && (TRACKED_EVENTS as readonly string[]).includes(event);
+  return typeof event === "string" && (TRACKED_EVENTS as readonly string[]).includes(event);
 }
 
 /**
@@ -190,7 +189,7 @@ export function isTrackedEvent(event: string | null | undefined): event is Track
  * nothing and closes the hole.
  */
 export function normalizeDeliveryId(raw: string | null | undefined): string | null {
-  if (typeof raw !== 'string') return null;
+  if (typeof raw !== "string") return null;
 
   const trimmed = raw.trim();
   if (!trimmed || trimmed.length > 200) return null;
@@ -238,34 +237,36 @@ export function admitWebhook(options: {
   deliveryHeader: string | null | undefined;
   contentLength?: string | number | null;
   maxBytes?: number;
-}): { ok: true; deliveryId: string; payload: Record<string, unknown> } | ({ ok: false } & WebhookAdmission) {
+}):
+  | { ok: true; deliveryId: string; payload: Record<string, unknown> }
+  | ({ ok: false } & WebhookAdmission) {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_WEBHOOK_BYTES;
 
   if (
     isPayloadTooLarge(options.contentLength, maxBytes) ||
     isPayloadTooLarge(payloadByteLength(options.payloadText), maxBytes)
   ) {
-    return { ok: false, status: 413, message: 'Webhook payload exceeds the configured size limit' };
+    return { ok: false, status: 413, message: "Webhook payload exceeds the configured size limit" };
   }
 
   if (!options.secret) {
     // A deployment fault, not a caller fault. `isOperational: false` at the call
     // site keeps the detail out of the response.
-    return { ok: false, status: 500, message: 'GITHUB_WEBHOOK_SECRET is not set' };
+    return { ok: false, status: 500, message: "GITHUB_WEBHOOK_SECRET is not set" };
   }
 
   const deliveryId = normalizeDeliveryId(options.deliveryHeader);
   if (!deliveryId) {
-    return { ok: false, status: 400, message: 'Missing or invalid x-github-delivery header' };
+    return { ok: false, status: 400, message: "Missing or invalid x-github-delivery header" };
   }
 
   const signatureHex = parseGithubSignature(options.signatureHeader);
   if (!signatureHex) {
-    return { ok: false, status: 401, message: 'Missing or invalid x-hub-signature-256 header' };
+    return { ok: false, status: 401, message: "Missing or invalid x-hub-signature-256 header" };
   }
 
   if (!verifySignature(options.payloadText, options.secret, signatureHex)) {
-    return { ok: false, status: 401, message: 'Invalid GitHub webhook signature' };
+    return { ok: false, status: 401, message: "Invalid GitHub webhook signature" };
   }
 
   const parsed = parseWebhookPayload(options.payloadText);

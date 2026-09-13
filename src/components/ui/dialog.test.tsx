@@ -26,7 +26,7 @@ describe("Dialog component", () => {
             <button>Save</button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>,
     );
 
     expect(screen.getByText("Dialog Title")).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe("Dialog component", () => {
             <DialogDescription className="custom-desc">Custom Desc</DialogDescription>
           </DialogHeader>
         </DialogContent>
-      </Dialog>
+      </Dialog>,
     );
 
     expect(screen.getByText("Custom Title")).toHaveClass("custom-title");

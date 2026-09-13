@@ -16,7 +16,7 @@ static scanner (`src/lib/armor/scanner.ts`).** It never reads the AI-generated `
 `remediationSuggestions`. This was true before this change and remains true after it — nothing in
 this document changes the policy engine.
 
-What prompt injection *can* affect, prior to this change, is the narrative text a developer reads
+What prompt injection _can_ affect, prior to this change, is the narrative text a developer reads
 next to a correctly-labeled finding — for example, a `🔴 CRITICAL` badge sitting next to an AI
 explanation that's been nudged to sound reassuring or dismissive. That undermines trust in the
 tool even though the automated gate is safe.
@@ -43,7 +43,7 @@ Four independent layers now protect the explanation layer:
    technique got past the pre-filter but still visibly swayed the output.
 4. **UI surfacing**: when `promptInjectionSuspected` is true, both the PR comment and the
    dashboard findings view show a `⚠️ AI explanation may be unreliable for this finding — verify
-   manually` note next to that specific finding.
+manually` note next to that specific finding.
 
 ## Testing
 
@@ -104,8 +104,8 @@ Implemented in `src/ai/flows/heist-prompt-guard.ts`.
 1. **Normalisation** (`normalizeProjectName`). Whitespace runs — including
    newlines — collapse to a single space, so the value cannot span lines and
    open what looks like a new turn. Zero-width and bidirectional control
-   characters are then *deleted*, closing the gap: `ig<ZWSP>nore previous
-   instructions` becomes `ignore previous instructions`, which the pattern list
+   characters are then _deleted_, closing the gap: `ig<ZWSP>nore previous
+instructions` becomes `ignore previous instructions`, which the pattern list
    can see. The order matters — whitespace becomes a space, invisibles become
    nothing.
 2. **Input screening** (`screenProjectName`). The normalised value is checked
@@ -147,7 +147,7 @@ key whose next caller may have supplied a perfectly good name.
 
 - `src/ai/flows/heist-prompt-guard.test.ts` — normalisation, input screening
   (including the zero-width-splitter bypass), output screening, and the
-  false-positive cases that must *not* be flagged (`prompt-injection-lab`,
+  false-positive cases that must _not_ be flagged (`prompt-injection-lab`,
   `Ignore.js`).
 - `src/lib/heist/transmission-cache.test.ts` — key stability and collision
   resistance, TTL, LRU eviction, and the unbounded-key-space bound.

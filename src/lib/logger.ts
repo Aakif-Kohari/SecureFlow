@@ -31,9 +31,9 @@
  * others is worse than `console`.
  */
 
-import { scrubCredentials } from '@/lib/redaction';
+import { scrubCredentials } from "@/lib/redaction";
 
-export const LOG_LEVELS = ['debug', 'info', 'warn', 'error', 'silent'] as const;
+export const LOG_LEVELS = ["debug", "info", "warn", "error", "silent"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
 /** Numeric severity; a record is emitted when its level is >= the threshold. */
@@ -46,7 +46,7 @@ const LEVEL_RANK: Readonly<Record<LogLevel, number>> = {
 };
 
 /** Levels that actually produce output. `silent` is a threshold, not a method. */
-export type EmittableLevel = Exclude<LogLevel, 'silent'>;
+export type EmittableLevel = Exclude<LogLevel, "silent">;
 
 /**
  * Metadata keys whose values are replaced wholesale.
@@ -55,27 +55,27 @@ export type EmittableLevel = Exclude<LogLevel, 'silent'>;
  * `x-hub-signature-256` are all caught without enumerating every spelling.
  */
 const REDACTED_KEY_PATTERNS = [
-  'password',
-  'passwd',
-  'secret',
-  'token',
-  'apikey',
-  'api_key',
-  'authorization',
-  'auth',
-  'credential',
-  'cookie',
-  'session',
-  'signature',
-  'privatekey',
-  'private_key',
-  'connectionstring',
-  'connection_string',
-  'database_url',
-  'databaseurl',
+  "password",
+  "passwd",
+  "secret",
+  "token",
+  "apikey",
+  "api_key",
+  "authorization",
+  "auth",
+  "credential",
+  "cookie",
+  "session",
+  "signature",
+  "privatekey",
+  "private_key",
+  "connectionstring",
+  "connection_string",
+  "database_url",
+  "databaseurl",
 ] as const;
 
-export const REDACTED_PLACEHOLDER = '[REDACTED]';
+export const REDACTED_PLACEHOLDER = "[REDACTED]";
 
 /** Longest single string value written to a record. */
 const MAX_VALUE_LENGTH = 2000;
@@ -107,15 +107,13 @@ const MAX_ARRAY_ENTRIES = 50;
  * they preserve readability in a stack trace.
  */
 export function sanitizeLogValue(value: unknown): string {
-  return String(value ?? '').replace(/[\r\n\u2028\u2029]+/g, ' ');
+  return String(value ?? "").replace(/[\r\n\u2028\u2029]+/g, " ");
 }
 
 /** True when a metadata key names something that must never be logged. */
 export function isSensitiveKey(key: string): boolean {
-  const normalized = key.toLowerCase().replace(/[-_\s]/g, '');
-  return REDACTED_KEY_PATTERNS.some((pattern) =>
-    normalized.includes(pattern.replace(/[-_]/g, ''))
-  );
+  const normalized = key.toLowerCase().replace(/[-_\s]/g, "");
+  return REDACTED_KEY_PATTERNS.some((pattern) => normalized.includes(pattern.replace(/[-_]/g, "")));
 }
 
 /**
@@ -133,17 +131,17 @@ export function isSensitiveKey(key: string): boolean {
 export function redactValue(value: unknown, depth: number = 0, seen?: WeakSet<object>): unknown {
   if (value === null || value === undefined) return value;
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const scrubbed = scrubCredentials(sanitizeLogValue(value));
     return scrubbed.length > MAX_VALUE_LENGTH
       ? `${scrubbed.slice(0, MAX_VALUE_LENGTH)}… (truncated)`
       : scrubbed;
   }
 
-  if (typeof value === 'number' || typeof value === 'boolean') return value;
-  if (typeof value === 'bigint') return value.toString();
-  if (typeof value === 'function') return '[Function]';
-  if (typeof value === 'symbol') return value.toString();
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "function") return "[Function]";
+  if (typeof value === "symbol") return value.toString();
 
   if (value instanceof Date) return value.toISOString();
 
@@ -155,18 +153,20 @@ export function redactValue(value: unknown, depth: number = 0, seen?: WeakSet<ob
     };
   }
 
-  if (depth >= MAX_DEPTH) return '[Truncated]';
+  if (depth >= MAX_DEPTH) return "[Truncated]";
 
   const tracker = seen ?? new WeakSet<object>();
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     // A Prisma error carries request/response objects that reference each other;
     // without this the logger is the thing that crashes.
-    if (tracker.has(value as object)) return '[Circular]';
+    if (tracker.has(value as object)) return "[Circular]";
     tracker.add(value as object);
   }
 
   if (Array.isArray(value)) {
-    const kept = value.slice(0, MAX_ARRAY_ENTRIES).map((entry) => redactValue(entry, depth + 1, tracker));
+    const kept = value
+      .slice(0, MAX_ARRAY_ENTRIES)
+      .map((entry) => redactValue(entry, depth + 1, tracker));
     if (value.length > MAX_ARRAY_ENTRIES) {
       kept.push(`… (${value.length - MAX_ARRAY_ENTRIES} more)`);
     }
@@ -202,9 +202,9 @@ export function resolveLogLevel(env: NodeJS.ProcessEnv = process.env): LogLevel 
     return explicit as LogLevel;
   }
 
-  if (env.VITEST === 'true' || env.NODE_ENV === 'test') return 'error';
-  if (env.NODE_ENV === 'development') return 'debug';
-  return 'info';
+  if (env.VITEST === "true" || env.NODE_ENV === "test") return "error";
+  if (env.NODE_ENV === "development") return "debug";
+  return "info";
 }
 
 export function shouldLog(level: EmittableLevel, threshold: LogLevel): boolean {
@@ -224,7 +224,7 @@ export function buildRecord(
   message: string,
   meta: Record<string, unknown> | undefined,
   context: Record<string, unknown>,
-  now: () => Date = () => new Date()
+  now: () => Date = () => new Date(),
 ): LogRecord {
   const text = scrubCredentials(sanitizeLogValue(message));
 
@@ -255,13 +255,13 @@ export function formatRecord(record: LogRecord, pretty: boolean): string {
         timestamp: record.timestamp,
         level: record.level,
         message: record.message,
-        meta: '[Unserializable]',
+        meta: "[Unserializable]",
       });
     }
   }
 
   const { timestamp, level, message, ...rest } = record;
-  const extras = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : '';
+  const extras = Object.keys(rest).length > 0 ? ` ${JSON.stringify(rest)}` : "";
   return `${timestamp} ${level.padEnd(5)} ${message}${extras}`;
 }
 
@@ -288,8 +288,8 @@ export interface LoggerOptions {
 function defaultSink(level: EmittableLevel, line: string): void {
   // `console.error` for warn and error so they land on stderr, which is what
   // Render and Docker use to separate the two streams.
-  if (level === 'error' || level === 'warn') console.error(line);
-  else if (level === 'debug') console.debug(line);
+  if (level === "error" || level === "warn") console.error(line);
+  else if (level === "debug") console.debug(line);
   else console.info(line);
 }
 
@@ -302,7 +302,7 @@ function defaultSink(level: EmittableLevel, line: string): void {
  */
 export function createLogger(options: LoggerOptions = {}): Logger {
   const level = options.level ?? resolveLogLevel();
-  const pretty = options.pretty ?? process.env.NODE_ENV !== 'production';
+  const pretty = options.pretty ?? process.env.NODE_ENV !== "production";
   const context = options.context ?? {};
   const sink = options.sink ?? defaultSink;
   const now = options.now;
@@ -314,10 +314,10 @@ export function createLogger(options: LoggerOptions = {}): Logger {
 
   return {
     level,
-    debug: (message, meta) => emit('debug', message, meta),
-    info: (message, meta) => emit('info', message, meta),
-    warn: (message, meta) => emit('warn', message, meta),
-    error: (message, meta) => emit('error', message, meta),
+    debug: (message, meta) => emit("debug", message, meta),
+    info: (message, meta) => emit("info", message, meta),
+    warn: (message, meta) => emit("warn", message, meta),
+    error: (message, meta) => emit("error", message, meta),
     child: (extra) =>
       createLogger({ ...options, level, pretty, context: { ...context, ...extra } }),
   };

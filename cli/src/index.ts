@@ -1,26 +1,26 @@
 #!/usr/bin/env node
-import fs from 'fs';
-import { GitError, getStagedFiles, readStagedContent } from './git.js';
-import { scanFile, formatScanResults, type FileScanResult, type OutputFormat } from './scanner.js';
+import fs from "fs";
+import { GitError, getStagedFiles, readStagedContent } from "./git.js";
+import { scanFile, formatScanResults, type FileScanResult, type OutputFormat } from "./scanner.js";
 
-const VERBOSE = process.argv.includes('--verbose');
+const VERBOSE = process.argv.includes("--verbose");
 
 function parseFormatArg(): OutputFormat {
-  const formatIndex = process.argv.findIndex((arg) => arg === '--format');
+  const formatIndex = process.argv.findIndex((arg) => arg === "--format");
   if (formatIndex !== -1) {
     const valStr = process.argv[formatIndex + 1];
     if (valStr) {
       const val = valStr.toLowerCase();
-      if (val === 'sarif' || val === 'json' || val === 'text') {
+      if (val === "sarif" || val === "json" || val === "text") {
         return val as OutputFormat;
       }
     }
   }
-  return 'text';
+  return "text";
 }
 
 function parseOutputArg(): string | null {
-  const outIndex = process.argv.findIndex((arg) => arg === '-o' || arg === '--output');
+  const outIndex = process.argv.findIndex((arg) => arg === "-o" || arg === "--output");
   if (outIndex !== -1) {
     const valStr = process.argv[outIndex + 1];
     if (valStr) {
@@ -71,7 +71,7 @@ function main(): number {
 
       const result = scanFile(path, content);
       fileResults.push(result);
-      if (format === 'text') {
+      if (format === "text") {
         reportSkipped(result);
         reportViolations(result);
       }
@@ -79,40 +79,42 @@ function main(): number {
     }
   }
 
-  if (format === 'sarif' || format === 'json') {
+  if (format === "sarif" || format === "json") {
     const outputString = formatScanResults(fileResults, format);
     if (outputPath) {
-      fs.writeFileSync(outputPath, outputString, 'utf-8');
-      console.log(`📄 [SecureFlow] Scan report exported in ${format.toUpperCase()} format to ${outputPath}`);
+      fs.writeFileSync(outputPath, outputString, "utf-8");
+      console.log(
+        `📄 [SecureFlow] Scan report exported in ${format.toUpperCase()} format to ${outputPath}`,
+      );
     } else {
       console.log(outputString);
     }
   } else if (outputPath) {
-    const textOutput = formatScanResults(fileResults, 'text');
-    fs.writeFileSync(outputPath, textOutput, 'utf-8');
+    const textOutput = formatScanResults(fileResults, "text");
+    fs.writeFileSync(outputPath, textOutput, "utf-8");
     console.log(`📄 [SecureFlow] Scan report written to ${outputPath}`);
   }
 
-  if (unreadable.length > 0 && format === 'text') {
+  if (unreadable.length > 0 && format === "text") {
     console.warn(
       `⚠️  [SecureFlow] Could not read ${unreadable.length} staged entr${
-        unreadable.length === 1 ? 'y' : 'ies'
-      } (submodule, symlink or conflicted): ${unreadable.join(', ')}`,
+        unreadable.length === 1 ? "y" : "ies"
+      } (submodule, symlink or conflicted): ${unreadable.join(", ")}`,
     );
   }
 
   if (violationCount > 0) {
-    if (format === 'text') {
+    if (format === "text") {
       console.error(
         `\n❌ SecureFlow blocked this commit: ${violationCount} secret-logging violation${
-          violationCount === 1 ? '' : 's'
+          violationCount === 1 ? "" : "s"
         }. Remove the exposed secrets/env variables, then re-stage.`,
       );
     }
     return 1;
   }
 
-  if (format === 'text') {
+  if (format === "text") {
     console.log(`✅ SecureFlow scan passed (${staged.length} staged file(s)).`);
   }
   return 0;

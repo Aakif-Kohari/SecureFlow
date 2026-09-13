@@ -1,19 +1,19 @@
-import 'dotenv/config';
-import { z } from 'zod';
-import { ai, defaultModel } from '@/ai/genkit';
-import { isRateLimitError, isTimeoutError, withRetry } from './security-helpers';
+import "dotenv/config";
+import { z } from "zod";
+import { ai, defaultModel } from "@/ai/genkit";
+import { isRateLimitError, isTimeoutError, withRetry } from "./security-helpers";
 import {
   DEFAULT_PROJECT_NAME,
   delimitProjectName,
   screenProjectName,
   screenTransmission,
-} from './heist-prompt-guard';
+} from "./heist-prompt-guard";
 
 // ── Input schema ──────────────────────────────────────────────────────────────
 export const HeistMessageInputSchema = z.object({
   projectName: z.string().min(1).max(120),
   score: z.number().int().min(0).max(100).optional(),
-  rank: z.enum(['S', 'A', 'B', 'C', 'D']).optional(),
+  rank: z.enum(["S", "A", "B", "C", "D"]).optional(),
   findingsCount: z.number().int().min(0).optional(),
 });
 
@@ -22,7 +22,7 @@ export type HeistMessageInput = z.infer<typeof HeistMessageInputSchema>;
 // ── Event types ───────────────────────────────────────────────────────────────
 
 /** A new fragment of the streaming text arrived (text-so-far snapshot). */
-export type HeistChunkEvent = { type: 'chunk'; text: string };
+export type HeistChunkEvent = { type: "chunk"; text: string };
 
 /**
  * All text has arrived; final complete message.
@@ -32,17 +32,17 @@ export type HeistChunkEvent = { type: 'chunk'; text: string };
  * caching or to note the fallback; the share page renders the message either
  * way.
  */
-export type HeistDoneEvent  = { type: 'done'; message: string; guarded?: boolean };
+export type HeistDoneEvent = { type: "done"; message: string; guarded?: boolean };
 
 /** AI generation failed; caller should fall back to static lines. */
-export type HeistErrorEvent = { type: 'error'; message: string };
+export type HeistErrorEvent = { type: "error"; message: string };
 
 export type HeistStreamEvent = HeistChunkEvent | HeistDoneEvent | HeistErrorEvent;
 
 // ── Fallback message (mirrored in the client for offline / error paths) ───────
 export const FALLBACK_HEIST_MESSAGE =
-  'Bella ciao, accomplice. The operation on this vault is complete. ' +
-  'The Professor always has a plan. Zero traces remain.';
+  "Bella ciao, accomplice. The operation on this vault is complete. " +
+  "The Professor always has a plan. Zero traces remain.";
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are "The Professor" from Money Heist — hyper-analytical, calm, authoritative, and a master strategist who speaks in measured, calculated sentences. You are transmitting an encrypted intelligence briefing over a secure channel to your network of accomplices (occasionally referencing team city codenames such as Tokyo, Berlin, Denver, Rio, Nairobi, Helsinki, Moscow, or Palermo) confirming that a security audit (a "heist") on a software target has been executed to perfection.
@@ -73,9 +73,7 @@ Rules:
  * injection surface and are interpolated directly.
  */
 function buildPrompt(input: HeistMessageInput): string {
-  const parts: string[] = [
-    delimitProjectName(input.projectName),
-  ];
+  const parts: string[] = [delimitProjectName(input.projectName)];
 
   if (input.score !== undefined) {
     parts.push(`Security score: ${input.score}/100.`);
@@ -87,10 +85,10 @@ function buildPrompt(input: HeistMessageInput): string {
     parts.push(`Findings logged: ${input.findingsCount}.`);
   }
 
-  parts.push('Generate The Professor\'s encrypted transmission now.');
+  parts.push("Generate The Professor's encrypted transmission now.");
   // Joined on newlines, not spaces: the delimiter block above is line-oriented
   // and collapsing it onto one line defeats the isolation it provides.
-  return parts.join('\n');
+  return parts.join("\n");
 }
 
 // ── Main streaming generator ──────────────────────────────────────────────────
@@ -136,8 +134,8 @@ export async function* streamHeistMessage(
     validatedInput = HeistMessageInputSchema.parse(input);
   } catch (err) {
     yield {
-      type: 'error',
-      message: err instanceof Error ? err.message : 'Invalid input.',
+      type: "error",
+      message: err instanceof Error ? err.message : "Invalid input.",
     };
     return;
   }
@@ -167,11 +165,11 @@ export async function* streamHeistMessage(
           ...(signal ? { abortSignal: signal } : {}),
         }),
       {
-        initialDelayMs: process.env.NODE_ENV === 'test' ? 10 : 100,
-      }
+        initialDelayMs: process.env.NODE_ENV === "test" ? 10 : 100,
+      },
     );
 
-    let accumulatedText = '';
+    let accumulatedText = "";
 
     for await (const chunk of stream) {
       // Stop pulling as soon as the caller is gone. Returning here finalises
@@ -180,10 +178,10 @@ export async function* streamHeistMessage(
 
       // Genkit streams raw text chunks for non-JSON output.
       // chunk.text is the incremental delta; we accumulate it.
-      const delta: string = chunk.text ?? '';
+      const delta: string = chunk.text ?? "";
       if (delta) {
         accumulatedText += delta;
-        yield { type: 'chunk', text: accumulatedText };
+        yield { type: "chunk", text: accumulatedText };
       }
     }
 
@@ -199,7 +197,7 @@ export async function* streamHeistMessage(
     const outputScreening = screenTransmission(finalText);
 
     yield {
-      type: 'done',
+      type: "done",
       message: outputScreening.compromised ? FALLBACK_HEIST_MESSAGE : finalText,
       guarded: screening.rejected || outputScreening.compromised,
     };
@@ -210,15 +208,15 @@ export async function* streamHeistMessage(
     const isRateLimit = isRateLimitError(err);
     const isTimeout = isTimeoutError(err);
     const message = isRateLimit
-      ? 'Groq API rate limit reached (429). Falling back to default heist transmission.'
+      ? "Groq API rate limit reached (429). Falling back to default heist transmission."
       : isTimeout
-      ? 'Groq API connection timed out. Falling back to default heist transmission.'
-      : err instanceof Error
-      ? err.message
-      : 'AI generation failed.';
+        ? "Groq API connection timed out. Falling back to default heist transmission."
+        : err instanceof Error
+          ? err.message
+          : "AI generation failed.";
 
     yield {
-      type: 'error',
+      type: "error",
       message,
     };
   }

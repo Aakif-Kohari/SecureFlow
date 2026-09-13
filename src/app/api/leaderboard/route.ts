@@ -154,7 +154,4 @@ async function handler(req: NextRequest): Promise<Response> {
   });
 }
 
-export const GET = withRateLimit(
-  handler as any,
-  { ...TIERS.STANDARD, keyPrefix: 'leaderboard' }
-);
+export const GET = withRateLimit(handler as any, { ...TIERS.STANDARD, keyPrefix: "leaderboard" });

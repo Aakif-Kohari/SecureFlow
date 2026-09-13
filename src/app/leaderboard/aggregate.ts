@@ -44,9 +44,21 @@ const SUPPRESSED_TRIAGE_STATUSES = SUPPRESSED_STATUSES;
 const FORM_SCAN_LIMIT = 2000;
 
 const CITIES = [
-  "Tokyo", "Denver", "Helsinki", "Nairobi", "Berlin",
-  "Rio", "Moscow", "Oslo", "Bogota", "Palermo",
-  "Stockholm", "Lisbon", "Marseille", "Reykjavik", "Valencia",
+  "Tokyo",
+  "Denver",
+  "Helsinki",
+  "Nairobi",
+  "Berlin",
+  "Rio",
+  "Moscow",
+  "Oslo",
+  "Bogota",
+  "Palermo",
+  "Stockholm",
+  "Lisbon",
+  "Marseille",
+  "Reykjavik",
+  "Valencia",
 ];
 
 function generateCodename(login: string): string {
@@ -69,12 +81,21 @@ function emptyCounts(): SeverityCounts {
  * every author's penalty on data we cannot actually rank.
  */
 function severityBucket(severity: string | null | undefined): keyof SeverityCounts | null {
-  switch (String(severity ?? "").trim().toUpperCase()) {
-    case "CRITICAL": return "critical";
-    case "HIGH": return "high";
-    case "MEDIUM": return "medium";
-    case "LOW": return "low";
-    default: return null;
+  switch (
+    String(severity ?? "")
+      .trim()
+      .toUpperCase()
+  ) {
+    case "CRITICAL":
+      return "critical";
+    case "HIGH":
+      return "high";
+    case "MEDIUM":
+      return "medium";
+    case "LOW":
+      return "low";
+    default:
+      return null;
   }
 }
 
@@ -106,9 +127,21 @@ async function aggregateContributors(): Promise<Omit<ContributorRow, "rank">[]> 
   const [totals, merged, passed, avatars, users, latestScans, suppressed, recentPrs] =
     await Promise.all([
       prisma.pullRequest.groupBy({ by: ["authorLogin"], where: authored, _count: { _all: true } }),
-      prisma.pullRequest.groupBy({ by: ["authorLogin"], where: { ...authored, state: "MERGED" }, _count: { _all: true } }),
-      prisma.pullRequest.groupBy({ by: ["authorLogin"], where: { ...authored, status: PASSED_STATUS }, _count: { _all: true } }),
-      prisma.pullRequest.findMany({ where: { ...authored, authorAvatarUrl: { not: null } }, select: { authorLogin: true, authorAvatarUrl: true }, distinct: ["authorLogin"] }),
+      prisma.pullRequest.groupBy({
+        by: ["authorLogin"],
+        where: { ...authored, state: "MERGED" },
+        _count: { _all: true },
+      }),
+      prisma.pullRequest.groupBy({
+        by: ["authorLogin"],
+        where: { ...authored, status: PASSED_STATUS },
+        _count: { _all: true },
+      }),
+      prisma.pullRequest.findMany({
+        where: { ...authored, authorAvatarUrl: { not: null } },
+        select: { authorLogin: true, authorAvatarUrl: true },
+        distinct: ["authorLogin"],
+      }),
       prisma.user.findMany({
         where: { codename: { not: null } },
         select: { githubLogin: true, name: true, email: true, codename: true },
@@ -134,13 +167,13 @@ async function aggregateContributors(): Promise<Omit<ContributorRow, "rank">[]> 
     ]);
 
   const mergedByLogin = new Map<string, number>(
-    merged.map((row: any) => [row.authorLogin as string, row._count._all as number])
+    merged.map((row: any) => [row.authorLogin as string, row._count._all as number]),
   );
   const passedByLogin = new Map<string, number>(
-    passed.map((row: any) => [row.authorLogin as string, row._count._all as number])
+    passed.map((row: any) => [row.authorLogin as string, row._count._all as number]),
   );
   const avatarByLogin = new Map<string, string>(
-    avatars.map((row: any) => [row.authorLogin as string, row.authorAvatarUrl as string])
+    avatars.map((row: any) => [row.authorLogin as string, row.authorAvatarUrl as string]),
   );
   const codenameByLogin = new Map<string, string>();
 
@@ -175,10 +208,12 @@ async function aggregateContributors(): Promise<Omit<ContributorRow, "rank">[]> 
     }
   }
 
-
   // scanResultId -> the author whose pull request that scan belongs to.
   const authorByScanId = new Map<string, string>();
-  for (const scan of latestScans as Array<{ id: string; pullRequest: { authorLogin: string | null } | null }>) {
+  for (const scan of latestScans as Array<{
+    id: string;
+    pullRequest: { authorLogin: string | null } | null;
+  }>) {
     const login = scan.pullRequest?.authorLogin;
     if (login) authorByScanId.set(scan.id, login);
   }
@@ -216,7 +251,11 @@ async function aggregateContributors(): Promise<Omit<ContributorRow, "rank">[]> 
 
   // Recent pull requests per author, newest first, for the W/D/L form string.
   const prsByLogin = new Map<string, { status: string; createdAt: Date }[]>();
-  for (const pr of recentPrs as Array<{ authorLogin: string | null; status: string; createdAt: Date }>) {
+  for (const pr of recentPrs as Array<{
+    authorLogin: string | null;
+    status: string;
+    createdAt: Date;
+  }>) {
     if (!pr.authorLogin) continue;
     const list = prsByLogin.get(pr.authorLogin) ?? [];
     // `computeForm` re-sorts and slices to five anyway; capping here keeps the
@@ -265,10 +304,7 @@ async function aggregateContributors(): Promise<Omit<ContributorRow, "rank">[]> 
   // stable, so pre-sorting here decides the order within a tie rather than
   // leaving it to whatever order the database happened to return rows in.
   rows.sort(
-    (a, b) =>
-      b.score - a.score ||
-      b.mergedCount - a.mergedCount ||
-      a.login.localeCompare(b.login)
+    (a, b) => b.score - a.score || b.mergedCount - a.mergedCount || a.login.localeCompare(b.login),
   );
 
   return rows;

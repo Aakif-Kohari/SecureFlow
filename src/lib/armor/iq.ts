@@ -1,13 +1,13 @@
-import { ArmorIQClient, IntentToken } from '@armoriq/sdk';
-import { ScanFinding } from './scanner';
-import prisma from '@/lib/prisma';
-import { z } from 'zod';
-import { isAtLeast, parseSeverity } from '@/lib/severity';
+import { ArmorIQClient, IntentToken } from "@armoriq/sdk";
+import { ScanFinding } from "./scanner";
+import prisma from "@/lib/prisma";
+import { z } from "zod";
+import { isAtLeast, parseSeverity } from "@/lib/severity";
 
 const armorIQConfigSchema = z.object({
-  apiKey: z.string().default(''),
-  userId: z.string().default('fallback-user'),
-  agentId: z.string().default('fallback-agent'),
+  apiKey: z.string().default(""),
+  userId: z.string().default("fallback-user"),
+  agentId: z.string().default("fallback-agent"),
 });
 
 const armorIQConfig = armorIQConfigSchema.parse({
@@ -16,7 +16,7 @@ const armorIQConfig = armorIQConfigSchema.parse({
   agentId: process.env.AGENT_ID || undefined,
 });
 
-export type PolicyResult = 'PASS' | 'REVIEW REQUIRED' | 'BLOCKED';
+export type PolicyResult = "PASS" | "REVIEW REQUIRED" | "BLOCKED";
 
 export class ArmorIQPolicyEngine {
   /**
@@ -34,15 +34,17 @@ export class ArmorIQPolicyEngine {
    * just cannot rank it, so a human should look.
    */
   evaluateFindings(findings: ScanFinding[]): PolicyResult {
-    if (findings.some(f => parseSeverity(f.severity) === 'CRITICAL')) {
-      return 'BLOCKED';
+    if (findings.some((f) => parseSeverity(f.severity) === "CRITICAL")) {
+      return "BLOCKED";
     }
 
-    if (findings.some(f => isAtLeast(f.severity, 'MEDIUM') || parseSeverity(f.severity) === null)) {
-      return 'REVIEW REQUIRED';
+    if (
+      findings.some((f) => isAtLeast(f.severity, "MEDIUM") || parseSeverity(f.severity) === null)
+    ) {
+      return "REVIEW REQUIRED";
     }
 
-    return 'PASS';
+    return "PASS";
   }
 
   async getRiskTrend(filters?: { userId?: string; repositoryId?: string }): Promise<number> {
@@ -71,7 +73,7 @@ export class ArmorIQPolicyEngine {
       });
       return aggregation._avg.riskScore ?? 0;
     } catch (error) {
-      console.error('Error fetching risk trend:', error);
+      console.error("Error fetching risk trend:", error);
       return 0;
     }
   }
@@ -115,30 +117,30 @@ export class ArmorIQService {
    * This bridges your custom UI with the ArmorIQ proxy guardrails.
    */
   static compileToArmorIQPolicy(dbPolicies: any[]): Record<string, any> {
-    const activePolicies = dbPolicies.filter(p => p.isActive);
+    const activePolicies = dbPolicies.filter((p) => p.isActive);
 
     const compiledPolicy = {
       allow: [] as string[],
       deny: [] as string[],
-      priority: 50 // Default priority
+      priority: 50, // Default priority
     };
 
     for (const policy of activePolicies) {
       const rulesMeta = (policy.rules as any) || {};
-      const action = rulesMeta.action || 'REVIEW REQUIRED';
+      const action = rulesMeta.action || "REVIEW REQUIRED";
       const conditions = rulesMeta.conditions || [];
 
       // Map database logic to ArmorIQ glob patterns (e.g., "data-mcp/*")
-      if (action === 'BLOCKED' || action === 'DENY') {
+      if (action === "BLOCKED" || action === "DENY") {
         compiledPolicy.deny.push(...conditions);
-      } else if (action === 'PASS' || action === 'ALLOW') {
+      } else if (action === "PASS" || action === "ALLOW") {
         compiledPolicy.allow.push(...conditions);
       }
     }
 
     // Default deny if no explicit allows are set, to adhere to zero-trust
     if (compiledPolicy.allow.length === 0 && compiledPolicy.deny.length === 0) {
-       compiledPolicy.deny.push('*:*');
+      compiledPolicy.deny.push("*:*");
     }
 
     return compiledPolicy;
@@ -147,11 +149,15 @@ export class ArmorIQService {
   /**
    * Helper to quickly get a token using the compiled programmatic policy.
    */
-  static async getProtectedToken(userEmail: string, planCapture: any, dbPolicies: any[]): Promise<IntentToken> {
+  static async getProtectedToken(
+    userEmail: string,
+    planCapture: any,
+    dbPolicies: any[],
+  ): Promise<IntentToken> {
     const client = this.getClient();
     if (!client) {
       throw new Error(
-        "ArmorIQ is not configured. Set ARMORIQ_API_KEY (get one at https://dev.armoriq.ai) to mint intent tokens."
+        "ArmorIQ is not configured. Set ARMORIQ_API_KEY (get one at https://dev.armoriq.ai) to mint intent tokens.",
       );
     }
     const scope = client.forUser(userEmail);

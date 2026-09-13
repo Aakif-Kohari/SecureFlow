@@ -1,11 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Mobile Viewport E2E Tests', () => {
-  test('renders login page correctly on mobile viewports without horizontal overflow', async ({ page }) => {
-    await page.goto('/login');
+test.describe("Mobile Viewport E2E Tests", () => {
+  test("renders login page correctly on mobile viewports without horizontal overflow", async ({
+    page,
+  }) => {
+    await page.goto("/login");
     await expect(page).toHaveTitle(/SecureFlow/i);
 
-    const body = page.locator('body');
+    const body = page.locator("body");
     await expect(body).toBeVisible();
 
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -13,10 +15,10 @@ test.describe('Mobile Viewport E2E Tests', () => {
     expect(scrollWidth).toBeLessThanOrEqual(viewportWidth);
   });
 
-  test('heist transmission view adapts to mobile screen bounds', async ({ page }) => {
-    await page.goto('/share/heist');
+  test("heist transmission view adapts to mobile screen bounds", async ({ page }) => {
+    await page.goto("/share/heist");
 
-    const container = page.locator('main');
+    const container = page.locator("main");
     await expect(container).toBeVisible();
 
     const isMobile = await page.evaluate(() => window.innerWidth < 768);

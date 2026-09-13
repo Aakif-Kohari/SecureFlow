@@ -105,7 +105,7 @@ const CATEGORISED_TYPES = [...SECRET_TYPES, ...VULNERABILITY_TYPES, ...MISCONFIG
  * cannot be a relational include.
  */
 function groupFingerprintsByStatus(
-  byKey: Map<string, { status: string; note: string | null }>
+  byKey: Map<string, { status: string; note: string | null }>,
 ): Partial<Record<FindingStatus, string[]>> {
   const grouped: Partial<Record<FindingStatus, string[]>> = {};
 
@@ -127,7 +127,7 @@ function groupFingerprintsByStatus(
  * `0 / 0 / 0` above fifty dismissed rows.
  */
 export async function getUserFindings(
-  query: FindingsQuery = {}
+  query: FindingsQuery = {},
 ): Promise<UserFindingsResult & { stats: FindingsStats }> {
   const userId = await requireUser();
   const normalized = normalizeFindingsQuery(query);
@@ -199,8 +199,8 @@ export async function getUserFindings(
           skip: slice.skip,
           take: slice.take,
           include,
-        })
-      )
+        }),
+      ),
     );
 
     rows = buckets.flat();

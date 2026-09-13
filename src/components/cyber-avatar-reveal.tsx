@@ -103,14 +103,13 @@ export function CyberAvatarReveal({ image, name }: CyberAvatarRevealProps) {
        * during the glitch animation so pixels don't bleed outside the circle.
        */}
       <div className="relative w-full h-full rounded-full overflow-hidden">
-
         {/* ── Layer 1: VenetianMask (default visible, glitches out on hover) ── */}
         <div
           className={cn(
             "absolute inset-0 rounded-full z-10",
             "bg-primary/20 border border-primary/30",
             "flex items-center justify-center",
-            phase === "revealing"  && "cyber-mask-out",
+            phase === "revealing" && "cyber-mask-out",
             phase === "concealing" && "cyber-mask-in",
           )}
           // When idle, show at full opacity (no animation class to override).
@@ -125,7 +124,7 @@ export function CyberAvatarReveal({ image, name }: CyberAvatarRevealProps) {
         <div
           className={cn(
             "absolute inset-0 z-0",
-            phase === "revealing"  && "cyber-avatar-in",
+            phase === "revealing" && "cyber-avatar-in",
             phase === "concealing" && "cyber-avatar-out",
           )}
           style={{ opacity: phase === "idle" ? 0 : undefined }}
@@ -138,7 +137,6 @@ export function CyberAvatarReveal({ image, name }: CyberAvatarRevealProps) {
             className="rounded-full object-cover border border-primary/30"
           />
         </div>
-
       </div>
     </div>
   );

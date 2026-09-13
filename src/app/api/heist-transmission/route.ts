@@ -85,7 +85,10 @@ export function createHeistStream(
   options: HeistStreamOptions = {},
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
-  const { signal: abortSignal, release } = streamManager.register(upstreamSignal, "heist-transmission");
+  const { signal: abortSignal, release } = streamManager.register(
+    upstreamSignal,
+    "heist-transmission",
+  );
   const cache = options.cache ?? getTransmissionCache();
   const cacheKey = transmissionKey(input);
 

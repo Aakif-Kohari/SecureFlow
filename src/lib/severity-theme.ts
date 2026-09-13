@@ -14,16 +14,16 @@
  * without pulling server-side code into the browser bundle.
  */
 
-import { normalizeSeverity, parseSeverity, type Severity } from './severity';
+import { normalizeSeverity, parseSeverity, type Severity } from "./severity";
 
 export type { Severity };
 
 export const SEVERITY_THEME: Record<Severity, { label: string; badgeClass: string }> = {
-  CRITICAL: { label: 'Interpol Breach', badgeClass: 'bg-red-500' },
-  HIGH: { label: 'Hostage Crisis', badgeClass: 'bg-orange-500' },
-  MEDIUM: { label: 'Camera Glitch', badgeClass: 'bg-yellow-500 text-black' },
-  LOW: { label: 'Loose Screws', badgeClass: 'bg-slate-500' },
-  NONE: { label: 'All Clear', badgeClass: 'bg-emerald-500' },
+  CRITICAL: { label: "Interpol Breach", badgeClass: "bg-red-500" },
+  HIGH: { label: "Hostage Crisis", badgeClass: "bg-orange-500" },
+  MEDIUM: { label: "Camera Glitch", badgeClass: "bg-yellow-500 text-black" },
+  LOW: { label: "Loose Screws", badgeClass: "bg-slate-500" },
+  NONE: { label: "All Clear", badgeClass: "bg-emerald-500" },
 };
 
 /**
@@ -42,9 +42,9 @@ export function getSeverityTheme(severity: unknown): { label: string; badgeClass
   const parsed = parseSeverity(severity);
   if (parsed !== null) return SEVERITY_THEME[parsed];
 
-  const raw = typeof severity === 'string' ? severity.trim() : '';
+  const raw = typeof severity === "string" ? severity.trim() : "";
   return {
-    label: raw || SEVERITY_THEME[normalizeSeverity(severity, 'NONE')].label,
-    badgeClass: 'bg-slate-500',
+    label: raw || SEVERITY_THEME[normalizeSeverity(severity, "NONE")].label,
+    badgeClass: "bg-slate-500",
   };
 }

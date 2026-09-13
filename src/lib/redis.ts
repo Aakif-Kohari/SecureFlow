@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import Redis from "ioredis";
 
 const globalForRedis = globalThis as unknown as {
   redis: Redis | undefined;
@@ -7,7 +7,7 @@ const globalForRedis = globalThis as unknown as {
 // Use an in-memory fallback if REDIS_URL is not provided (useful for local dev without Docker)
 let redisInstance: Redis | null = null;
 
-if (process.env.REDIS_URL && process.env.REDIS_URL.trim() !== '') {
+if (process.env.REDIS_URL && process.env.REDIS_URL.trim() !== "") {
   redisInstance =
     globalForRedis.redis ??
     new Redis(process.env.REDIS_URL, {
@@ -18,14 +18,16 @@ if (process.env.REDIS_URL && process.env.REDIS_URL.trim() !== '') {
       maxRetriesPerRequest: 3,
     });
 
-  if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redisInstance;
+  if (process.env.NODE_ENV !== "production") globalForRedis.redis = redisInstance;
 } else {
-  console.warn('⚠️ REDIS_URL is not set. Rate limiting will fall back to an in-memory Map (not suitable for production multi-instance).');
+  console.warn(
+    "⚠️ REDIS_URL is not set. Rate limiting will fall back to an in-memory Map (not suitable for production multi-instance).",
+  );
 }
 
 export const redis = redisInstance;
 
-export type FallbackStrategy = 'fail-open' | 'fail-closed';
+export type FallbackStrategy = "fail-open" | "fail-closed";
 
 export interface RateLimitOptions {
   fallbackStrategy?: FallbackStrategy;
@@ -139,7 +141,7 @@ function checkMemoryRateLimit(
   key: string,
   limit: number,
   windowSeconds: number,
-  now: number
+  now: number,
 ): RateLimitResult {
   const record = memoryStore.get(key);
 
@@ -180,12 +182,12 @@ export async function checkRateLimitDetailed(
   key: string,
   limit: number,
   windowSeconds: number,
-  options?: RateLimitOptions | FallbackStrategy
+  options?: RateLimitOptions | FallbackStrategy,
 ): Promise<RateLimitResult> {
   const now = Date.now();
   const fallbackStrategy: FallbackStrategy =
-    typeof options === 'string' ? options : (options?.fallbackStrategy ?? 'fail-open');
-  const timeoutMs = typeof options === 'object' ? (options?.timeoutMs ?? 1000) : 1000;
+    typeof options === "string" ? options : (options?.fallbackStrategy ?? "fail-open");
+  const timeoutMs = typeof options === "object" ? (options?.timeoutMs ?? 1000) : 1000;
 
   if (!redis) {
     return checkMemoryRateLimit(key, limit, windowSeconds, now);
@@ -201,11 +203,11 @@ export async function checkRateLimitDetailed(
       let ttlMs = windowSeconds * 1000;
       if (current === 1) {
         await redis.expire(key, windowSeconds);
-      } else if (typeof redis.pttl === 'function') {
+      } else if (typeof redis.pttl === "function") {
         const pttl = await redis.pttl(key);
-        if (typeof pttl === 'number' && pttl > 0) {
+        if (typeof pttl === "number" && pttl > 0) {
           ttlMs = pttl;
-        } else if (typeof pttl === 'number' && pttl < 0) {
+        } else if (typeof pttl === "number" && pttl < 0) {
           // -1 means the key exists with no expiry, which can happen if a
           // previous process died between INCR and EXPIRE. Re-arm it rather
           // than leaving a counter that never resets.
@@ -224,11 +226,11 @@ export async function checkRateLimitDetailed(
 
     return await withTimeout(incrementTask, timeoutMs);
   } catch (error) {
-    console.error('Redis error or timeout during rate limiting:', error);
+    console.error("Redis error or timeout during rate limiting:", error);
 
     // The counter is unknown, so the reported window is a best guess. `degraded`
     // tells the caller not to advertise it as authoritative.
-    const allowed = fallbackStrategy !== 'fail-closed';
+    const allowed = fallbackStrategy !== "fail-closed";
     return {
       allowed,
       limit,
@@ -249,7 +251,7 @@ export async function checkRateLimit(
   key: string,
   limit: number,
   windowSeconds: number,
-  options?: RateLimitOptions | FallbackStrategy
+  options?: RateLimitOptions | FallbackStrategy,
 ): Promise<boolean> {
   const result = await checkRateLimitDetailed(key, limit, windowSeconds, options);
   return result.allowed;
@@ -267,4 +269,3 @@ export async function closeRedis(): Promise<void> {
     }
   }
 }
-

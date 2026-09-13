@@ -9,19 +9,19 @@
  *   GENERIC_WEBHOOK_SECRET - Shared HMAC secret for signature verification.
  */
 
-import { withRateLimit } from '@/lib/middleware/rate-limit';
-import { createInboundWebhookHandler } from '@/lib/webhooks/inbound-handler';
+import { withRateLimit } from "@/lib/middleware/rate-limit";
+import { createInboundWebhookHandler } from "@/lib/webhooks/inbound-handler";
 
 const handler = createInboundWebhookHandler({
   readSecret: () => process.env.GENERIC_WEBHOOK_SECRET,
-  secretEnvVar: 'GENERIC_WEBHOOK_SECRET',
-  logComponent: 'webhook-generic',
+  secretEnvVar: "GENERIC_WEBHOOK_SECRET",
+  logComponent: "webhook-generic",
 });
 
 export const POST = withRateLimit(handler, {
   limit: 100,
   windowSeconds: 60,
-  keyPrefix: 'webhook:generic',
+  keyPrefix: "webhook:generic",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";

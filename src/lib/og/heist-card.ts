@@ -44,14 +44,14 @@ export const MAX_TIMESTAMP_LENGTH = 40;
 export const MAX_FINDINGS_COUNT = 1_000_000;
 
 /** Ranks the badge renders. Anything else is omitted rather than drawn. */
-export const VALID_RANKS = ['S', 'A', 'B', 'C', 'D'] as const;
+export const VALID_RANKS = ["S", "A", "B", "C", "D"] as const;
 export type CardRank = (typeof VALID_RANKS)[number];
 
-export const DEFAULT_PROJECT = 'Classified Target';
-export const DEFAULT_ALIAS = 'The Professor';
+export const DEFAULT_PROJECT = "Classified Target";
+export const DEFAULT_ALIAS = "The Professor";
 export const DEFAULT_SCORE = 100;
 
-export type CardTheme = 'heist' | 'glitch';
+export type CardTheme = "heist" | "glitch";
 
 export interface HeistCardParams {
   project: string;
@@ -80,13 +80,15 @@ export interface HeistCardParams {
  * Newlines go too — the card's fields are single-line by design.
  */
 function stripControlCharacters(value: string): string {
-  return value
-    // C0 and C1 control characters, including the newlines the layout has no row for.
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
-    // Zero-width, soft hyphen, and the bidi overrides.
-    .replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    value
+      // C0 and C1 control characters, including the newlines the layout has no row for.
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+      // Zero-width, soft hyphen, and the bidi overrides.
+      .replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 /**
@@ -97,7 +99,7 @@ function stripControlCharacters(value: string): string {
  * full-length blank.
  */
 export function sanitizeText(raw: string | null | undefined, maxLength: number): string {
-  if (typeof raw !== 'string') return '';
+  if (typeof raw !== "string") return "";
   return stripControlCharacters(raw).slice(0, maxLength);
 }
 
@@ -108,7 +110,7 @@ export function sanitizeText(raw: string | null | undefined, maxLength: number):
  * `.toString()` would happily render as "NaN" in 86px type.
  */
 export function parseScore(raw: string | null | undefined): number {
-  if (typeof raw !== 'string' || raw.trim() === '') return DEFAULT_SCORE;
+  if (typeof raw !== "string" || raw.trim() === "") return DEFAULT_SCORE;
 
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) return DEFAULT_SCORE;
@@ -124,7 +126,7 @@ export function parseScore(raw: string | null | undefined): number {
  * rendered a counter the caller never asked for.
  */
 export function parseFindingsCount(raw: string | null | undefined): string | undefined {
-  if (typeof raw !== 'string' || raw.trim() === '') return undefined;
+  if (typeof raw !== "string" || raw.trim() === "") return undefined;
 
   const parsed = Number(raw);
   if (!Number.isFinite(parsed) || parsed < 0) return undefined;
@@ -135,7 +137,7 @@ export function parseFindingsCount(raw: string | null | undefined): string | und
 /** Parse the rank badge, or `undefined` when it should not be drawn. */
 export function parseRank(raw: string | null | undefined): CardRank | undefined {
   const candidate = raw?.trim().toUpperCase();
-  return (VALID_RANKS as readonly string[]).includes(candidate ?? '')
+  return (VALID_RANKS as readonly string[]).includes(candidate ?? "")
     ? (candidate as CardRank)
     : undefined;
 }
@@ -143,12 +145,12 @@ export function parseRank(raw: string | null | undefined): CardRank | undefined 
 /** `glitch` and its `matrix` alias select the green palette; everything else is the default. */
 export function parseTheme(raw: string | null | undefined): CardTheme {
   const candidate = raw?.trim().toLowerCase();
-  return candidate === 'glitch' || candidate === 'matrix' ? 'glitch' : 'heist';
+  return candidate === "glitch" || candidate === "matrix" ? "glitch" : "heist";
 }
 
 /** The timestamp rendered when the caller did not supply one. */
 export function defaultTimestamp(now: Date = new Date()): string {
-  return now.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  return now.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 
 /**
@@ -158,31 +160,31 @@ export function defaultTimestamp(now: Date = new Date()): string {
  */
 export function parseHeistCardParams(
   searchParams: URLSearchParams,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): HeistCardParams {
-  const suppliedTimestamp = sanitizeText(searchParams.get('timestamp'), MAX_TIMESTAMP_LENGTH);
+  const suppliedTimestamp = sanitizeText(searchParams.get("timestamp"), MAX_TIMESTAMP_LENGTH);
   const stolen = sanitizeText(
-    searchParams.get('stolen') ?? searchParams.get('amount'),
-    MAX_STOLEN_LENGTH
+    searchParams.get("stolen") ?? searchParams.get("amount"),
+    MAX_STOLEN_LENGTH,
   );
 
   return {
-    project: sanitizeText(searchParams.get('project'), MAX_PROJECT_LENGTH) || DEFAULT_PROJECT,
-    alias: sanitizeText(searchParams.get('alias'), MAX_ALIAS_LENGTH) || DEFAULT_ALIAS,
-    score: parseScore(searchParams.get('score')),
-    rank: parseRank(searchParams.get('rank')),
+    project: sanitizeText(searchParams.get("project"), MAX_PROJECT_LENGTH) || DEFAULT_PROJECT,
+    alias: sanitizeText(searchParams.get("alias"), MAX_ALIAS_LENGTH) || DEFAULT_ALIAS,
+    score: parseScore(searchParams.get("score")),
+    rank: parseRank(searchParams.get("rank")),
     findingsCount: parseFindingsCount(
-      searchParams.get('findingsCount') ?? searchParams.get('findings')
+      searchParams.get("findingsCount") ?? searchParams.get("findings"),
     ),
     stolen: stolen || undefined,
-    theme: parseTheme(searchParams.get('theme')),
+    theme: parseTheme(searchParams.get("theme")),
     timestamp: suppliedTimestamp || defaultTimestamp(now),
     timestampPinned: suppliedTimestamp.length > 0,
   };
 }
 
 /** How long a card whose bytes are fully determined by its URL may be cached. */
-export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+export const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 /**
  * How long a card carrying a render-time timestamp may be cached.
@@ -192,7 +194,7 @@ export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
  * a year stale.
  */
 export const TIMESTAMPED_CACHE_CONTROL =
-  'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+  "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400";
 
 /**
  * The `Cache-Control` a rendered card should carry.
@@ -205,6 +207,6 @@ export const TIMESTAMPED_CACHE_CONTROL =
  * `immutable` is correct exactly when the URL pins every input, which is what
  * `timestampPinned` records.
  */
-export function cacheControlFor(params: Pick<HeistCardParams, 'timestampPinned'>): string {
+export function cacheControlFor(params: Pick<HeistCardParams, "timestampPinned">): string {
   return params.timestampPinned ? IMMUTABLE_CACHE_CONTROL : TIMESTAMPED_CACHE_CONTROL;
 }

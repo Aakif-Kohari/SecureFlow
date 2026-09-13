@@ -5,11 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sanitizeAuditLogInput } from "@/lib/audit/minimization";
 import { createLogger } from "@/lib/logger";
-import {
-  codenameTakenError,
-  isCodenameConflict,
-  validateCodename,
-} from "@/lib/codename/normalize";
+import { codenameTakenError, isCodenameConflict, validateCodename } from "@/lib/codename/normalize";
 
 const log = createLogger({ context: { component: "codename-ceremony" } });
 

@@ -12,7 +12,7 @@ describe("Avatar component", () => {
       <Avatar>
         <AvatarImage src="https://github.com/octocat.png" alt="Octocat" />
         <AvatarFallback>OC</AvatarFallback>
-      </Avatar>
+      </Avatar>,
     );
 
     expect(screen.getByText("OC")).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe("Avatar component", () => {
     const { container } = render(
       <Avatar className="custom-avatar-class">
         <AvatarFallback>SF</AvatarFallback>
-      </Avatar>
+      </Avatar>,
     );
 
     expect(container.firstChild).toHaveClass("custom-avatar-class");
@@ -33,7 +33,7 @@ describe("Avatar component", () => {
     render(
       <Avatar>
         <AvatarFallback className="custom-fallback">AB</AvatarFallback>
-      </Avatar>
+      </Avatar>,
     );
 
     expect(screen.getByText("AB")).toHaveClass("custom-fallback");

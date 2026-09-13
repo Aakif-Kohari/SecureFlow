@@ -29,8 +29,8 @@
  * `127.0.0.1` is the standard way around a hostname allowlist.
  */
 
-import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
-import { lookup as dnsLookup } from 'dns/promises';
+import { createHmac, randomUUID, timingSafeEqual } from "crypto";
+import { lookup as dnsLookup } from "dns/promises";
 
 /** Default per-request deadline. Generous for a webhook, far short of forever. */
 export const DEFAULT_TIMEOUT_MS = 10_000;
@@ -42,12 +42,12 @@ export const MAX_TIMEOUT_MS = 60_000;
 export const DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024;
 
 /** Version tag on the signature header, so the scheme can change without breaking receivers. */
-export const SIGNATURE_VERSION = 'v1';
+export const SIGNATURE_VERSION = "v1";
 
 /** Header names, exported so tests and receivers agree on the spelling. */
-export const SIGNATURE_HEADER = 'X-SecureFlow-Signature';
-export const TIMESTAMP_HEADER = 'X-SecureFlow-Timestamp';
-export const DELIVERY_HEADER = 'X-SecureFlow-Delivery';
+export const SIGNATURE_HEADER = "X-SecureFlow-Signature";
+export const TIMESTAMP_HEADER = "X-SecureFlow-Timestamp";
+export const DELIVERY_HEADER = "X-SecureFlow-Delivery";
 
 /**
  * Hostnames that name the machine or the platform rather than a peer.
@@ -57,14 +57,14 @@ export const DELIVERY_HEADER = 'X-SecureFlow-Delivery';
  * laptop would see NXDOMAIN and wave it through.
  */
 const BLOCKED_HOSTNAMES = new Set([
-  'localhost',
-  'localhost.localdomain',
-  'ip6-localhost',
-  'ip6-loopback',
-  'metadata',
-  'metadata.google.internal',
-  'metadata.goog',
-  'instance-data',
+  "localhost",
+  "localhost.localdomain",
+  "ip6-localhost",
+  "ip6-loopback",
+  "metadata",
+  "metadata.google.internal",
+  "metadata.goog",
+  "instance-data",
 ]);
 
 /**
@@ -78,7 +78,7 @@ export class OutboundDestinationError extends Error {
 
   constructor(message: string) {
     super(message);
-    this.name = 'OutboundDestinationError';
+    this.name = "OutboundDestinationError";
     Object.setPrototypeOf(this, OutboundDestinationError.prototype);
   }
 }
@@ -90,7 +90,7 @@ export class OutboundDeliveryError extends Error {
 
   constructor(message: string, retryable: boolean, status?: number) {
     super(message);
-    this.name = 'OutboundDeliveryError';
+    this.name = "OutboundDeliveryError";
     this.retryable = retryable;
     this.status = status;
     Object.setPrototypeOf(this, OutboundDeliveryError.prototype);
@@ -118,7 +118,7 @@ function parsePositiveInt(raw: string | undefined, fallback: number, max: number
 }
 
 function parseBoolean(raw: string | undefined): boolean {
-  return raw?.trim().toLowerCase() === 'true';
+  return raw?.trim().toLowerCase() === "true";
 }
 
 /**
@@ -130,10 +130,10 @@ function parseBoolean(raw: string | undefined): boolean {
  * exactly how these guards usually end up disabled.
  */
 export function resolveDispatchConfig(env: NodeJS.ProcessEnv = process.env): DispatchConfig {
-  const isProduction = env.NODE_ENV === 'production';
+  const isProduction = env.NODE_ENV === "production";
 
-  const allowedHosts = (env.OUTBOUND_WEBHOOK_ALLOWED_HOSTS ?? '')
-    .split(',')
+  const allowedHosts = (env.OUTBOUND_WEBHOOK_ALLOWED_HOSTS ?? "")
+    .split(",")
     .map((host) => host.trim().toLowerCase())
     .filter((host) => host.length > 0);
 
@@ -141,12 +141,12 @@ export function resolveDispatchConfig(env: NodeJS.ProcessEnv = process.env): Dis
     timeoutMs: parsePositiveInt(
       env.OUTBOUND_WEBHOOK_TIMEOUT_MS,
       DEFAULT_TIMEOUT_MS,
-      MAX_TIMEOUT_MS
+      MAX_TIMEOUT_MS,
     ),
     maxResponseBytes: parsePositiveInt(
       env.OUTBOUND_WEBHOOK_MAX_RESPONSE_BYTES,
       DEFAULT_MAX_RESPONSE_BYTES,
-      1024 * 1024
+      1024 * 1024,
     ),
     allowedHosts,
     allowInsecureHttp: !isProduction && parseBoolean(env.OUTBOUND_WEBHOOK_ALLOW_INSECURE_HTTP),
@@ -157,7 +157,7 @@ export function resolveDispatchConfig(env: NodeJS.ProcessEnv = process.env): Dis
 
 /** Parse a dotted-quad into its four octets, or null if it is not one. */
 function parseIPv4(value: string): number[] | null {
-  const parts = value.split('.');
+  const parts = value.split(".");
   if (parts.length !== 4) return null;
 
   const octets: number[] = [];
@@ -220,9 +220,12 @@ function hextetsToIPv4(high: string, low: string): string {
  * read `url.hostname`, so matching only the dotted form catches nothing.
  */
 export function isPrivateIPv6(value: string): boolean {
-  const normalized = value.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  const normalized = value
+    .toLowerCase()
+    .replace(/^\[|\]$/g, "")
+    .split("%")[0];
 
-  if (normalized === '::' || normalized === '::1') return true;
+  if (normalized === "::" || normalized === "::1") return true;
 
   // ::ffff:127.0.0.1 and the deprecated IPv4-compatible ::127.0.0.1
   const dotted = normalized.match(/^::(?:ffff:)?(\d{1,3}(?:\.\d{1,3}){3})$/);
@@ -246,15 +249,15 @@ export function isPrivateIPv6(value: string): boolean {
 /** True for any address literal we refuse to connect to. */
 export function isPrivateAddress(value: string): boolean {
   if (!value) return true;
-  return value.includes(':') ? isPrivateIPv6(value) : isPrivateIPv4(value);
+  return value.includes(":") ? isPrivateIPv6(value) : isPrivateIPv4(value);
 }
 
 /** True when a hostname names the local machine or a platform metadata service. */
 export function isBlockedHostname(hostname: string): boolean {
-  const normalized = hostname.toLowerCase().replace(/\.$/, '');
+  const normalized = hostname.toLowerCase().replace(/\.$/, "");
   if (BLOCKED_HOSTNAMES.has(normalized)) return true;
   // `.localhost` and `.internal` are reserved for exactly this purpose.
-  return normalized.endsWith('.localhost') || normalized.endsWith('.internal');
+  return normalized.endsWith(".localhost") || normalized.endsWith(".internal");
 }
 
 /**
@@ -265,7 +268,9 @@ export function isBlockedHostname(hostname: string): boolean {
  * delivery failure.
  */
 export function describeDestination(url: URL): string {
-  return url.port ? `${url.protocol}//${url.hostname}:${url.port}` : `${url.protocol}//${url.hostname}`;
+  return url.port
+    ? `${url.protocol}//${url.hostname}:${url.port}`
+    : `${url.protocol}//${url.hostname}`;
 }
 
 /** Resolves a hostname to address literals. Injected so tests never touch DNS. */
@@ -291,45 +296,45 @@ export interface ValidateDestinationOptions {
  */
 export async function assertDispatchableUrl(
   rawUrl: string,
-  options: ValidateDestinationOptions = {}
+  options: ValidateDestinationOptions = {},
 ): Promise<URL> {
   const config = options.config ?? resolveDispatchConfig();
   const resolve = options.resolve ?? defaultResolver;
 
-  if (typeof rawUrl !== 'string' || rawUrl.trim().length === 0) {
-    throw new OutboundDestinationError('Webhook URL is missing.');
+  if (typeof rawUrl !== "string" || rawUrl.trim().length === 0) {
+    throw new OutboundDestinationError("Webhook URL is missing.");
   }
 
   let url: URL;
   try {
     url = new URL(rawUrl.trim());
   } catch {
-    throw new OutboundDestinationError('Webhook URL is not a valid absolute URL.');
+    throw new OutboundDestinationError("Webhook URL is not a valid absolute URL.");
   }
 
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new OutboundDestinationError(
-      `Unsupported webhook scheme "${url.protocol}" — only http and https are dispatchable.`
+      `Unsupported webhook scheme "${url.protocol}" — only http and https are dispatchable.`,
     );
   }
 
-  if (url.protocol === 'http:' && !config.allowInsecureHttp) {
+  if (url.protocol === "http:" && !config.allowInsecureHttp) {
     throw new OutboundDestinationError(
-      'Refusing to dispatch a webhook over plaintext http. Use https.'
+      "Refusing to dispatch a webhook over plaintext http. Use https.",
     );
   }
 
   // Credentials in the authority are never meaningful for a webhook and are a
   // reliable sign the URL was assembled from somewhere it should not have been.
   if (url.username || url.password) {
-    throw new OutboundDestinationError('Webhook URL must not embed credentials.');
+    throw new OutboundDestinationError("Webhook URL must not embed credentials.");
   }
 
-  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const hostname = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
 
   if (config.allowedHosts.length > 0 && !config.allowedHosts.includes(hostname)) {
     throw new OutboundDestinationError(
-      `Host "${hostname}" is not in OUTBOUND_WEBHOOK_ALLOWED_HOSTS.`
+      `Host "${hostname}" is not in OUTBOUND_WEBHOOK_ALLOWED_HOSTS.`,
     );
   }
 
@@ -345,11 +350,11 @@ export async function assertDispatchableUrl(
   // just hand it straight back.
   if (isPrivateAddress(hostname)) {
     throw new OutboundDestinationError(
-      `Refusing to dispatch to private or reserved address "${hostname}".`
+      `Refusing to dispatch to private or reserved address "${hostname}".`,
     );
   }
 
-  const isLiteral = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(':');
+  const isLiteral = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":");
   if (isLiteral) {
     return url;
   }
@@ -370,7 +375,7 @@ export async function assertDispatchableUrl(
   const internal = addresses.find((address) => isPrivateAddress(address));
   if (internal) {
     throw new OutboundDestinationError(
-      `Host "${hostname}" resolves to the internal address ${internal}.`
+      `Host "${hostname}" resolves to the internal address ${internal}.`,
     );
   }
 
@@ -386,7 +391,7 @@ export async function assertDispatchableUrl(
  * a receiver having to guess which one it is looking at.
  */
 export function buildSignatureHeader(secret: string, body: string, timestamp: number): string {
-  const digest = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
+  const digest = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
   return `t=${timestamp},${SIGNATURE_VERSION}=${digest}`;
 }
 
@@ -399,27 +404,27 @@ export function verifySignatureHeader(
   secret: string,
   body: string,
   toleranceSeconds = 300,
-  now: number = Math.floor(Date.now() / 1000)
+  now: number = Math.floor(Date.now() / 1000),
 ): boolean {
   const parts = new Map(
     header
-      .split(',')
-      .map((segment) => segment.trim().split('='))
-      .filter((pair): pair is [string, string] => pair.length === 2)
+      .split(",")
+      .map((segment) => segment.trim().split("="))
+      .filter((pair): pair is [string, string] => pair.length === 2),
   );
 
-  const timestamp = Number(parts.get('t'));
+  const timestamp = Number(parts.get("t"));
   const provided = parts.get(SIGNATURE_VERSION);
   if (!Number.isFinite(timestamp) || !provided) return false;
   if (Math.abs(now - timestamp) > toleranceSeconds) return false;
 
-  const expected = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
-  const a = Buffer.from(expected, 'utf8');
-  const b = Buffer.from(provided, 'utf8');
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(provided, "utf8");
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export type StatusClass = 'success' | 'retryable' | 'permanent';
+export type StatusClass = "success" | "retryable" | "permanent";
 
 /**
  * Decide what an HTTP status means for a retry.
@@ -430,10 +435,10 @@ export type StatusClass = 'success' | 'retryable' | 'permanent';
  * just produce the same redirect.
  */
 export function classifyResponseStatus(status: number): StatusClass {
-  if (status >= 200 && status < 300) return 'success';
-  if (status === 408 || status === 425 || status === 429) return 'retryable';
-  if (status >= 500) return 'retryable';
-  return 'permanent';
+  if (status >= 200 && status < 300) return "success";
+  if (status === 408 || status === 425 || status === 429) return "retryable";
+  if (status >= 500) return "retryable";
+  return "permanent";
 }
 
 /**
@@ -444,7 +449,7 @@ export function classifyResponseStatus(status: number): StatusClass {
  * entry says nothing more than "400".
  */
 export async function drainBody(response: Response, limit: number): Promise<string> {
-  if (!response.body) return '';
+  if (!response.body) return "";
 
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -514,7 +519,7 @@ export interface DispatchResult {
  */
 export async function dispatchOutboundWebhook(
   request: OutboundWebhookRequest,
-  options: DispatchOptions = {}
+  options: DispatchOptions = {},
 ): Promise<DispatchResult> {
   const config = options.config ?? resolveDispatchConfig();
   const doFetch = options.fetchImpl ?? fetch;
@@ -525,11 +530,11 @@ export async function dispatchOutboundWebhook(
   const deliveryId = options.deliveryId ?? request.deliveryId ?? randomUUID();
 
   const body =
-    typeof request.payload === 'string' ? request.payload : JSON.stringify(request.payload);
+    typeof request.payload === "string" ? request.payload : JSON.stringify(request.payload);
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'User-Agent': 'SecureFlow-Webhooks/1.0',
+    "Content-Type": "application/json",
+    "User-Agent": "SecureFlow-Webhooks/1.0",
     [DELIVERY_HEADER]: deliveryId,
   };
 
@@ -544,22 +549,22 @@ export async function dispatchOutboundWebhook(
 
   try {
     response = await doFetch(url.toString(), {
-      method: 'POST',
+      method: "POST",
       headers,
       body,
       // A 3xx is a destination we have not validated. Never follow it.
-      redirect: 'manual',
+      redirect: "manual",
       signal: AbortSignal.timeout(config.timeoutMs),
     });
   } catch (error) {
     const isTimeout =
-      error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
 
     throw new OutboundDeliveryError(
       isTimeout
         ? `Webhook to ${destination} timed out after ${config.timeoutMs}ms.`
         : `Webhook to ${destination} failed: ${error instanceof Error ? error.message : String(error)}`,
-      true
+      true,
     );
   }
 
@@ -567,7 +572,7 @@ export async function dispatchOutboundWebhook(
   const durationMs = now() - startedAt;
   const outcome = classifyResponseStatus(response.status);
 
-  if (outcome === 'success') {
+  if (outcome === "success") {
     return { status: response.status, destination, deliveryId, durationMs, bodyPreview };
   }
 
@@ -576,7 +581,7 @@ export async function dispatchOutboundWebhook(
     redirected
       ? `Webhook to ${destination} returned a ${response.status} redirect, which is not followed.`
       : `Webhook to ${destination} failed with HTTP ${response.status}.`,
-    outcome === 'retryable',
-    response.status
+    outcome === "retryable",
+    response.status,
   );
 }

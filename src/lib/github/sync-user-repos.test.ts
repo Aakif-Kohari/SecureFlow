@@ -39,10 +39,7 @@ function mockApp(instance: unknown) {
 }
 
 /** An `App` whose installation lookup resolves to `installationId`. */
-function appWithInstallation(
-  installationId: number,
-  installationOctokit?: unknown
-) {
+function appWithInstallation(installationId: number, installationOctokit?: unknown) {
   return {
     octokit: {
       rest: {
@@ -81,7 +78,8 @@ describe("Repository Synchronization Engine (#634)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.GITHUB_APP_ID = "12345";
-    process.env.GITHUB_PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----\nMOCK_KEY\n-----END RSA PRIVATE KEY-----";
+    process.env.GITHUB_PRIVATE_KEY =
+      "-----BEGIN RSA PRIVATE KEY-----\nMOCK_KEY\n-----END RSA PRIVATE KEY-----";
     delete process.env.NEXT_PUBLIC_MOCK_DB;
 
     vi.mocked(prisma.repository.findMany).mockResolvedValue([] as any);
@@ -143,8 +141,8 @@ describe("Repository Synchronization Engine (#634)", () => {
           octokitReturning([
             apiRepo(101, "alice_developer/repo-alpha"),
             apiRepo(102, "alice_developer/repo-beta"),
-          ])
-        )
+          ]),
+        ),
       );
 
       const result = await syncUserRepositories("user-alice", "alice_developer");
@@ -160,7 +158,7 @@ describe("Repository Synchronization Engine (#634)", () => {
             action: "REPOSITORY_SYNC",
             userId: "user-alice",
           }),
-        })
+        }),
       );
     });
 
@@ -199,9 +197,7 @@ describe("Repository Synchronization Engine (#634)", () => {
 
   describe("Ownership (#657)", () => {
     it("never writes userId in the update branch, so an existing row keeps its owner", async () => {
-      mockApp(
-        appWithInstallation(98765, octokitReturning([apiRepo(101, "acme/api")]))
-      );
+      mockApp(appWithInstallation(98765, octokitReturning([apiRepo(101, "acme/api")])));
 
       await syncUserRepositories("user-alice", "alice_developer");
 
@@ -225,8 +221,8 @@ describe("Repository Synchronization Engine (#634)", () => {
       mockApp(
         appWithInstallation(
           98765,
-          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")])
-        )
+          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")]),
+        ),
       );
 
       const result = await syncUserRepositories("user-alice", "alice_developer");
@@ -246,9 +242,7 @@ describe("Repository Synchronization Engine (#634)", () => {
         { githubId: BigInt(101), userId: "user-alice" },
       ] as any);
 
-      mockApp(
-        appWithInstallation(98765, octokitReturning([apiRepo(101, "acme/api-renamed")]))
-      );
+      mockApp(appWithInstallation(98765, octokitReturning([apiRepo(101, "acme/api-renamed")])));
 
       const result = await syncUserRepositories("user-alice", "alice_developer");
 
@@ -260,8 +254,8 @@ describe("Repository Synchronization Engine (#634)", () => {
       mockApp(
         appWithInstallation(
           98765,
-          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")])
-        )
+          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")]),
+        ),
       );
 
       await syncUserRepositories("user-alice", "alice_developer");
@@ -282,8 +276,8 @@ describe("Repository Synchronization Engine (#634)", () => {
             apiRepo(101, "acme/api"),
             { id: "not-a-number", full_name: "acme/broken" },
             apiRepo(103, "acme/cli"),
-          ])
-        )
+          ]),
+        ),
       );
 
       const result = await syncUserRepositories("user-alice", "alice_developer");
@@ -302,8 +296,8 @@ describe("Repository Synchronization Engine (#634)", () => {
       mockApp(
         appWithInstallation(
           98765,
-          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")])
-        )
+          octokitReturning([apiRepo(101, "acme/api"), apiRepo(102, "acme/web")]),
+        ),
       );
 
       const result = await syncUserRepositories("user-alice", "alice_developer");
@@ -338,9 +332,9 @@ describe("Repository Synchronization Engine (#634)", () => {
       vi.mocked(prisma.auditLog.create).mockRejectedValue(new Error("audit down"));
       mockApp(appWithInstallation(98765, octokitReturning([apiRepo(101, "acme/api")])));
 
-      await expect(
-        syncUserRepositories("user-alice", "alice_developer")
-      ).resolves.toMatchObject({ synced: 1 });
+      await expect(syncUserRepositories("user-alice", "alice_developer")).resolves.toMatchObject({
+        synced: 1,
+      });
     });
   });
 });

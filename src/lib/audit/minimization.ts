@@ -359,17 +359,17 @@ export function sanitizeAuditLogInput(input: AuditLogInput): AuditLogInput {
   const sanitized: AuditLogInput = {
     userId: input.userId,
     action: (input.action ?? "").trim().toUpperCase(),
-    resource: input.resource ? maskSecretValue(
-      // Mask emails embedded in resource strings like "user:admin@example.com"
-      input.resource.replace(
-        /[^\s@]+@[^\s@]+\.[^\s@]+/g,
-        (email) => maskEmail(email)
-      )
-    ) : input.resource,
+    resource: input.resource
+      ? maskSecretValue(
+          // Mask emails embedded in resource strings like "user:admin@example.com"
+          input.resource.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, (email) => maskEmail(email)),
+        )
+      : input.resource,
     decision: input.decision,
-    metadata: input.metadata != null
-      ? sanitizeAuditMetadata(input.metadata) as Record<string, unknown>
-      : input.metadata,
+    metadata:
+      input.metadata != null
+        ? (sanitizeAuditMetadata(input.metadata) as Record<string, unknown>)
+        : input.metadata,
   };
 
   return sanitized;

@@ -12,14 +12,20 @@ export type Badge = { emoji: string; label: string };
 export function computeSecurityScore(m: RepoMetrics): number {
   const penalty = Math.min(
     60,
-    m.findings.critical * 10 + m.findings.high * 5 + m.findings.medium * 2 + m.findings.low * 1
+    m.findings.critical * 10 + m.findings.high * 5 + m.findings.medium * 2 + m.findings.low * 1,
   );
 
   const passRate = m.totalPRs > 0 ? m.passedPRs / m.totalPRs : 1;
   const passBonus = Math.round(passRate * 20);
 
   const streakBonus =
-    m.daysSinceLastCritical === null ? 20 : m.daysSinceLastCritical >= 30 ? 20 : m.daysSinceLastCritical >= 7 ? 10 : 0;
+    m.daysSinceLastCritical === null
+      ? 20
+      : m.daysSinceLastCritical >= 30
+        ? 20
+        : m.daysSinceLastCritical >= 7
+          ? 10
+          : 0;
 
   return Math.max(0, Math.min(100, 40 + passBonus + streakBonus - penalty + 20));
 }
@@ -67,7 +73,10 @@ export type StoredPrStatus = (typeof PR_STATUS)[keyof typeof PR_STATUS];
 export function parsePrStatus(status: unknown): StoredPrStatus | null {
   if (typeof status !== "string") return null;
 
-  const clean = status.trim().toUpperCase().replace(/[\s_-]+/g, "");
+  const clean = status
+    .trim()
+    .toUpperCase()
+    .replace(/[\s_-]+/g, "");
 
   if (clean === "PASS") return PR_STATUS.PASS;
   if (clean === "REVIEWREQUIRED") return PR_STATUS.REVIEW_REQUIRED;
@@ -110,8 +119,7 @@ export function computeBadges(m: RepoMetrics): Badge[] {
     badges.push({ emoji: "🔥", label: "30-Day Clean Streak" });
   if (m.totalPRs > 0 && m.passedPRs === m.totalPRs)
     badges.push({ emoji: "✅", label: "Perfect Pass Rate" });
-  if (m.findings.critical === 0 && total > 0)
-    badges.push({ emoji: "🟢", label: "No Criticals" });
+  if (m.findings.critical === 0 && total > 0) badges.push({ emoji: "🟢", label: "No Criticals" });
   return badges;
 }
 
@@ -133,7 +141,7 @@ export function computeContributorScore(m: ContributorMetrics): number {
     m.vulnsIntroduced.critical * 8 +
       m.vulnsIntroduced.high * 4 +
       m.vulnsIntroduced.medium * 2 +
-      m.vulnsIntroduced.low * 1
+      m.vulnsIntroduced.low * 1,
   );
 
   const passRate = m.totalPRs > 0 ? m.passedPRs / m.totalPRs : 1;

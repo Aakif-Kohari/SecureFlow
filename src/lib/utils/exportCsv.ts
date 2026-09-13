@@ -1,4 +1,4 @@
-import { toCsv } from './csv';
+import { toCsv } from "./csv";
 
 /**
  * Serialise `data` and hand it to the browser as a file download.
@@ -13,13 +13,13 @@ export function downloadCSV(data: Array<Record<string, unknown>>, filename: stri
   const csvString = toCsv(data);
   if (!csvString) return;
 
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
   document.body.appendChild(link);
 
   try {

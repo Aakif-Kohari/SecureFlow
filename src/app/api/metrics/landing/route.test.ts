@@ -40,7 +40,7 @@ describe("GET /api/metrics/landing route (#632, #705)", () => {
 
   it("returns 500 when metrics retrieval throws an unexpected error", async () => {
     vi.spyOn(landingStatsModule, "getDetailedLandingMetrics").mockRejectedValue(
-      new Error("Fatal Redis/DB connection drop")
+      new Error("Fatal Redis/DB connection drop"),
     );
 
     const response = await GET(request());
@@ -73,7 +73,7 @@ describe("GET /api/metrics/landing route (#632, #705)", () => {
     const spy = vi
       .spyOn(landingStatsModule, "getDetailedLandingMetrics")
       .mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockMetrics), 10))
+        () => new Promise((resolve) => setTimeout(() => resolve(mockMetrics), 10)),
       );
 
     const responses = await Promise.all([GET(request()), GET(request()), GET(request())]);

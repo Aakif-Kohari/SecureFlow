@@ -32,15 +32,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <header className="hidden lg:flex h-16 border-b border-border px-8 items-center justify-between glass-card sticky top-0 z-40 shrink-0">
           <div className="text-sm text-muted-foreground flex items-center gap-1">
             <ShieldAlert className="w-4 h-4 text-primary mr-1 animate-pulse" />
-            <span className="text-foreground font-semibold uppercase tracking-wider text-xs font-mono">SecureFlow System Control</span>
+            <span className="text-foreground font-semibold uppercase tracking-wider text-xs font-mono">
+              SecureFlow System Control
+            </span>
           </div>
           <ThemeToggle />
         </header>
 
         {/* Children content area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto pt-20 lg:pt-8">
-          {children}
-        </main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto pt-20 lg:pt-8">{children}</main>
       </div>
     </div>
   );

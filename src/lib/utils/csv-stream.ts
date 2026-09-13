@@ -19,7 +19,7 @@
  * *when* those bytes are produced.
  */
 
-import { CSV_BOM, CSV_ROW_SEPARATOR, collectCsvHeaders, escapeCsvCell } from './csv';
+import { CSV_BOM, CSV_ROW_SEPARATOR, collectCsvHeaders, escapeCsvCell } from "./csv";
 
 export type CsvRow = Record<string, unknown>;
 
@@ -32,7 +32,7 @@ export type CsvRow = Record<string, unknown>;
  */
 export type CsvPageFetcher<TCursor> = (
   cursor: TCursor | null,
-  take: number
+  take: number,
 ) => Promise<{ rows: CsvRow[]; nextCursor: TCursor | null }>;
 
 export interface CsvStreamOptions {
@@ -58,12 +58,12 @@ export const DEFAULT_CSV_BATCH_SIZE = 500;
  * if this disagrees with `toCsv`, the two export paths emit different bytes.
  */
 export function serializeCsvRow(row: CsvRow, headers: string[]): string {
-  return headers.map((header) => escapeCsvCell(row?.[header])).join(',');
+  return headers.map((header) => escapeCsvCell(row?.[header])).join(",");
 }
 
 /** The header line, escaped the same way a data row is. */
 export function serializeCsvHeader(headers: string[]): string {
-  return headers.map(escapeCsvCell).join(',');
+  return headers.map(escapeCsvCell).join(",");
 }
 
 /**
@@ -80,7 +80,7 @@ export function serializeCsvHeader(headers: string[]): string {
  */
 export function streamCsv<TCursor>(
   fetchPage: CsvPageFetcher<TCursor>,
-  options: CsvStreamOptions
+  options: CsvStreamOptions,
 ): ReadableStream<Uint8Array> {
   const {
     headers,
@@ -105,8 +105,8 @@ export function streamCsv<TCursor>(
           wroteHeader = true;
           controller.enqueue(
             encoder.encode(
-              `${withBom ? CSV_BOM : ''}${serializeCsvHeader(headers)}${CSV_ROW_SEPARATOR}`
-            )
+              `${withBom ? CSV_BOM : ""}${serializeCsvHeader(headers)}${CSV_ROW_SEPARATOR}`,
+            ),
           );
           return;
         }
@@ -168,9 +168,9 @@ export async function collectCsvStream(stream: ReadableStream<Uint8Array>): Prom
   // output. The default swallows it, which would make this helper report bytes
   // the client does not actually receive — and the BOM is the entire reason
   // Excel on Windows reads the file as UTF-8 rather than as the host code page.
-  const decoder = new TextDecoder('utf-8', { ignoreBOM: true });
+  const decoder = new TextDecoder("utf-8", { ignoreBOM: true });
   const reader = stream.getReader();
-  let out = '';
+  let out = "";
 
   for (;;) {
     const { done, value } = await reader.read();

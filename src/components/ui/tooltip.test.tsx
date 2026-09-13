@@ -1,11 +1,11 @@
 /**
  * @vitest-environment jsdom
  */
-import React from 'react';
-import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
-import { PolicyCard } from '@/app/dashboard/policies/policy-card';
+import React from "react";
+import { describe, it, expect, vi, beforeAll } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
+import { PolicyCard } from "@/app/dashboard/policies/policy-card";
 
 beforeAll(() => {
   global.ResizeObserver = class ResizeObserver {
@@ -15,8 +15,8 @@ beforeAll(() => {
   };
 });
 
-describe('Tooltip Component', () => {
-  it('renders trigger element in the DOM', () => {
+describe("Tooltip Component", () => {
+  it("renders trigger element in the DOM", () => {
     render(
       <TooltipProvider delayDuration={0}>
         <Tooltip>
@@ -25,31 +25,31 @@ describe('Tooltip Component', () => {
             Tooltip Information
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
-    expect(screen.getByText('Hover me')).toBeInTheDocument();
+    expect(screen.getByText("Hover me")).toBeInTheDocument();
   });
 });
 
-describe('PolicyCard Component', () => {
+describe("PolicyCard Component", () => {
   const mockProps = {
-    id: 'test-policy-1',
-    title: 'Prevent PII Logging',
-    description: 'Strictly blocks logging statements that output PII.',
+    id: "test-policy-1",
+    title: "Prevent PII Logging",
+    description: "Strictly blocks logging statements that output PII.",
     isActive: true,
-    severity: 'CRITICAL',
-    action: 'DENY',
-    rules: ['logging/pii/*', 'code/print/sensitive_data_*'],
+    severity: "CRITICAL",
+    action: "DENY",
+    rules: ["logging/pii/*", "code/print/sensitive_data_*"],
     toggleAction: vi.fn(),
   };
 
-  it('renders policy card title and rule conditions properly', () => {
+  it("renders policy card title and rule conditions properly", () => {
     render(<PolicyCard {...mockProps} />);
-    expect(screen.getByText('Prevent PII Logging')).toBeInTheDocument();
-    expect(screen.getByText('CRITICAL')).toBeInTheDocument();
-    expect(screen.getByText('DENY')).toBeInTheDocument();
-    expect(screen.getByText('logging/pii/*')).toBeInTheDocument();
-    expect(screen.getByText('code/print/sensitive_data_*')).toBeInTheDocument();
+    expect(screen.getByText("Prevent PII Logging")).toBeInTheDocument();
+    expect(screen.getByText("CRITICAL")).toBeInTheDocument();
+    expect(screen.getByText("DENY")).toBeInTheDocument();
+    expect(screen.getByText("logging/pii/*")).toBeInTheDocument();
+    expect(screen.getByText("code/print/sensitive_data_*")).toBeInTheDocument();
   });
 });

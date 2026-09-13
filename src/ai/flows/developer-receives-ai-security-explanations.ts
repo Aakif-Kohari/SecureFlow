@@ -1,20 +1,26 @@
-'use server';
+"use server";
 
 import "dotenv/config";
-import { __internal, evaluateForInjection, isRateLimitError, isTimeoutError, withRetry } from './security-helpers';
-import { ai, defaultModel, securityExplanationModel } from '@/ai/genkit';
+import {
+  __internal,
+  evaluateForInjection,
+  isRateLimitError,
+  isTimeoutError,
+  withRetry,
+} from "./security-helpers";
+import { ai, defaultModel, securityExplanationModel } from "@/ai/genkit";
 import {
   AISecurityExplanationInputSchema,
   AISecurityExplanationOutputSchema,
   SYSTEM_PROMPT,
   type AISecurityExplanationInput,
   type AISecurityExplanationOutput,
-} from './security-explanation-schemas';
+} from "./security-explanation-schemas";
 
 const { contradictsSeverity, buildPrompt } = __internal;
 
 export async function developerReceivesAISecurityExplanations(
-  input: AISecurityExplanationInput
+  input: AISecurityExplanationInput,
 ): Promise<AISecurityExplanationOutput> {
   const validatedInput = AISecurityExplanationInputSchema.parse(input);
 
@@ -49,37 +55,41 @@ export async function developerReceivesAISecurityExplanations(
           },
         }),
       {
-        initialDelayMs: process.env.NODE_ENV === 'test' ? 10 : 100,
-      }
+        initialDelayMs: process.env.NODE_ENV === "test" ? 10 : 100,
+      },
     );
     responseText = res.text;
   } catch (genError) {
     if (isRateLimitError(genError)) {
       console.warn("Groq API rate limit reached after retries:", genError);
       parsedContent = {
-        explanation: 'Groq API rate limit reached (429). The Professor will retry transmission shortly.',
-        remediationSuggestions: 'Rate limit active: review static scanner details or wait a moment before re-evaluating.',
+        explanation:
+          "Groq API rate limit reached (429). The Professor will retry transmission shortly.",
+        remediationSuggestions:
+          "Rate limit active: review static scanner details or wait a moment before re-evaluating.",
       };
     } else if (isTimeoutError(genError)) {
       console.warn("Groq API connection timed out after retries:", genError);
       parsedContent = {
-        explanation: 'Groq API connection timed out. The Professor is standing by.',
-        remediationSuggestions: 'Connection timed out: verify model availability and inspect the vulnerability manually.',
+        explanation: "Groq API connection timed out. The Professor is standing by.",
+        remediationSuggestions:
+          "Connection timed out: verify model availability and inspect the vulnerability manually.",
       };
     } else {
       console.error("AI generation failed after retries:", genError);
       parsedContent = {
-        explanation: 'Signal lost. The Professor is recalculating.',
-        remediationSuggestions: 'Adjust the plan: lock down the perimeter manually and review the intercepted payload.',
+        explanation: "Signal lost. The Professor is recalculating.",
+        remediationSuggestions:
+          "Adjust the plan: lock down the perimeter manually and review the intercepted payload.",
       };
     }
   }
 
   if (responseText && !parsedContent) {
     try {
-      const withoutThoughts = responseText.replace(/<think>[\s\S]*?(<\/think>|$)/ig, '');
+      const withoutThoughts = responseText.replace(/<think>[\s\S]*?(<\/think>|$)/gi, "");
       const jsonMatch = withoutThoughts.match(/[\{\[][\s\S]*[\}\]]/);
-      
+
       if (!jsonMatch) {
         throw new Error("No JSON object found in response");
       }
@@ -87,17 +97,17 @@ export async function developerReceivesAISecurityExplanations(
       parsedContent = JSON.parse(jsonMatch[0]);
     } catch (error) {
       console.error("Failed to parse explanation JSON:", error);
-      console.error("RAW OUTPUT WAS:\n", responseText); 
-      
+      console.error("RAW OUTPUT WAS:\n", responseText);
+
       parsedContent = {
-        explanation: 'Signal lost. The Professor is recalculating.',
-        remediationSuggestions: 'Adjust the plan: lock down the perimeter manually and review the intercepted payload.'
+        explanation: "Signal lost. The Professor is recalculating.",
+        remediationSuggestions:
+          "Adjust the plan: lock down the perimeter manually and review the intercepted payload.",
       };
     }
   }
 
-
-  const explanation: string = parsedContent?.explanation || 'No explanation provided.';
+  const explanation: string = parsedContent?.explanation || "No explanation provided.";
 
   // Output consistency check: even with structural isolation and the pre-filter, catch cases
   // where the model's explanation ended up contradicting the finding's known severity.
@@ -105,7 +115,8 @@ export async function developerReceivesAISecurityExplanations(
 
   return AISecurityExplanationOutputSchema.parse({
     explanation,
-    remediationSuggestions: parsedContent?.remediationSuggestions || 'No remediation suggestions provided.',
+    remediationSuggestions:
+      parsedContent?.remediationSuggestions || "No remediation suggestions provided.",
     promptInjectionSuspected: injectionPreFilterFlagged || consistencyFlagged,
   });
 }

@@ -11,29 +11,27 @@ import { togglePolicy } from "./actions";
 // --- Page Component ---
 export default async function PoliciesPage() {
   const session = await auth();
-  
+
   if (!session?.user?.id || !session?.user?.email) {
     redirect("/api/auth/signin");
   }
-  
+
   const userId = session.user.id;
   const userEmail = session.user.email;
 
   const templates = await prisma.policyTemplate.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: "desc" },
   });
 
   const userToggles = await prisma.userPolicyToggle.findMany({
-    where: { userId }
+    where: { userId },
   });
 
   const toggleMap = new Map(userToggles.map((t: any) => [t.policyTemplateId, t.isActive]));
 
   const policiesToRender = templates.map((template: any) => {
-    const isActive = toggleMap.has(template.id) 
-      ? toggleMap.get(template.id) 
-      : template.isDefault;
-      
+    const isActive = toggleMap.has(template.id) ? toggleMap.get(template.id) : template.isDefault;
+
     return { ...template, isActive };
   });
 
@@ -51,7 +49,9 @@ export default async function PoliciesPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="font-headline text-3xl font-bold tracking-tight mb-2">The Rules</h1>
-          <p className="text-muted-foreground">Toggle automated guardrails used to protect your main branch.</p>
+          <p className="text-muted-foreground">
+            Toggle automated guardrails used to protect your main branch.
+          </p>
         </div>
       </div>
 
@@ -62,11 +62,20 @@ export default async function PoliciesPage() {
             <CardTitle className="text-lg">Programmatic Rule Set</CardTitle>
           </div>
           <CardDescription>
-            Your active rules below are compiled dynamically into this execution guardrail for the agent scope: <strong className="text-white">{userEmail}</strong>.
+            Your active rules below are compiled dynamically into this execution guardrail for the
+            agent scope: <strong className="text-white">{userEmail}</strong>.
             {!armoriqConfigured && (
               <span className="mt-1 block text-xs text-amber-500/80">
                 ArmorIQ cloud enforcement is inactive — set <code>ARMORIQ_API_KEY</code> (from{" "}
-                <a href="https://dev.armoriq.ai" target="_blank" rel="noopener noreferrer" className="underline">dev.armoriq.ai</a>) to bind this policy to live intent tokens.
+                <a
+                  href="https://dev.armoriq.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  dev.armoriq.ai
+                </a>
+                ) to bind this policy to live intent tokens.
               </span>
             )}
           </CardDescription>
@@ -84,13 +93,13 @@ export default async function PoliciesPage() {
             No rule templates available. (Administrators need to seed the database).
           </div>
         )}
-        
+
         {policiesToRender.map((policy: any) => {
           const rulesMeta = (policy.rules as any) || {};
           const conditions = Array.isArray(rulesMeta) ? rulesMeta : rulesMeta.conditions || [];
-          
+
           return (
-            <PolicyCard 
+            <PolicyCard
               key={policy.id}
               id={policy.id}
               title={policy.name}

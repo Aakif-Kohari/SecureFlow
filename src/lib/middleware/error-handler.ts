@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { resolveErrorStatus, DEFAULT_ERROR_STATUS } from './http-status';
-import { scrubSensitiveData } from '@/lib/redaction';
-import { logger } from '@/lib/logger';
+import { NextResponse } from "next/server";
+import { resolveErrorStatus, DEFAULT_ERROR_STATUS } from "./http-status";
+import { scrubSensitiveData } from "@/lib/redaction";
+import { logger } from "@/lib/logger";
 
 /**
  * Backend logger.
@@ -36,17 +36,17 @@ export class AppError extends Error {
 
 // Map HTTP status codes to standardized error names
 const STATUS_TO_ERROR_CODE: Record<number, string> = {
-  400: 'BAD_REQUEST',
-  401: 'UNAUTHORIZED',
-  403: 'FORBIDDEN',
-  404: 'NOT_FOUND',
-  409: 'CONFLICT',
-  422: 'UNPROCESSABLE_ENTITY',
-  429: 'TOO_MANY_REQUESTS',
-  500: 'INTERNAL_SERVER_ERROR',
-  502: 'BAD_GATEWAY',
-  503: 'SERVICE_UNAVAILABLE',
-  504: 'GATEWAY_TIMEOUT',
+  400: "BAD_REQUEST",
+  401: "UNAUTHORIZED",
+  403: "FORBIDDEN",
+  404: "NOT_FOUND",
+  409: "CONFLICT",
+  422: "UNPROCESSABLE_ENTITY",
+  429: "TOO_MANY_REQUESTS",
+  500: "INTERNAL_SERVER_ERROR",
+  502: "BAD_GATEWAY",
+  503: "SERVICE_UNAVAILABLE",
+  504: "GATEWAY_TIMEOUT",
 };
 
 // Scrub sensitive details such as paths, credentials, and connection strings.
@@ -63,10 +63,10 @@ export { scrubSensitiveData };
  * `TypeError`, …) tells a caller which libraries we run and how our internals
  * are wired, so those collapse to the generic status-derived code instead.
  */
-const EXPOSABLE_ERROR_NAMES = new Set(['AppError', 'ValidationError']);
+const EXPOSABLE_ERROR_NAMES = new Set(["AppError", "ValidationError"]);
 
 export function withErrorHandler<Args extends unknown[], Result>(
-  handler: (...args: Args) => Promise<Result>
+  handler: (...args: Args) => Promise<Result>,
 ) {
   return async (...args: Args) => {
     try {
@@ -97,7 +97,7 @@ export function withErrorHandler<Args extends unknown[], Result>(
       // credentials end up in log aggregation.
       logger.error("API route error caught by global handler", {
         error: {
-          name: err?.name || 'Error',
+          name: err?.name || "Error",
           message: originalMessage,
           stack,
           code: prismaCode,
@@ -108,7 +108,7 @@ export function withErrorHandler<Args extends unknown[], Result>(
       });
 
       // 3. Construct strict, standardized client error response
-      let clientErrorCode = STATUS_TO_ERROR_CODE[statusCode] || 'INTERNAL_SERVER_ERROR';
+      let clientErrorCode = STATUS_TO_ERROR_CODE[statusCode] || "INTERNAL_SERVER_ERROR";
       let clientMessage = "An unexpected error occurred. Incident logged.";
 
       // Determine if error should be redacted or not
@@ -120,19 +120,20 @@ export function withErrorHandler<Args extends unknown[], Result>(
         if (err?.name && EXPOSABLE_ERROR_NAMES.has(err.name)) {
           clientErrorCode = err.name;
         } else {
-          clientErrorCode = STATUS_TO_ERROR_CODE[statusCode] || 'CLIENT_ERROR';
+          clientErrorCode = STATUS_TO_ERROR_CODE[statusCode] || "CLIENT_ERROR";
         }
         clientMessage = scrubSensitiveData(originalMessage);
       } else {
         // Redaction logic for unexpected server-side / system/ database errors
-        const isPrisma = err?.name && err?.name.startsWith('Prisma');
-        const isDatabase = isPrisma || (originalMessage && (
-          originalMessage.toLowerCase().includes('postgres') ||
-          originalMessage.toLowerCase().includes('postgresql') ||
-          originalMessage.toLowerCase().includes('database') ||
-          originalMessage.toLowerCase().includes('sql') ||
-          originalMessage.toLowerCase().includes('prisma')
-        ));
+        const isPrisma = err?.name && err?.name.startsWith("Prisma");
+        const isDatabase =
+          isPrisma ||
+          (originalMessage &&
+            (originalMessage.toLowerCase().includes("postgres") ||
+              originalMessage.toLowerCase().includes("postgresql") ||
+              originalMessage.toLowerCase().includes("database") ||
+              originalMessage.toLowerCase().includes("sql") ||
+              originalMessage.toLowerCase().includes("prisma")));
 
         if (isDatabase) {
           clientErrorCode = "DATABASE_ERROR";
@@ -146,9 +147,8 @@ export function withErrorHandler<Args extends unknown[], Result>(
           error: clientErrorCode,
           message: clientMessage,
         },
-        { status: statusCode }
+        { status: statusCode },
       );
     }
   };
 }
-

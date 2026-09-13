@@ -84,7 +84,7 @@ describe("setCrewCodename Server Action", () => {
 
     const result = await setCrewCodename("Berlin");
     expect(result.success).toBe(false);
-    expect(result.error).toContain('already taken');
+    expect(result.error).toContain("already taken");
   });
 
   it("successfully sets and capitalizes codename and logs audit event", async () => {

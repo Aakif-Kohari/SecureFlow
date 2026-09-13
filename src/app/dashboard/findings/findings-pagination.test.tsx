@@ -23,7 +23,7 @@ describe("FindingsPagination", () => {
 
   it("renders nothing when there is nothing to page through", () => {
     const { container } = render(
-      <FindingsPagination page={1} pageSize={20} total={0} totalPages={1} />
+      <FindingsPagination page={1} pageSize={20} total={0} totalPages={1} />,
     );
 
     expect(container.firstChild).toBeNull();
@@ -49,7 +49,7 @@ describe("FindingsPagination", () => {
 
   it("disables Previous on the first page and Next on the last", () => {
     const { rerender } = render(
-      <FindingsPagination page={1} pageSize={20} total={57} totalPages={3} />
+      <FindingsPagination page={1} pageSize={20} total={57} totalPages={3} />,
     );
     expect(screen.getByRole("button", { name: /previous page/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /next page/i })).not.toBeDisabled();

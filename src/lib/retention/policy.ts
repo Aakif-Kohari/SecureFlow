@@ -30,7 +30,7 @@ export interface RetentionRule {
   rationale: string;
 }
 
-export type PurgeTarget = 'auditLog' | 'webhookEvent' | 'scanResult' | 'findingSnippet';
+export type PurgeTarget = "auditLog" | "webhookEvent" | "scanResult" | "findingSnippet";
 
 /**
  * The policy.
@@ -43,32 +43,32 @@ export type PurgeTarget = 'auditLog' | 'webhookEvent' | 'scanResult' | 'findingS
  */
 export const RETENTION_RULES: readonly RetentionRule[] = [
   {
-    target: 'findingSnippet',
-    envVar: 'FINDING_SNIPPET_REDACT_DAYS',
+    target: "findingSnippet",
+    envVar: "FINDING_SNIPPET_REDACT_DAYS",
     defaultDays: 90,
     rationale:
-      'Redacts the copied source excerpt while keeping the finding row, so security history survives without an indefinite archive of customer code.',
+      "Redacts the copied source excerpt while keeping the finding row, so security history survives without an indefinite archive of customer code.",
   },
   {
-    target: 'webhookEvent',
-    envVar: 'WEBHOOK_EVENT_RETENTION_DAYS',
+    target: "webhookEvent",
+    envVar: "WEBHOOK_EVENT_RETENTION_DAYS",
     defaultDays: 30,
     rationale:
-      'Delivery-id rows exist for idempotency. GitHub does not redeliver beyond a few days, so a month is generous.',
+      "Delivery-id rows exist for idempotency. GitHub does not redeliver beyond a few days, so a month is generous.",
   },
   {
-    target: 'scanResult',
-    envVar: 'SCAN_RESULT_RETENTION_DAYS',
+    target: "scanResult",
+    envVar: "SCAN_RESULT_RETENTION_DAYS",
     defaultDays: 180,
     rationale:
-      'Scan history feeds the risk trend and the leaderboard. Six months keeps those meaningful without unbounded growth. Cascades remove the attached findings.',
+      "Scan history feeds the risk trend and the leaderboard. Six months keeps those meaningful without unbounded growth. Cascades remove the attached findings.",
   },
   {
-    target: 'auditLog',
-    envVar: 'AUDIT_LOG_RETENTION_DAYS',
+    target: "auditLog",
+    envVar: "AUDIT_LOG_RETENTION_DAYS",
     defaultDays: 365,
     rationale:
-      'Audit rows carry userId and metadata — personal data under GDPR Art. 5(1)(e), which expects a stated, bounded retention period.',
+      "Audit rows carry userId and metadata — personal data under GDPR Art. 5(1)(e), which expects a stated, bounded retention period.",
   },
 ] as const;
 
@@ -82,7 +82,7 @@ export const MIN_RETENTION_DAYS = 1;
 export class RetentionConfigError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'RetentionConfigError';
+    this.name = "RetentionConfigError";
   }
 }
 
@@ -95,19 +95,17 @@ export class RetentionConfigError extends Error {
  * one is exactly the failure this module exists to prevent.
  */
 export function parseRetentionDays(rule: RetentionRule, raw: string | undefined): number {
-  if (raw === undefined || raw.trim() === '') return rule.defaultDays;
+  if (raw === undefined || raw.trim() === "") return rule.defaultDays;
 
   const parsed = Number(raw.trim());
 
   if (!Number.isInteger(parsed)) {
-    throw new RetentionConfigError(
-      `${rule.envVar} must be a whole number of days, got "${raw}".`
-    );
+    throw new RetentionConfigError(`${rule.envVar} must be a whole number of days, got "${raw}".`);
   }
 
   if (parsed < MIN_RETENTION_DAYS || parsed > MAX_RETENTION_DAYS) {
     throw new RetentionConfigError(
-      `${rule.envVar} must be between ${MIN_RETENTION_DAYS} and ${MAX_RETENTION_DAYS} days, got ${parsed}.`
+      `${rule.envVar} must be between ${MIN_RETENTION_DAYS} and ${MAX_RETENTION_DAYS} days, got ${parsed}.`,
     );
   }
 
@@ -130,7 +128,7 @@ export interface ResolvedRetention extends RetentionRule {
  */
 export function resolveRetentionPolicy(
   env: Record<string, string | undefined> = process.env,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): ResolvedRetention[] {
   return RETENTION_RULES.map((rule) => {
     const days = parseRetentionDays(rule, env[rule.envVar]);
@@ -146,7 +144,7 @@ export function resolveRetentionPolicy(
 export function retentionFor(
   target: PurgeTarget,
   env: Record<string, string | undefined> = process.env,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): ResolvedRetention {
   const found = resolveRetentionPolicy(env, now).find((rule) => rule.target === target);
   if (!found) throw new RetentionConfigError(`Unknown retention target "${target}".`);

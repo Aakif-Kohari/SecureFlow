@@ -1,6 +1,6 @@
 # Data Retention
 
-> *"The Professor never keeps evidence longer than the plan needs it."*
+> _"The Professor never keeps evidence longer than the plan needs it."_
 
 SecureFlow scans other people's private code. This document states how long it
 keeps what, why, and how to run the purge.
@@ -31,12 +31,12 @@ not a feature. Beyond that:
 
 ## The policy
 
-| Data | Variable | Default | What happens |
-| ---- | -------- | ------- | ------------ |
-| Finding code snippets | `FINDING_SNIPPET_REDACT_DAYS` | 90 days | **Redacted**, row kept |
-| Webhook delivery records | `WEBHOOK_EVENT_RETENTION_DAYS` | 30 days | Deleted |
-| Scan results (and their findings) | `SCAN_RESULT_RETENTION_DAYS` | 180 days | Deleted |
-| Audit log entries | `AUDIT_LOG_RETENTION_DAYS` | 365 days | Deleted |
+| Data                              | Variable                       | Default  | What happens           |
+| --------------------------------- | ------------------------------ | -------- | ---------------------- |
+| Finding code snippets             | `FINDING_SNIPPET_REDACT_DAYS`  | 90 days  | **Redacted**, row kept |
+| Webhook delivery records          | `WEBHOOK_EVENT_RETENTION_DAYS` | 30 days  | Deleted                |
+| Scan results (and their findings) | `SCAN_RESULT_RETENTION_DAYS`   | 180 days | Deleted                |
+| Audit log entries                 | `AUDIT_LOG_RETENTION_DAYS`     | 365 days | Deleted                |
 
 ### Why snippets are redacted, not deleted
 
@@ -100,11 +100,11 @@ Re-run with --apply to perform the purge.
 
 ### Exit codes
 
-| Code | Meaning |
-| ---- | ------- |
-| `0` | Success |
-| `1` | One or more targets failed, or the run itself failed |
-| `2` | Bad arguments or invalid retention configuration |
+| Code | Meaning                                              |
+| ---- | ---------------------------------------------------- |
+| `0`  | Success                                              |
+| `1`  | One or more targets failed, or the run itself failed |
+| `2`  | Bad arguments or invalid retention configuration     |
 
 A failing target does not stop the others — one problematic table should not
 prevent the rest from being cleaned up. The failure is reported per target and
@@ -132,7 +132,7 @@ same: run the command, let the exit code decide whether to alert.
 
 Every applied run writes an `AuditLog` row with `action = "RETENTION_PURGE"`
 recording what it removed, so the purge is itself auditable. Dry runs do not —
-a report of what *would* happen is not an event, and writing one would pollute
+a report of what _would_ happen is not an event, and writing one would pollute
 the table being purged.
 
 ---

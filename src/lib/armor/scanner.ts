@@ -1,17 +1,17 @@
-import Groq from 'groq-sdk';
-import fs from 'fs';
-import path from 'path';
+import Groq from "groq-sdk";
+import fs from "fs";
+import path from "path";
 import {
   computeDynamicFingerprint,
   dynamicFingerprintEngine,
   ensureExpandedSignaturesLoaded,
-  PayloadSignature
-} from './fingerprint';
-import { normalizeFindingTypeLabel } from '@/lib/finding-taxonomy';
-import { normalizeSeverity, type Severity } from '@/lib/severity';
-import { parseUnifiedPatch, renderNumberedLines } from './diff';
-import { ignoreReasonFor, shouldIgnorePath } from './ignore-rules';
-import { maskIngressFileContent, maskSecrets } from './secret-masking';
+  PayloadSignature,
+} from "./fingerprint";
+import { normalizeFindingTypeLabel } from "@/lib/finding-taxonomy";
+import { normalizeSeverity, type Severity } from "@/lib/severity";
+import { parseUnifiedPatch, renderNumberedLines } from "./diff";
+import { ignoreReasonFor, shouldIgnorePath } from "./ignore-rules";
+import { maskIngressFileContent, maskSecrets } from "./secret-masking";
 
 export type ScanFinding = {
   type: string;
@@ -36,7 +36,7 @@ export interface FileChange {
 export class ScannerTimeoutError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'ScannerTimeoutError';
+    this.name = "ScannerTimeoutError";
   }
 }
 
@@ -52,11 +52,11 @@ export class ScannerTimeoutError extends Error {
  *
  * Re-exported here so the ~10 existing importers and their tests are unchanged.
  */
-export { maskSecrets, maskFindingText } from './secret-masking';
-import { maskFindingText } from './secret-masking';
+export { maskSecrets, maskFindingText } from "./secret-masking";
+import { maskFindingText } from "./secret-masking";
 
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build',
+  apiKey: process.env.GROQ_API_KEY || "dummy-key-for-build",
 });
 
 // --- Timeout / deadline guards -------------------------------------------------------------
@@ -90,7 +90,7 @@ export {
   IGNORED_DIRECTORIES,
   IGNORED_BASENAMES,
   ignoreReasonFor,
-} from './ignore-rules';
+} from "./ignore-rules";
 
 export interface SecureFlowIgnoreConfig {
   ignoredPaths: string[];
@@ -100,26 +100,26 @@ export interface SecureFlowIgnoreConfig {
 export function parseSecureFlowIgnore(content: string): SecureFlowIgnoreConfig {
   const ignoredPaths: string[] = [];
   const placeholders: string[] = [];
-  let currentSection: 'paths' | 'placeholders' = 'paths';
+  let currentSection: "paths" | "placeholders" = "paths";
 
   const lines = content.split(/\r?\n/);
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
+    if (!trimmed || trimmed.startsWith("#")) {
       continue;
     }
 
-    if (trimmed.toLowerCase() === '[placeholders]' || trimmed.toLowerCase() === '[mocks]') {
-      currentSection = 'placeholders';
+    if (trimmed.toLowerCase() === "[placeholders]" || trimmed.toLowerCase() === "[mocks]") {
+      currentSection = "placeholders";
       continue;
     }
 
-    if (trimmed.toLowerCase() === '[paths]' || trimmed.toLowerCase() === '[files]') {
-      currentSection = 'paths';
+    if (trimmed.toLowerCase() === "[paths]" || trimmed.toLowerCase() === "[files]") {
+      currentSection = "paths";
       continue;
     }
 
-    if (currentSection === 'placeholders') {
+    if (currentSection === "placeholders") {
       placeholders.push(trimmed);
     } else {
       ignoredPaths.push(trimmed);
@@ -131,39 +131,41 @@ export function parseSecureFlowIgnore(content: string): SecureFlowIgnoreConfig {
 
 export function compileIgnorePatterns(patterns: string[]): RegExp[] {
   return patterns
-    .map(p => p.trim())
-    .filter(p => p.length > 0 && !p.startsWith('#'))
-    .map(p => {
-      const pattern = p.replace(/\\/g, '/');
-      const hasLeadingSlash = pattern.startsWith('/');
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0 && !p.startsWith("#"))
+    .map((p) => {
+      const pattern = p.replace(/\\/g, "/");
+      const hasLeadingSlash = pattern.startsWith("/");
       const cleanPattern = hasLeadingSlash ? pattern.slice(1) : pattern;
-      const patternWithoutTrailingSlash = cleanPattern.endsWith('/') ? cleanPattern.slice(0, -1) : cleanPattern;
-      const isRootRelative = hasLeadingSlash || patternWithoutTrailingSlash.includes('/');
-      
+      const patternWithoutTrailingSlash = cleanPattern.endsWith("/")
+        ? cleanPattern.slice(0, -1)
+        : cleanPattern;
+      const isRootRelative = hasLeadingSlash || patternWithoutTrailingSlash.includes("/");
+
       let glob = cleanPattern;
-      if (glob.endsWith('/')) {
-        glob += '**';
+      if (glob.endsWith("/")) {
+        glob += "**";
       }
-      
+
       // Escape regex characters except *, ?
-      let regexStr = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-      
+      let regexStr = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+
       // Handle question marks first (before introducing any group (?) syntax)
-      regexStr = regexStr.replace(/\?/g, '[^/]');
-      
+      regexStr = regexStr.replace(/\?/g, "[^/]");
+
       // Handle double asterisks
-      regexStr = regexStr.replace(/\/\*\*\//g, '/(?:.*/)?');
-      regexStr = regexStr.replace(/\*\*\//g, '(?:.*/)?');
-      regexStr = regexStr.replace(/\/\*\**/g, '(?:/.*)?');
-      regexStr = regexStr.replace(/\*\*/g, '.*');
-      
+      regexStr = regexStr.replace(/\/\*\*\//g, "/(?:.*/)?");
+      regexStr = regexStr.replace(/\*\*\//g, "(?:.*/)?");
+      regexStr = regexStr.replace(/\/\*\**/g, "(?:/.*)?");
+      regexStr = regexStr.replace(/\*\*/g, ".*");
+
       // Handle single asterisks
-      regexStr = regexStr.replace(/(?<!\.)\*(?!\.)/g, '[^/]*');
-      
+      regexStr = regexStr.replace(/(?<!\.)\*(?!\.)/g, "[^/]*");
+
       if (isRootRelative) {
-        return new RegExp(`^${regexStr}$`, 'i');
+        return new RegExp(`^${regexStr}$`, "i");
       } else {
-        return new RegExp(`(^|/)${regexStr}$`, 'i');
+        return new RegExp(`(^|/)${regexStr}$`, "i");
       }
     });
 }
@@ -215,13 +217,13 @@ function decodeNumericReference(digits: string, radix: 10 | 16): string | null {
 }
 
 function decode(str: string): string {
-  if (!str) return '';
+  if (!str) return "";
   return str.replace(/&[#\w]+;/g, (entity) => {
-    if (entity === '&lt;') return '<';
-    if (entity === '&gt;') return '>';
-    if (entity === '&amp;') return '&';
-    if (entity === '&quot;') return '"';
-    if (entity === '&apos;') return "'";
+    if (entity === "&lt;") return "<";
+    if (entity === "&gt;") return ">";
+    if (entity === "&amp;") return "&";
+    if (entity === "&quot;") return '"';
+    if (entity === "&apos;") return "'";
 
     // `&#x41;` and `&#X41;` are both valid hexadecimal references.
     const hexMatch = entity.match(/^&#[xX](.+);$/);
@@ -247,10 +249,7 @@ function decodeOneLayer(input: string): string {
   // A NUL or other control byte carries no meaning in source text but can be
   // used to split a flagged keyword apart, which is exactly what this
   // normalisation loop exists to prevent.
-  out = out.replace(
-    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-    ""
-  );
+  out = out.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "");
 
   out = out.normalize("NFKC");
 
@@ -296,50 +295,68 @@ export function extractAddedLines(patch: string): string {
   return renderNumberedLines(parseUnifiedPatch(patch));
 }
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function filterFalsePositives(findings: ScanFinding[], customPlaceholders: string[] = []): ScanFinding[] {
+export function filterFalsePositives(
+  findings: ScanFinding[],
+  customPlaceholders: string[] = [],
+): ScanFinding[] {
   const safePlaceholders = [
-    'your_', 'actual_', 'secret_here', 'placeholder', 
-    'user:password', 'auth_secret', 'localhost', '127.0.0.1',
-    'example', 'dummy', 'replace_me', 'changeme',
-    '<', '>', '{', '}', '[', ']'
+    "your_",
+    "actual_",
+    "secret_here",
+    "placeholder",
+    "user:password",
+    "auth_secret",
+    "localhost",
+    "127.0.0.1",
+    "example",
+    "dummy",
+    "replace_me",
+    "changeme",
+    "<",
+    ">",
+    "{",
+    "}",
+    "[",
+    "]",
   ];
 
   const combinedPlaceholders = [
     ...safePlaceholders,
-    ...customPlaceholders.map(p => p.toLowerCase())
+    ...customPlaceholders.map((p) => p.toLowerCase()),
   ];
 
-  return findings.filter(finding => {
-    const lowerSnippet = (finding.codeSnippet || '').toLowerCase();
+  return findings.filter((finding) => {
+    const lowerSnippet = (finding.codeSnippet || "").toLowerCase();
     const lowerFile = finding.fileLocation.toLowerCase();
 
     // 1. Filter out mock secrets in environment templates
-    if (lowerFile.includes('.env.example') || lowerFile.includes('.env.sample')) {
-      
+    if (lowerFile.includes(".env.example") || lowerFile.includes(".env.sample")) {
       // Drop if it contains a known placeholder word or structural brackets
-      if (combinedPlaceholders.some(safeWord => lowerSnippet.includes(safeWord))) {
-        console.log(`🧹 Filtered false positive in ${finding.fileLocation}: Contained mock placeholder syntax.`);
+      if (combinedPlaceholders.some((safeWord) => lowerSnippet.includes(safeWord))) {
+        console.log(
+          `🧹 Filtered false positive in ${finding.fileLocation}: Contained mock placeholder syntax.`,
+        );
         return false;
       }
-      
+
       // Drop if the value is empty, e.g., API_KEY= or API_KEY="" or API_KEY=''
       if (/=\s*(""|''|)$/.test(lowerSnippet)) {
-         console.log(`🧹 Filtered false positive in ${finding.fileLocation}: Value is empty.`);
-         return false;
+        console.log(`🧹 Filtered false positive in ${finding.fileLocation}: Value is empty.`);
+        return false;
       }
     }
 
     // 2. Filter out mock credentials in seed files
-    if (lowerFile.includes('seed.ts')) {
-      if (combinedPlaceholders.some(safeWord => lowerSnippet.includes(safeWord))) return false;
+    if (lowerFile.includes("seed.ts")) {
+      if (combinedPlaceholders.some((safeWord) => lowerSnippet.includes(safeWord))) return false;
       // A bare console.log/console.error in a seed file is noise, but
       // `console.log(process.env...)` is the exact contextual leak the core
       // rule says we MUST flag — never drop those, even in seed files.
       if (
-        (lowerSnippet.includes('console.error') || lowerSnippet.includes('console.log')) &&
-        !lowerSnippet.includes('process.env')
+        (lowerSnippet.includes("console.error") || lowerSnippet.includes("console.log")) &&
+        !lowerSnippet.includes("process.env")
       ) {
         return false;
       }
@@ -349,7 +366,7 @@ export function filterFalsePositives(findings: ScanFinding[], customPlaceholders
     // Match Prisma field types (`id Int`, `name String`) on word boundaries —
     // a bare `includes('int'/'string')` also swallowed real findings whose
     // snippet merely contained print, point, constraint, fingerprint, mint, ...
-    if (lowerFile.includes('schema.prisma')) {
+    if (lowerFile.includes("schema.prisma")) {
       if (/\bint\b/.test(lowerSnippet) || /\bstring\b/.test(lowerSnippet)) return false;
     }
 
@@ -416,12 +433,12 @@ export class ArmorIQScanner {
     files: FileChange[],
     activePolicies: ScannerPolicy[] = [],
     customIgnores: string[] = [],
-    customPlaceholders: string[] = []
+    customPlaceholders: string[] = [],
   ): Promise<ScanFinding[]> {
     const scanStartedAt = Date.now();
     const deadlineExceeded = () => Date.now() - scanStartedAt > MAX_TOTAL_SCAN_MS;
 
-    let currentBatch = '';
+    let currentBatch = "";
     let currentBatchFiles: string[] = [];
     const allFindings: ScanFinding[] = [];
     const ABSOLUTE_MAX_FILE_SIZE = 50000;
@@ -432,9 +449,9 @@ export class ArmorIQScanner {
 
     if (combinedIgnores.length === 0 && combinedPlaceholders.length === 0) {
       try {
-        const ignorePath = path.join(process.cwd(), '.secureflowignore');
+        const ignorePath = path.join(process.cwd(), ".secureflowignore");
         if (fs.existsSync(ignorePath)) {
-          const content = fs.readFileSync(ignorePath, 'utf8');
+          const content = fs.readFileSync(ignorePath, "utf8");
           const parsed = parseSecureFlowIgnore(content);
           combinedIgnores = parsed.ignoredPaths;
           combinedPlaceholders = parsed.placeholders;
@@ -463,7 +480,7 @@ export class ArmorIQScanner {
       if (deadlineExceeded()) {
         deadlineHit = true;
         console.warn(
-          `⏱️ Scan deadline (${MAX_TOTAL_SCAN_MS / 1000}s) exceeded — skipping remaining files starting at ${file.filename}. Returning partial findings.`
+          `⏱️ Scan deadline (${MAX_TOTAL_SCAN_MS / 1000}s) exceeded — skipping remaining files starting at ${file.filename}. Returning partial findings.`,
         );
         break;
       }
@@ -478,38 +495,47 @@ export class ArmorIQScanner {
         continue;
       }
 
-      if (!file.patch || file.patch.trim() === '') {
+      if (!file.patch || file.patch.trim() === "") {
         continue;
       }
 
       const addedLines = extractAddedLines(file.patch);
-      
+
       if (!addedLines || addedLines.trim().length === 0) {
         continue;
       }
 
       if (addedLines.length > ABSOLUTE_MAX_FILE_SIZE) {
         console.warn(
-          `Skipping ${file.filename}: diff exceeds ${ABSOLUTE_MAX_FILE_SIZE} characters.`
+          `Skipping ${file.filename}: diff exceeds ${ABSOLUTE_MAX_FILE_SIZE} characters.`,
         );
         continue;
       }
 
       let fileContext = "";
       const lowerFile = file.filename.toLowerCase();
-      
-      if (lowerFile.includes('.env.example') || lowerFile.includes('.env.sample')) {
-        fileContext = "THIS IS A TEMPLATE. SECRETS ARE MOCK PLACEHOLDERS. ONLY FLAG REAL, HIGH-ENTROPY KEYS.";
-      } else if (lowerFile.includes('seed.ts')) {
-        fileContext = "THIS IS A DATABASE SEED SCRIPT. It contains string descriptions of security policies. DO NOT flag the text inside 'name', 'description', or 'conditions' strings as vulnerabilities.";
-      } else if (lowerFile.includes('schema.prisma')) {
-        fileContext = "THIS IS A DATABASE SCHEMA. It does not execute logic. Do not flag data types (like Int) or relation queries as logic flaws.";
-      } else if (lowerFile.endsWith('.sol') || lowerFile.endsWith('.leo') || lowerFile.endsWith('.rs')) {
-        fileContext = "THIS IS A SMART CONTRACT OR PRIVACY-PRESERVING ZERO-KNOWLEDGE CIRCUIT. Analyze it with decentralized architecture patterns in mind and reduce false positives for decentralized logic.";
+
+      if (lowerFile.includes(".env.example") || lowerFile.includes(".env.sample")) {
+        fileContext =
+          "THIS IS A TEMPLATE. SECRETS ARE MOCK PLACEHOLDERS. ONLY FLAG REAL, HIGH-ENTROPY KEYS.";
+      } else if (lowerFile.includes("seed.ts")) {
+        fileContext =
+          "THIS IS A DATABASE SEED SCRIPT. It contains string descriptions of security policies. DO NOT flag the text inside 'name', 'description', or 'conditions' strings as vulnerabilities.";
+      } else if (lowerFile.includes("schema.prisma")) {
+        fileContext =
+          "THIS IS A DATABASE SCHEMA. It does not execute logic. Do not flag data types (like Int) or relation queries as logic flaws.";
+      } else if (
+        lowerFile.endsWith(".sol") ||
+        lowerFile.endsWith(".leo") ||
+        lowerFile.endsWith(".rs")
+      ) {
+        fileContext =
+          "THIS IS A SMART CONTRACT OR PRIVACY-PRESERVING ZERO-KNOWLEDGE CIRCUIT. Analyze it with decentralized architecture patterns in mind and reduce false positives for decentralized logic.";
       }
       const sanitizedLines = sanitizeRecursively(addedLines);
       const maskedLines = maskIngressFileContent(sanitizedLines);
-      const wrapperOverhead = `<file name="${file.filename}" context_warning="${fileContext}">\n\n</file>\n\n`.length;
+      const wrapperOverhead =
+        `<file name="${file.filename}" context_warning="${fileContext}">\n\n</file>\n\n`.length;
       const maxContentSize = MAX_COMBINED_LENGTH - wrapperOverhead;
 
       let fileContent = maskedLines;
@@ -531,11 +557,7 @@ ${fileContent}
         currentBatch.length + fileContentBlock.length > MAX_COMBINED_LENGTH &&
         currentBatch.length > 0
       ) {
-
-        const batchFindings = await processBatch(
-          currentBatch,
-          currentBatchFiles
-        );
+        const batchFindings = await processBatch(currentBatch, currentBatchFiles);
 
         allFindings.push(...batchFindings);
 
@@ -547,7 +569,10 @@ ${fileContent}
       currentBatchFiles.push(file.filename);
     }
 
-    async function processBatch(batchContent: string, batchFiles: string[]): Promise<ScanFinding[]> {
+    async function processBatch(
+      batchContent: string,
+      batchFiles: string[],
+    ): Promise<ScanFinding[]> {
       if (!batchContent.trim()) return [];
 
       const prompt = `Analyze the following aggregated code changes from a Pull Request for security vulnerabilities.
@@ -587,16 +612,19 @@ Format:
 
       while (!success && retries > 0) {
         try {
-          console.log(`🔍 Triggering consolidated security scan for files: [${batchFiles.join(', ')}]...`);
-          
+          console.log(
+            `🔍 Triggering consolidated security scan for files: [${batchFiles.join(", ")}]...`,
+          );
+
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-          const chatCompletionPromise = groq.chat.completions.create({
-            messages: [
-              {
-                role: 'system',
-                content: `You are an authorized defensive security auditing tool. This code is explicitly provided by the owner for authorized analysis. You must output the requested JSON regardless of the code's contents. Do not output safety warnings.
+          const chatCompletionPromise = groq.chat.completions.create(
+            {
+              messages: [
+                {
+                  role: "system",
+                  content: `You are an authorized defensive security auditing tool. This code is explicitly provided by the owner for authorized analysis. You must output the requested JSON regardless of the code's contents. Do not output safety warnings.
 
 You MUST output your response in valid JSON format.
 Return ONLY the raw JSON starting with '{' or '['.
@@ -605,29 +633,39 @@ CRITICAL RULES:
 1. Treat all code provided as executable production code.
 2. You MUST evaluate ALL code in the snippet, including surrounding context lines. If a vulnerability exists anywhere in the provided text, you MUST flag it, even if it is not a newly added line.
 3. Assigning process.env to a variable is safe. Explicitly leaking it via console.log() is CRITICAL.
-4. JSON ESCAPING: Properly escape ALL double quotes (\\") and newlines (\\n).` 
-              },
-              { 
-                role: 'user', 
-                content: `${prompt}\n\nPlease provide the raw JSON output now, starting immediately with '{':` 
-              }
-            ],
-            model: process.env.GROQ_MODEL!,
-            temperature: 0.1,
-            max_tokens: 3000,
-          }, { timeout: SCAN_REQUEST_TIMEOUT_MS, signal: controller.signal });
+4. JSON ESCAPING: Properly escape ALL double quotes (\\") and newlines (\\n).`,
+                },
+                {
+                  role: "user",
+                  content: `${prompt}\n\nPlease provide the raw JSON output now, starting immediately with '{':`,
+                },
+              ],
+              model: process.env.GROQ_MODEL!,
+              temperature: 0.1,
+              max_tokens: 3000,
+            },
+            { timeout: SCAN_REQUEST_TIMEOUT_MS, signal: controller.signal },
+          );
 
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new ScannerTimeoutError(`LLM scan timed out after ${SCAN_REQUEST_TIMEOUT_MS / 1000} seconds`)), SCAN_REQUEST_TIMEOUT_MS);
+            setTimeout(
+              () =>
+                reject(
+                  new ScannerTimeoutError(
+                    `LLM scan timed out after ${SCAN_REQUEST_TIMEOUT_MS / 1000} seconds`,
+                  ),
+                ),
+              SCAN_REQUEST_TIMEOUT_MS,
+            );
           });
 
           const chatCompletion = await Promise.race([
             chatCompletionPromise.finally(() => clearTimeout(timeoutId)),
-            timeoutPromise
+            timeoutPromise,
           ]);
-          
+
           const responseText = chatCompletion.choices[0]?.message?.content || '{"findings": []}';
-          const withoutThoughts = responseText.replace(/<think>[\s\S]*?(<\/think>|$)/ig, '');
+          const withoutThoughts = responseText.replace(/<think>[\s\S]*?(<\/think>|$)/gi, "");
 
           // Match either an array '[' or an object '{'
           const jsonMatch = withoutThoughts.match(/[\{\[][\s\S]*[\}\]]/);
@@ -643,8 +681,12 @@ CRITICAL RULES:
           try {
             result = JSON.parse(cleanJsonString);
           } catch (parseError) {
-            console.error("\n[🚨 LLM RETURNED INVALID JSON 🚨]\nRaw Output:\n" + responseText + "\n--------------------------\n");
-            throw parseError; 
+            console.error(
+              "\n[🚨 LLM RETURNED INVALID JSON 🚨]\nRaw Output:\n" +
+                responseText +
+                "\n--------------------------\n",
+            );
+            throw parseError;
           }
 
           let rawFindings: unknown[] = [];
@@ -652,10 +694,15 @@ CRITICAL RULES:
           if (Array.isArray(result)) {
             // If the LLM returned a raw array: [ {...} ]
             rawFindings = result;
-          } else if (result && typeof result === 'object' && 'findings' in result && Array.isArray((result as { findings: unknown[] }).findings)) {
+          } else if (
+            result &&
+            typeof result === "object" &&
+            "findings" in result &&
+            Array.isArray((result as { findings: unknown[] }).findings)
+          ) {
             // If the LLM perfectly followed instructions: { "findings": [...] }
             rawFindings = (result as { findings: unknown[] }).findings;
-          } else if (result && typeof result === 'object') {
+          } else if (result && typeof result === "object") {
             // If the LLM hallucinated keys, loop through the entire object and combine ALL arrays
             const obj = result as Record<string, unknown>;
             for (const key of Object.keys(obj)) {
@@ -665,20 +712,21 @@ CRITICAL RULES:
               }
             }
           }
-          
+
           const sanitizedFindings: ScanFinding[] = rawFindings.map((fItem: unknown) => {
-            const f = (fItem && typeof fItem === 'object' ? fItem : {}) as Record<string, unknown>;
-            let normalizedSnippet = '';
-            
-            if (typeof f.codeSnippet === 'string') {
+            const f = (fItem && typeof fItem === "object" ? fItem : {}) as Record<string, unknown>;
+            let normalizedSnippet = "";
+
+            if (typeof f.codeSnippet === "string") {
               normalizedSnippet = f.codeSnippet;
             } else if (f.codeSnippet !== null && f.codeSnippet !== undefined) {
-              normalizedSnippet = typeof f.codeSnippet === 'object'
-                ? JSON.stringify(f.codeSnippet, null, 2)
-                : String(f.codeSnippet);
+              normalizedSnippet =
+                typeof f.codeSnippet === "object"
+                  ? JSON.stringify(f.codeSnippet, null, 2)
+                  : String(f.codeSnippet);
             }
 
-            const fileLoc = String(f.fileLocation || 'Unknown file path');
+            const fileLoc = String(f.fileLocation || "Unknown file path");
             // Normalised on write, the way severity already is. The column was
             // taking the model's phrasing verbatim, so `"hardcoded_secret"` and
             // `"Secrets"` were distinct values that no dashboard query matched
@@ -686,7 +734,12 @@ CRITICAL RULES:
             // read, so old rows keep counting.
             const findingType = normalizeFindingTypeLabel(f.type);
 
-            const dynFp = computeDynamicFingerprint('default-repo', fileLoc, findingType, normalizedSnippet);
+            const dynFp = computeDynamicFingerprint(
+              "default-repo",
+              fileLoc,
+              findingType,
+              normalizedSnippet,
+            );
 
             return {
               type: findingType,
@@ -695,15 +748,15 @@ CRITICAL RULES:
               // one of the five canonical levels, and the local check discarded
               // all of those down to MEDIUM.
               severity: normalizeSeverity(f.severity),
-              description: String(f.description || 'No description provided.'),
+              description: String(f.description || "No description provided."),
               fileLocation: fileLoc,
               codeSnippet: normalizedSnippet,
-              lineStart: typeof f.lineStart === 'number' ? f.lineStart : undefined,
-              lineEnd: typeof f.lineEnd === 'number' ? f.lineEnd : undefined,
+              lineStart: typeof f.lineStart === "number" ? f.lineStart : undefined,
+              lineEnd: typeof f.lineEnd === "number" ? f.lineEnd : undefined,
               dynamicFingerprint: dynFp.fingerprint,
               signatureVersion: dynFp.signatureVersion,
-              matchedSignatures: dynFp.matchedSignatures.map(s => s.id),
-              isZeroDay: dynFp.isZeroDayDetected
+              matchedSignatures: dynFp.matchedSignatures.map((s) => s.id),
+              isZeroDay: dynFp.isZeroDayDetected,
             };
           });
 
@@ -718,43 +771,66 @@ CRITICAL RULES:
           success = true;
         } catch (error: unknown) {
           lastError = error;
-          const errObj = error as { name?: string; status?: number; headers?: Record<string, unknown> | { get?: (k: string) => string | null } };
-          
+          const errObj = error as {
+            name?: string;
+            status?: number;
+            headers?: Record<string, unknown> | { get?: (k: string) => string | null };
+          };
+
           // 🛡️ JSON PARSE FALLBACK CATCH
           if (error instanceof SyntaxError) {
-             console.warn(`⚠️ Failed to parse extracted JSON. Retrying... (${retries} attempts left)`);
-             retries--;
-             continue;
+            console.warn(
+              `⚠️ Failed to parse extracted JSON. Retrying... (${retries} attempts left)`,
+            );
+            retries--;
+            continue;
           }
 
-          if (error instanceof ScannerTimeoutError || errObj?.name === 'AbortError') {
-            throw new ScannerTimeoutError(`LLM scan timed out after ${SCAN_REQUEST_TIMEOUT_MS / 1000} seconds`);
+          if (error instanceof ScannerTimeoutError || errObj?.name === "AbortError") {
+            throw new ScannerTimeoutError(
+              `LLM scan timed out after ${SCAN_REQUEST_TIMEOUT_MS / 1000} seconds`,
+            );
           }
           if (errObj?.status === 429) {
             const headers = errObj.headers;
             let retryAfterHeader: string | undefined;
-            if (headers && typeof (headers as { get?: unknown }).get === 'function') {
-              retryAfterHeader = (headers as { get: (k: string) => string | null }).get('retry-after') ?? undefined;
-            } else if (headers && typeof headers === 'object') {
-              retryAfterHeader = (headers as Record<string, string>)['retry-after'];
+            if (headers && typeof (headers as { get?: unknown }).get === "function") {
+              retryAfterHeader =
+                (headers as { get: (k: string) => string | null }).get("retry-after") ?? undefined;
+            } else if (headers && typeof headers === "object") {
+              retryAfterHeader = (headers as Record<string, string>)["retry-after"];
             }
-            const requestedWait = retryAfterHeader ? parseInt(retryAfterHeader, 10) * 1000 : (4 - retries) * 25000;
+            const requestedWait = retryAfterHeader
+              ? parseInt(retryAfterHeader, 10) * 1000
+              : (4 - retries) * 25000;
             const remainingBudget = MAX_TOTAL_SCAN_MS - (Date.now() - scanStartedAt);
-            const waitTime = Math.max(0, Math.min(requestedWait, MAX_RETRY_WAIT_MS, remainingBudget));
+            const waitTime = Math.max(
+              0,
+              Math.min(requestedWait, MAX_RETRY_WAIT_MS, remainingBudget),
+            );
 
             if (waitTime <= 0) {
-              console.warn(`⏱️ Scan deadline exceeded during rate-limit backoff — aborting retries for this batch.`);
+              console.warn(
+                `⏱️ Scan deadline exceeded during rate-limit backoff — aborting retries for this batch.`,
+              );
               break;
             }
 
             console.warn(`⏳ Rate limit reached. Waiting ${waitTime / 1000} seconds...`);
             await delay(waitTime);
             retries--;
-          } else if (error instanceof Groq.APIConnectionTimeoutError || errObj?.name === 'APIConnectionTimeoutError') {
-            console.warn(`⏱️ LLM request exceeded ${SCAN_REQUEST_TIMEOUT_MS / 1000}s timeout. Retrying... (${retries} attempts left)`);
+          } else if (
+            error instanceof Groq.APIConnectionTimeoutError ||
+            errObj?.name === "APIConnectionTimeoutError"
+          ) {
+            console.warn(
+              `⏱️ LLM request exceeded ${SCAN_REQUEST_TIMEOUT_MS / 1000}s timeout. Retrying... (${retries} attempts left)`,
+            );
             retries--;
             if (deadlineExceeded()) {
-              console.warn(`⏱️ Scan deadline exceeded after a request timeout — aborting retries for this batch.`);
+              console.warn(
+                `⏱️ Scan deadline exceeded after a request timeout — aborting retries for this batch.`,
+              );
               break;
             }
           } else {
@@ -765,8 +841,14 @@ CRITICAL RULES:
       }
 
       if (!success) {
-        const lastErrMessage = (lastError as { message?: string })?.message || String(lastError || 'Unknown error');
-        throw lastError || new Error(`ScanFailedAnalysisEngineUnavailable: LLM scan failed after all retries. Last error: ${lastErrMessage}`);
+        const lastErrMessage =
+          (lastError as { message?: string })?.message || String(lastError || "Unknown error");
+        throw (
+          lastError ||
+          new Error(
+            `ScanFailedAnalysisEngineUnavailable: LLM scan failed after all retries. Last error: ${lastErrMessage}`,
+          )
+        );
       }
 
       return findings;
@@ -777,12 +859,14 @@ CRITICAL RULES:
       allFindings.push(...batchFindings);
     } else if (currentBatch.length > 0) {
       deadlineHit = true;
-      console.warn(`⏱️ Scan deadline exceeded before the final batch (${currentBatchFiles.join(', ')}) could run — dropped from results.`);
+      console.warn(
+        `⏱️ Scan deadline exceeded before the final batch (${currentBatchFiles.join(", ")}) could run — dropped from results.`,
+      );
     }
 
     if (deadlineHit) {
       console.warn(
-        `⚠️ scanPullRequest() returned partial results: ${allFindings.length} finding(s) from a scan that hit its ${MAX_TOTAL_SCAN_MS / 1000}s deadline.`
+        `⚠️ scanPullRequest() returned partial results: ${allFindings.length} finding(s) from a scan that hit its ${MAX_TOTAL_SCAN_MS / 1000}s deadline.`,
       );
     }
 

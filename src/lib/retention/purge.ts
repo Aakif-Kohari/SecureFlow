@@ -16,11 +16,7 @@
  * Every run records what it did in `AuditLog`, so the purge is itself auditable.
  */
 
-import {
-  resolveRetentionPolicy,
-  type PurgeTarget,
-  type ResolvedRetention,
-} from './policy';
+import { resolveRetentionPolicy, type PurgeTarget, type ResolvedRetention } from "./policy";
 
 /** Rows touched per statement. Small enough to keep locks short. */
 export const DEFAULT_BATCH_SIZE = 500;
@@ -36,10 +32,10 @@ export const MAX_BATCHES_PER_TARGET = 200;
  * the inverse of `SUPPRESSED_STATUSES`: anything not yet resolved or dismissed
  * is still live work.
  */
-export const PROTECTED_TRIAGE_STATUSES = ['OPEN'] as const;
+export const PROTECTED_TRIAGE_STATUSES = ["OPEN"] as const;
 
 /** Replacement text left in place of a redacted snippet. */
-export const REDACTED_SNIPPET = '[REDACTED — retention policy]';
+export const REDACTED_SNIPPET = "[REDACTED — retention policy]";
 
 export interface PurgeOptions {
   /** When false, nothing is written. Defaults to true. */
@@ -132,7 +128,7 @@ async function runBatched(
   selectIds: (take: number) => Promise<Array<{ id: string }>>,
   apply: (ids: string[]) => Promise<{ count: number }>,
   batchSize: number,
-  dryRun: boolean
+  dryRun: boolean,
 ): Promise<{ affected: number; batches: number; truncated: boolean }> {
   let affected = 0;
   let batches = 0;
@@ -170,7 +166,7 @@ async function purgeAuditLogs(
   db: PurgeClient,
   rule: ResolvedRetention,
   batchSize: number,
-  dryRun: boolean
+  dryRun: boolean,
 ) {
   return runBatched(
     (take) =>
@@ -181,7 +177,7 @@ async function purgeAuditLogs(
       }),
     (ids) => db.auditLog.deleteMany({ where: { id: { in: ids } } }),
     batchSize,
-    dryRun
+    dryRun,
   );
 }
 
@@ -189,7 +185,7 @@ async function purgeWebhookEvents(
   db: PurgeClient,
   rule: ResolvedRetention,
   batchSize: number,
-  dryRun: boolean
+  dryRun: boolean,
 ) {
   return runBatched(
     (take) =>
@@ -200,7 +196,7 @@ async function purgeWebhookEvents(
       }),
     (ids) => db.webhookEvent.deleteMany({ where: { id: { in: ids } } }),
     batchSize,
-    dryRun
+    dryRun,
   );
 }
 
@@ -208,7 +204,7 @@ async function purgeScanResults(
   db: PurgeClient,
   rule: ResolvedRetention,
   batchSize: number,
-  dryRun: boolean
+  dryRun: boolean,
 ) {
   // Findings go with their ScanResult via the existing onDelete: Cascade.
   return runBatched(
@@ -220,7 +216,7 @@ async function purgeScanResults(
       }),
     (ids) => db.scanResult.deleteMany({ where: { id: { in: ids } } }),
     batchSize,
-    dryRun
+    dryRun,
   );
 }
 
@@ -229,15 +225,13 @@ async function redactFindingSnippets(
   rule: ResolvedRetention,
   batchSize: number,
   dryRun: boolean,
-  protectedFingerprints: string[]
+  protectedFingerprints: string[],
 ) {
   const where = {
     createdAt: { lt: rule.cutoff },
     // Already-redacted rows must not be re-selected, or the loop never drains.
     codeSnippet: { not: null as null, notIn: [REDACTED_SNIPPET] },
-    ...(protectedFingerprints.length > 0
-      ? { fingerprint: { notIn: protectedFingerprints } }
-      : {}),
+    ...(protectedFingerprints.length > 0 ? { fingerprint: { notIn: protectedFingerprints } } : {}),
   };
 
   return runBatched(
@@ -248,7 +242,7 @@ async function redactFindingSnippets(
         data: { codeSnippet: REDACTED_SNIPPET },
       }),
     batchSize,
-    dryRun
+    dryRun,
   );
 }
 
@@ -263,7 +257,7 @@ async function redactFindingSnippets(
  */
 export async function runRetention(
   db: PurgeClient,
-  options: PurgeOptions = {}
+  options: PurgeOptions = {},
 ): Promise<PurgeReport> {
   const dryRun = options.dryRun ?? true;
   const batchSize = Math.max(1, options.batchSize ?? DEFAULT_BATCH_SIZE);
@@ -277,7 +271,7 @@ export async function runRetention(
 
   // Loaded once, up front: the set does not change during the run, and querying
   // it per batch would be a needless round trip per batch.
-  const protectedFingerprints = selected.some((r) => r.target === 'findingSnippet')
+  const protectedFingerprints = selected.some((r) => r.target === "findingSnippet")
     ? await loadProtectedFingerprints(db)
     : [];
 
@@ -294,16 +288,16 @@ export async function runRetention(
       let outcome: { affected: number; batches: number; truncated: boolean };
 
       switch (rule.target) {
-        case 'auditLog':
+        case "auditLog":
           outcome = await purgeAuditLogs(db, rule, batchSize, dryRun);
           break;
-        case 'webhookEvent':
+        case "webhookEvent":
           outcome = await purgeWebhookEvents(db, rule, batchSize, dryRun);
           break;
-        case 'scanResult':
+        case "scanResult":
           outcome = await purgeScanResults(db, rule, batchSize, dryRun);
           break;
-        case 'findingSnippet':
+        case "findingSnippet":
           outcome = await redactFindingSnippets(db, rule, batchSize, dryRun, protectedFingerprints);
           break;
       }
@@ -351,9 +345,9 @@ async function recordPurge(db: PurgeClient, report: PurgeReport): Promise<void> 
     await db.auditLog.create({
       data: {
         userId: null,
-        action: 'RETENTION_PURGE',
-        resource: 'system',
-        decision: report.hadErrors ? 'PARTIAL' : 'ALLOW',
+        action: "RETENTION_PURGE",
+        resource: "system",
+        decision: report.hadErrors ? "PARTIAL" : "ALLOW",
         metadata: {
           totalAffected: report.totalAffected,
           startedAt: report.startedAt,
@@ -370,14 +364,14 @@ async function recordPurge(db: PurgeClient, report: PurgeReport): Promise<void> 
 /** Render a report as human-readable lines for the CLI. */
 export function formatReport(report: PurgeReport): string {
   const lines: string[] = [];
-  const mode = report.dryRun ? 'DRY RUN — nothing was written' : 'APPLIED';
+  const mode = report.dryRun ? "DRY RUN — nothing was written" : "APPLIED";
 
   lines.push(`SecureFlow data retention — ${mode}`);
   lines.push(`Started ${report.startedAt}`);
-  lines.push('');
+  lines.push("");
 
   for (const outcome of report.outcomes) {
-    const verb = outcome.target === 'findingSnippet' ? 'redact' : 'delete';
+    const verb = outcome.target === "findingSnippet" ? "redact" : "delete";
     const label = `${outcome.target} (older than ${outcome.retentionDays}d, before ${outcome.cutoff})`;
 
     if (outcome.error) {
@@ -385,14 +379,14 @@ export function formatReport(report: PurgeReport): string {
       continue;
     }
 
-    const suffix = outcome.truncated ? ' (more remain — run again)' : '';
+    const suffix = outcome.truncated ? " (more remain — run again)" : "";
     const tense = report.dryRun ? `would ${verb}` : `${verb}d`;
     lines.push(`  • ${label}: ${tense} ${outcome.affected} row(s)${suffix}`);
   }
 
-  lines.push('');
+  lines.push("");
   lines.push(`Total affected: ${report.totalAffected}`);
-  if (report.hadErrors) lines.push('One or more targets failed — see above.');
+  if (report.hadErrors) lines.push("One or more targets failed — see above.");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
