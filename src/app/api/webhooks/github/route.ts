@@ -198,8 +198,8 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
     throw new AppError("Webhook payload exceeds the configured size limit", 413);
   }
 
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET?.trim();
-  if (!webhookSecret) {
+  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+  if (!webhookSecret || !webhookSecret.trim()) {
     // A deployment fault rather than a caller fault: not operational, so the
     // error handler returns a generic message instead of naming the variable.
     throw new AppError("GITHUB_WEBHOOK_SECRET is not set", 500, false);
