@@ -1,4 +1,4 @@
-name: "CodeQL Static Analysis"
+﻿name: "CodeQL Static Analysis"
 
 on:
   push:
@@ -54,9 +54,13 @@ jobs:
           # security-extended (default + lower severity) and
           # security-and-quality (extended + maintainability/reliability).
           queries: security-extended,security-and-quality
+          paths: |
+            src
+            cli
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
+

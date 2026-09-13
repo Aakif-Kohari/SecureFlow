@@ -3,6 +3,7 @@ import Groq from "groq-sdk";
 import { getVulnerabilityMetadata } from "../../database/vulnerabilityDb";
 import { __internal, isRateLimitError, isTimeoutError, withRetry } from "./security-helpers";
 import { ai, securityExplanationModel, getSecurityExplanationModelChain } from "@/ai/genkit";
+import { env } from "@/lib/env";
 import { executeWithFallbackAndRetry } from "../resilience";
 import {
   AISecurityExplanationApiSchema,
@@ -13,7 +14,7 @@ import {
   type AISecurityExplanationOutput,
 } from "./security-explanation-schemas";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "dummy-key-for-build" });
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 interface StreamOptions {
   vulnerabilityId: string;

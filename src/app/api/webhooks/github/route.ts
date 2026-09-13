@@ -12,11 +12,12 @@ import {
   payloadByteLength,
   verifySignature,
   webhookJobId,
-} from "@/lib/github/webhook-verification";
-import prisma from "@/lib/prisma";
-import { Octokit } from "octokit";
-import { parseManifestFile } from "@/lib/sbom/dependency-parser";
-import { matchVulnerabilities } from "@/lib/sbom/vulnerability-matcher";
+} from '@/lib/github/webhook-verification';
+import prisma from '@/lib/prisma';
+import { Octokit } from 'octokit';
+import { parseManifestFile } from '@/lib/sbom/dependency-parser';
+import { matchVulnerabilities } from '@/lib/sbom/vulnerability-matcher';
+import { env } from "@/lib/env";
 
 /**
  * GitHub webhook ingest (#562).
@@ -186,7 +187,7 @@ export async function handleBranchProtectionMutation(payload: Record<string, unk
 }
 
 const handler = withErrorHandler(async function POST(req: NextRequest) {
-  const maxBytes = parseMaxWebhookBytes(process.env.GITHUB_WEBHOOK_MAX_BYTES);
+  const maxBytes = parseMaxWebhookBytes(env.GITHUB_WEBHOOK_MAX_BYTES);
 
   // 1. Size, from the header, before reading a single byte.
   //
@@ -197,13 +198,7 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   if (isPayloadTooLarge(req.headers.get("content-length"), maxBytes)) {
     throw new AppError("Webhook payload exceeds the configured size limit", 413);
   }
-
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-  if (!webhookSecret || !webhookSecret.trim()) {
-    // A deployment fault rather than a caller fault: not operational, so the
-    // error handler returns a generic message instead of naming the variable.
-    throw new AppError("GITHUB_WEBHOOK_SECRET is not set", 500, false);
-  }
+  const webhookSecret = env.GITHUB_WEBHOOK_SECRET;
 
   // 2. Delivery ID, required.
   //
