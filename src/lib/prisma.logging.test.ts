@@ -1,7 +1,57 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+// Unmock @/lib/prisma so this file can test the module itself
 vi.unmock("./prisma");
 vi.unmock("@/lib/prisma");
+
+/**
+ * Mock PrismaClient and pg pool infrastructure, matching the pattern in prisma.pool.test.ts.
+ */
+const { FakePrismaClient, constructedClients } = vi.hoisted(() => {
+  interface MockPrismaClientInstance {
+    options: Record<string, unknown>;
+    listeners: Map<string, ((...args: unknown[]) => void)[]>;
+  }
+
+  const constructedClients: MockPrismaClientInstance[] = [];
+
+  class FakePrismaClient {
+    public readonly options: Record<string, unknown>;
+    public readonly listeners = new Map<string, ((...args: unknown[]) => void)[]>();
+
+    constructor(options: Record<string, unknown>) {
+      this.options = options;
+      constructedClients.push(this);
+    }
+
+    $on(event: string, handler: (...args: unknown[]) => void): this {
+      const existing = this.listeners.get(event) ?? [];
+      existing.push(handler);
+      this.listeners.set(event, existing);
+      return this;
+    }
+  }
+
+  return { FakePrismaClient, constructedClients };
+});
+
+vi.mock("pg", () => ({
+  Pool: class {
+    on() {
+      return this;
+    }
+  },
+}));
+
+vi.mock("@prisma/adapter-pg", () => ({
+  PrismaPg: class {
+    constructor(public pool: unknown) {}
+  },
+}));
+
+vi.mock("@prisma/client", () => ({
+  PrismaClient: FakePrismaClient,
+}));
 
 import {
   shouldLogQueries,
@@ -14,23 +64,72 @@ import {
 } from "./prisma";
 import type { Logger } from "@/lib/logger";
 
-describe("Prisma Development Query Logging", () => {
-  describe("shouldLogQueries", () => {
+const ORIGINAL_ENV = { ...process.env };
+
+/** Helper to import prisma.ts with fresh environment and cleared singleton memo */
+async function importWithEnv(overrides: Record<string, string | undefined>) {
+  for (const key of [
+    "DATABASE_URL",
+    "DATABASE_POOL_URL",
+    "DB_POOL_MAX",
+    "NEXT_PUBLIC_MOCK_DB",
+    "PRISMA_LOG_QUERIES",
+    "SLOW_QUERY_THRESHOLD_MS",
+    "NODE_ENV",
+    "CI",
+    "NEXT_PHASE",
+  ]) {
+    delete process.env[key];
+  }
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+
+  delete (globalThis as { prismaGlobal?: unknown }).prismaGlobal;
+  vi.resetModules();
+  vi.doUnmock("@/lib/prisma");
+  vi.doUnmock("./prisma");
+  return import("./prisma");
+}
+
+describe("Prisma Development Query Logging & Process-Wide Repeated-Query Detection", () => {
+  beforeEach(() => {
+    constructedClients.length = 0;
+    delete (globalThis as { prismaGlobal?: unknown }).prismaGlobal;
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
+    delete (globalThis as { prismaGlobal?: unknown }).prismaGlobal;
+  });
+
+  describe("shouldLogQueries (Copilot Comment 1: High — Prevent Production Logging)", () => {
     it("returns true when NODE_ENV is development", () => {
       expect(shouldLogQueries({ NODE_ENV: "development" })).toBe(true);
     });
 
-    it("returns true when PRISMA_LOG_QUERIES is 'true'", () => {
-      expect(shouldLogQueries({ NODE_ENV: "production", PRISMA_LOG_QUERIES: "true" })).toBe(true);
-      expect(shouldLogQueries({ NODE_ENV: "test", PRISMA_LOG_QUERIES: "true" })).toBe(true);
+    it("allows opting out in development when PRISMA_LOG_QUERIES is 'false'", () => {
+      expect(shouldLogQueries({ NODE_ENV: "development", PRISMA_LOG_QUERIES: "false" })).toBe(
+        false,
+      );
     });
 
-    it("returns false in production when PRISMA_LOG_QUERIES is not set", () => {
+    it("returns false in production by default", () => {
       expect(shouldLogQueries({ NODE_ENV: "production" })).toBe(false);
     });
 
-    it("returns false in test when PRISMA_LOG_QUERIES is not set", () => {
-      expect(shouldLogQueries({ NODE_ENV: "test" })).toBe(false);
+    it("NEVER enables query logging in production, even when PRISMA_LOG_QUERIES='true'", () => {
+      expect(shouldLogQueries({ NODE_ENV: "production", PRISMA_LOG_QUERIES: "true" })).toBe(false);
+    });
+
+    it("returns false in test even when PRISMA_LOG_QUERIES='true'", () => {
+      expect(shouldLogQueries({ NODE_ENV: "test", PRISMA_LOG_QUERIES: "true" })).toBe(false);
+    });
+
+    it("returns false when NODE_ENV is unset or unknown", () => {
+      expect(shouldLogQueries({})).toBe(false);
+      expect(shouldLogQueries({ NODE_ENV: "staging" })).toBe(false);
     });
   });
 
@@ -64,36 +163,67 @@ describe("Prisma Development Query Logging", () => {
     });
   });
 
-  describe("createRecentQueryTracker", () => {
-    it("tracks query occurrences within the sliding window", () => {
+  describe("createRecentQueryTracker (Copilot Comment 2: Medium — Prevent Warning Flooding)", () => {
+    it("tracks query occurrences and triggers isRepeated ONLY on threshold-crossing", () => {
       const tracker = createRecentQueryTracker({ windowMs: 2000, threshold: 3 });
       const query = 'SELECT * FROM "Repository" WHERE id = $1';
 
       const t0 = 10000;
+
+      // 1st occurrence: no warning
       const r1 = tracker.recordQuery(query, t0);
       expect(r1.count).toBe(1);
       expect(r1.isRepeated).toBe(false);
 
-      const r2 = tracker.recordQuery(query, t0 + 500);
+      // 2nd occurrence: no warning
+      const r2 = tracker.recordQuery(query, t0 + 200);
       expect(r2.count).toBe(2);
       expect(r2.isRepeated).toBe(false);
 
-      const r3 = tracker.recordQuery(query, t0 + 1000);
+      // 3rd occurrence (threshold-crossing): triggers warning
+      const r3 = tracker.recordQuery(query, t0 + 400);
       expect(r3.count).toBe(3);
       expect(r3.isRepeated).toBe(true);
+
+      // 4th occurrence in same window: NO repeated warning
+      const r4 = tracker.recordQuery(query, t0 + 600);
+      expect(r4.count).toBe(4);
+      expect(r4.isRepeated).toBe(false);
+
+      // 5th occurrence in same window: NO repeated warning
+      const r5 = tracker.recordQuery(query, t0 + 800);
+      expect(r5.count).toBe(5);
+      expect(r5.isRepeated).toBe(false);
     });
 
-    it("evicts timestamps outside the sliding window", () => {
+    it("resets warning suppression after the query ages out of the sliding window", () => {
       const tracker = createRecentQueryTracker({ windowMs: 2000, threshold: 3 });
       const query = 'SELECT * FROM "Repository" WHERE id = $1';
 
+      // First sequence: threshold crossed at t = 1400
       tracker.recordQuery(query, 1000);
-      tracker.recordQuery(query, 2000);
+      tracker.recordQuery(query, 1200);
+      const r3 = tracker.recordQuery(query, 1400);
+      expect(r3.isRepeated).toBe(true);
 
-      // Query executed at t = 3500ms; t = 1000ms is now > 2000ms ago (3500 - 2000 = 1500)
-      const r = tracker.recordQuery(query, 3500);
-      expect(r.count).toBe(2); // Only t=2000 and t=3500
-      expect(r.isRepeated).toBe(false);
+      // 4th execution in same window is suppressed
+      const r4 = tracker.recordQuery(query, 1600);
+      expect(r4.isRepeated).toBe(false);
+
+      // Query ages out of the window (> 2000ms after last execution at 1600ms)
+      // Next query at t = 4000ms: cutoff is 2000ms, all prior timestamps [1000..1600] age out
+      const r5 = tracker.recordQuery(query, 4000);
+      expect(r5.count).toBe(1);
+      expect(r5.isRepeated).toBe(false);
+
+      const r6 = tracker.recordQuery(query, 4200);
+      expect(r6.count).toBe(2);
+      expect(r6.isRepeated).toBe(false);
+
+      // Second sequence crosses threshold again: triggers a fresh warning
+      const r7 = tracker.recordQuery(query, 4400);
+      expect(r7.count).toBe(3);
+      expect(r7.isRepeated).toBe(true);
     });
 
     it("prevents unbounded memory growth by respecting maxEntries", () => {
@@ -107,7 +237,7 @@ describe("Prisma Development Query Logging", () => {
     });
   });
 
-  describe("handlePrismaQueryEvent", () => {
+  describe("handlePrismaQueryEvent (Copilot Comment 4: Process-Wide Repeated-Query Labeling)", () => {
     let tracker: ReturnType<typeof createRecentQueryTracker>;
     let mockLogger: {
       debug: ReturnType<typeof vi.fn>;
@@ -176,7 +306,7 @@ describe("Prisma Development Query Logging", () => {
       expect(mockLogger.debug).not.toHaveBeenCalled();
     });
 
-    it("logs repeated queries at warn level when threshold is reached", () => {
+    it("logs repeated queries with explicit 'process-wide' scope and avoids warning flooding on hot queries", () => {
       const event: PrismaQueryEvent = {
         query: 'SELECT * FROM "Repository" WHERE id = $1',
         duration: 20,
@@ -188,20 +318,109 @@ describe("Prisma Development Query Logging", () => {
         logger: mockLogger as unknown as Logger,
       };
 
+      // 1st and 2nd executions: debug logs, no warnings
       handlePrismaQueryEvent(event, ctx, 1000);
       handlePrismaQueryEvent(event, ctx, 1200);
       expect(mockLogger.warn).not.toHaveBeenCalled();
+      expect(mockLogger.debug).toHaveBeenCalledTimes(2);
 
-      // Third execution triggers repeated query warning
+      // 3rd execution (threshold-crossing): exactly one warning with process-wide label
       handlePrismaQueryEvent(event, ctx, 1400);
+      expect(mockLogger.warn).toHaveBeenCalledTimes(1);
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        "Repeated query detected (3x in 2000ms): 20ms",
+        "Repeated query detected (process-wide 3x in 2000ms): 20ms",
         expect.objectContaining({
           query: event.query,
           durationMs: 20,
           repeatedCount: 3,
+          scope: "process-wide",
         }),
       );
+
+      // 4th, 5th, 6th executions in same window: NO additional warnings emitted (prevent flooding)
+      handlePrismaQueryEvent(event, ctx, 1500);
+      handlePrismaQueryEvent(event, ctx, 1600);
+      handlePrismaQueryEvent(event, ctx, 1700);
+      expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("PrismaClient Constructor & Event Registration (Copilot Comment 3: Low)", () => {
+    it("in development: passes event logging options and registers $on for query/warn/error", async () => {
+      await importWithEnv({
+        NODE_ENV: "development",
+        DATABASE_URL: "postgresql://u:p@localhost:5432/secureflow_dev",
+      });
+
+      expect(constructedClients).toHaveLength(1);
+      const client = constructedClients[0];
+
+      // Verify constructor options
+      expect(client.options.log).toEqual([
+        { emit: "event", level: "query" },
+        { emit: "event", level: "warn" },
+        { emit: "event", level: "error" },
+      ]);
+
+      // Verify $on listeners registered
+      expect(client.listeners.has("query")).toBe(true);
+      expect(client.listeners.get("query")).toHaveLength(1);
+      expect(client.listeners.has("warn")).toBe(true);
+      expect(client.listeners.get("warn")).toHaveLength(1);
+      expect(client.listeners.has("error")).toBe(true);
+      expect(client.listeners.get("error")).toHaveLength(1);
+    });
+
+    it("in production: passes error-only stdout logging and does NOT register query listeners", async () => {
+      await importWithEnv({
+        NODE_ENV: "production",
+        DATABASE_URL: "postgresql://u:p@db.production:5432/secureflow",
+      });
+
+      expect(constructedClients).toHaveLength(1);
+      const client = constructedClients[0];
+
+      // Verify constructor receives error-only stdout config
+      expect(client.options.log).toEqual([{ emit: "stdout", level: "error" }]);
+
+      // Verify no event listeners registered
+      expect(client.listeners.has("query")).toBe(false);
+      expect(client.listeners.has("warn")).toBe(false);
+      expect(client.listeners.has("error")).toBe(false);
+    });
+
+    it("in production with PRISMA_LOG_QUERIES='true': remains strictly error-only and registers NO query listeners", async () => {
+      await importWithEnv({
+        NODE_ENV: "production",
+        PRISMA_LOG_QUERIES: "true",
+        DATABASE_URL: "postgresql://u:p@db.production:5432/secureflow",
+      });
+
+      expect(constructedClients).toHaveLength(1);
+      const client = constructedClients[0];
+
+      // Production must remain error-only even if someone sets PRISMA_LOG_QUERIES
+      expect(client.options.log).toEqual([{ emit: "stdout", level: "error" }]);
+      expect(client.listeners.has("query")).toBe(false);
+    });
+
+    it("safely handles PrismaClient mocks where $on is not defined", async () => {
+      // Temporarily delete $on from FakePrismaClient prototype
+      const originalOn = FakePrismaClient.prototype.$on;
+      delete (FakePrismaClient.prototype as { $on?: unknown }).$on;
+
+      try {
+        await expect(
+          importWithEnv({
+            NODE_ENV: "development",
+            DATABASE_URL: "postgresql://u:p@localhost:5432/secureflow_dev",
+          }),
+        ).resolves.toBeDefined();
+
+        expect(constructedClients).toHaveLength(1);
+      } finally {
+        FakePrismaClient.prototype.$on = originalOn;
+      }
     });
   });
 });

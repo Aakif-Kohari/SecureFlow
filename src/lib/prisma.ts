@@ -314,7 +314,12 @@ function createPool(): Pool {
 }
 
 /**
- * Development Query Logging and Potential N+1 Detection
+ * Development Query Logging and Process-Wide Repeated-Query Detection
+ *
+ * NOTE: The repeated-query tracker operates process-wide across all incoming
+ * requests on the PrismaClient singleton without request/route context.
+ * A repeated query pattern indicates high-frequency identical SQL execution,
+ * but does not definitively prove request-level N+1 correlation.
  */
 
 export const DEFAULT_SLOW_QUERY_THRESHOLD_MS = 100;
@@ -330,9 +335,9 @@ export interface PrismaQueryEvent {
 }
 
 export function shouldLogQueries(env: Record<string, string | undefined> = process.env): boolean {
-  if (env.PRISMA_LOG_QUERIES === "true") return true;
-  if (env.NODE_ENV === "development") return true;
-  return false;
+  if (env.NODE_ENV !== "development") return false;
+  if (env.PRISMA_LOG_QUERIES === "false") return false;
+  return true;
 }
 
 export function resolveSlowQueryThreshold(
@@ -344,6 +349,11 @@ export function resolveSlowQueryThreshold(
 
 export function normalizeQuery(query: string): string {
   return query.trim().replace(/\s+/g, " ");
+}
+
+export interface QueryExecutionEntry {
+  timestamps: number[];
+  hasWarned: boolean;
 }
 
 export interface RecentQueryTracker {
@@ -363,34 +373,50 @@ export function createRecentQueryTracker(
   const threshold = options.threshold ?? DEFAULT_REPEATED_QUERY_THRESHOLD;
   const maxEntries = options.maxEntries ?? MAX_TRACKED_QUERIES;
 
-  // Map: normalizedQuery -> array of timestamps
-  const executions = new Map<string, number[]>();
+  // Map: normalizedQuery -> QueryExecutionEntry
+  const executions = new Map<string, QueryExecutionEntry>();
 
   return {
     recordQuery(query: string, now: number = Date.now()): { count: number; isRepeated: boolean } {
       const key = normalizeQuery(query);
       const cutoff = now - windowMs;
 
-      let timestamps = executions.get(key);
-      if (!timestamps) {
+      let entry = executions.get(key);
+      if (!entry) {
         // Enforce maxEntries to prevent unbounded memory growth in long-running dev sessions
         if (executions.size >= maxEntries) {
           const firstKey = executions.keys().next().value;
           if (firstKey) executions.delete(firstKey);
         }
-        timestamps = [];
-        executions.set(key, timestamps);
+        entry = { timestamps: [], hasWarned: false };
+        executions.set(key, entry);
       }
 
       // Filter out timestamps outside the sliding window
-      const recent = timestamps.filter((t) => t >= cutoff);
+      const recent = entry.timestamps.filter((t) => t >= cutoff);
+
+      // If all previous executions aged out of the sliding window, reset hasWarned
+      // so a new repetition sequence can trigger another warning.
+      if (recent.length === 0) {
+        entry.hasWarned = false;
+      }
+
       recent.push(now);
-      executions.set(key, recent);
+      entry.timestamps = recent;
 
       const count = recent.length;
+      let isRepeated = false;
+
+      // Emit warning ONLY when the repetition threshold is crossed for this window,
+      // and suppress further warnings for the same query while in this window.
+      if (count >= threshold && !entry.hasWarned) {
+        isRepeated = true;
+        entry.hasWarned = true;
+      }
+
       return {
         count,
-        isRepeated: count >= threshold,
+        isRepeated,
       };
     },
     clear(): void {
@@ -428,10 +454,11 @@ export function handlePrismaQueryEvent(
 
   if (isRepeated) {
     logger.warn(
-      `Repeated query detected (${count}x in ${DEFAULT_REPEATED_QUERY_WINDOW_MS}ms): ${duration}ms`,
+      `Repeated query detected (process-wide ${count}x in ${DEFAULT_REPEATED_QUERY_WINDOW_MS}ms): ${duration}ms`,
       {
         ...meta,
         repeatedCount: count,
+        scope: "process-wide",
       },
     );
   } else if (isSlow) {
