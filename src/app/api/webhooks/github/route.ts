@@ -198,7 +198,7 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
     throw new AppError("Webhook payload exceeds the configured size limit", 413);
   }
 
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
     // A deployment fault rather than a caller fault: not operational, so the
     // error handler returns a generic message instead of naming the variable.
@@ -216,7 +216,9 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
     throw new AppError("Missing or invalid x-github-delivery header", 400);
   }
 
-  const signatureHex = parseGithubSignature(req.headers.get("x-hub-signature-256"));
+  const signatureHex = parseGithubSignature(
+    req.headers.get("x-hub-signature-256") ?? req.headers.get("X-Hub-Signature-256"),
+  );
   if (!signatureHex) {
     throw new AppError("Missing or invalid x-hub-signature-256 header", 401);
   }

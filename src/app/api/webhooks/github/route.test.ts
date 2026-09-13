@@ -61,8 +61,19 @@ function makeRequest(
     ...overrides,
   };
   return {
-    headers: { get: (k: string) => headers[k] ?? null },
-    text: async () => body,
+    headers: {
+      get: (k: string) => {
+        const lower = k.toLowerCase();
+        for (const [key, value] of Object.entries(headers)) {
+          if (key.toLowerCase() === lower) {
+            return value;
+          }
+        }
+        return null;
+      },
+    },
+    text: vi.fn(async () => body),
+    json: vi.fn(async () => JSON.parse(body)),
   } as any;
 }
 
@@ -84,18 +95,84 @@ describe("GitHub webhook route", () => {
   });
 
   describe("signature verification (x-hub-signature-256)", () => {
-    it("returns 401 Unauthorized when the signature header is missing completely", async () => {
+    it("processes a webhook when the signature is valid", async () => {
+      const req = makeRequest(minimalPRPayload);
+      const res = await POST(req);
+      expect(res.status).toBe(202);
+      expect(await res.json()).toMatchObject({ status: "queued" });
+      expect(addWebhookJob).toHaveBeenCalledOnce();
+      expect(req.json).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature header is omitted completely (null)", async () => {
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": null });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Missing or invalid x-hub-signature-256 header" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature header is empty string", async () => {
       const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": "" });
       const res = await POST(req);
       expect(res.status).toBe(401);
       expect(await res.json()).toEqual({ error: "Missing or invalid x-hub-signature-256 header" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
     });
 
     it("returns 401 Unauthorized when the signature header format is malformed (missing sha256= prefix)", async () => {
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": "0".repeat(64) });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Missing or invalid x-hub-signature-256 header" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature header uses an unsupported prefix (e.g. md5= or sha1=)", async () => {
       const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": "md5=1234567890abcdef" });
       const res = await POST(req);
       expect(res.status).toBe(401);
       expect(await res.json()).toEqual({ error: "Missing or invalid x-hub-signature-256 header" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature header contains non-hex characters", async () => {
+      const req = makeRequest(minimalPRPayload, {
+        "x-hub-signature-256": "sha256=" + "z".repeat(64),
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Missing or invalid x-hub-signature-256 header" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature header length is invalid", async () => {
+      const tooShort = makeRequest(minimalPRPayload, { "x-hub-signature-256": "sha256=12345" });
+      const resShort = await POST(tooShort);
+      expect(resShort.status).toBe(401);
+      expect(await resShort.json()).toEqual({
+        error: "Missing or invalid x-hub-signature-256 header",
+      });
+
+      const tooLong = makeRequest(minimalPRPayload, {
+        "x-hub-signature-256": "sha256=" + "a".repeat(65),
+      });
+      const resLong = await POST(tooLong);
+      expect(resLong.status).toBe(401);
+      expect(await resLong.json()).toEqual({
+        error: "Missing or invalid x-hub-signature-256 header",
+      });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when the signature was computed with a different secret", async () => {
+      const wrongSecretSignature =
+        "sha256=" + createHmac("sha256", "wrong-secret").update(minimalPRPayload).digest("hex");
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": wrongSecretSignature });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Invalid GitHub webhook signature" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
     });
 
     it("returns 401 Unauthorized when the signature HMAC digest does not match the payload", async () => {
@@ -104,6 +181,41 @@ describe("GitHub webhook route", () => {
       const res = await POST(req);
       expect(res.status).toBe(401);
       expect(await res.json()).toEqual({ error: "Invalid GitHub webhook signature" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when a valid signature is provided for a modified payload", async () => {
+      const originalPayload = JSON.stringify({ action: "opened", pr: 1 });
+      const validSig = sign(originalPayload);
+      const tamperedPayload = JSON.stringify({ action: "opened", pr: 2 });
+
+      const req = makeRequest(tamperedPayload, { "x-hub-signature-256": validSig });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Invalid GitHub webhook signature" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 401 Unauthorized when payload has a single character difference", async () => {
+      const validSig = sign(minimalPRPayload);
+      const modifiedPayload = minimalPRPayload + " ";
+
+      const req = makeRequest(modifiedPayload, { "x-hub-signature-256": validSig });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Invalid GitHub webhook signature" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("verifies signature strictly before parsing payload (malformed JSON with bad signature fails as 401, not 400)", async () => {
+      const malformedBody = "{invalid-json";
+      const badSig = "sha256=" + "0".repeat(64);
+
+      const req = makeRequest(malformedBody, { "x-hub-signature-256": badSig });
+      const res = await POST(req);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ error: "Invalid GitHub webhook signature" });
+      expect(addWebhookJob).not.toHaveBeenCalled();
     });
 
     it("verifies before dispatching on the event type (#562)", async () => {
@@ -119,6 +231,13 @@ describe("GitHub webhook route", () => {
       const res = await POST(req);
       expect(res.status).toBe(401);
       expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("reads raw text and never calls req.json() before or during signature verification", async () => {
+      const req = makeRequest(minimalPRPayload);
+      await POST(req);
+      expect(req.text).toHaveBeenCalled();
+      expect(req.json).not.toHaveBeenCalled();
     });
   });
 
@@ -306,6 +425,30 @@ describe("GitHub webhook route", () => {
     it("returns 500 when GITHUB_WEBHOOK_SECRET is not configured", async () => {
       delete process.env.GITHUB_WEBHOOK_SECRET;
       const req = makeRequest(minimalPRPayload);
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("does not allow unsigned requests when GITHUB_WEBHOOK_SECRET is unset", async () => {
+      delete process.env.GITHUB_WEBHOOK_SECRET;
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": null });
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 when GITHUB_WEBHOOK_SECRET is empty string, rejecting unsigned requests", async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = "";
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": null });
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      expect(addWebhookJob).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 when GITHUB_WEBHOOK_SECRET is whitespace-only, rejecting unsigned and forged requests", async () => {
+      process.env.GITHUB_WEBHOOK_SECRET = "   ";
+      const req = makeRequest(minimalPRPayload, { "x-hub-signature-256": null });
       const res = await POST(req);
       expect(res.status).toBe(500);
       expect(addWebhookJob).not.toHaveBeenCalled();
