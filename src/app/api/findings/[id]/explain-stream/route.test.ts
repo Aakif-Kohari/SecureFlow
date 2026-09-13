@@ -28,6 +28,7 @@ vi.mock('@/lib/middleware/rate-limit', () => ({
 
 vi.mock('@/lib/redis', () => ({
   checkRateLimit: vi.fn(async () => mockUserAllowed),
+  redis: null,
 }));
 
 const mockFinding = {
