@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { createLogger } from "@/lib/logger";
+import { createLogger, type Logger } from "@/lib/logger";
 import {
   MISSING_CONNECTION_STRING_MESSAGE,
   resolveConnectionString,
@@ -313,6 +313,134 @@ function createPool(): Pool {
   return unconfigured ? guardUnconfiguredPool(pool) : pool;
 }
 
+/**
+ * Development Query Logging and Potential N+1 Detection
+ */
+
+export const DEFAULT_SLOW_QUERY_THRESHOLD_MS = 100;
+export const DEFAULT_REPEATED_QUERY_WINDOW_MS = 2000;
+export const DEFAULT_REPEATED_QUERY_THRESHOLD = 3;
+export const MAX_TRACKED_QUERIES = 200;
+
+export interface PrismaQueryEvent {
+  query: string;
+  params?: string;
+  duration: number;
+  timestamp?: Date;
+}
+
+export function shouldLogQueries(env: Record<string, string | undefined> = process.env): boolean {
+  if (env.PRISMA_LOG_QUERIES === "true") return true;
+  if (env.NODE_ENV === "development") return true;
+  return false;
+}
+
+export function resolveSlowQueryThreshold(
+  env: Record<string, string | undefined> = process.env,
+): number {
+  const custom = Number(env.SLOW_QUERY_THRESHOLD_MS);
+  return Number.isFinite(custom) && custom > 0 ? custom : DEFAULT_SLOW_QUERY_THRESHOLD_MS;
+}
+
+export function normalizeQuery(query: string): string {
+  return query.trim().replace(/\s+/g, " ");
+}
+
+export interface RecentQueryTracker {
+  recordQuery(query: string, now?: number): { count: number; isRepeated: boolean };
+  clear(): void;
+  size(): number;
+}
+
+export function createRecentQueryTracker(
+  options: {
+    windowMs?: number;
+    threshold?: number;
+    maxEntries?: number;
+  } = {},
+): RecentQueryTracker {
+  const windowMs = options.windowMs ?? DEFAULT_REPEATED_QUERY_WINDOW_MS;
+  const threshold = options.threshold ?? DEFAULT_REPEATED_QUERY_THRESHOLD;
+  const maxEntries = options.maxEntries ?? MAX_TRACKED_QUERIES;
+
+  // Map: normalizedQuery -> array of timestamps
+  const executions = new Map<string, number[]>();
+
+  return {
+    recordQuery(query: string, now: number = Date.now()): { count: number; isRepeated: boolean } {
+      const key = normalizeQuery(query);
+      const cutoff = now - windowMs;
+
+      let timestamps = executions.get(key);
+      if (!timestamps) {
+        // Enforce maxEntries to prevent unbounded memory growth in long-running dev sessions
+        if (executions.size >= maxEntries) {
+          const firstKey = executions.keys().next().value;
+          if (firstKey) executions.delete(firstKey);
+        }
+        timestamps = [];
+        executions.set(key, timestamps);
+      }
+
+      // Filter out timestamps outside the sliding window
+      const recent = timestamps.filter((t) => t >= cutoff);
+      recent.push(now);
+      executions.set(key, recent);
+
+      const count = recent.length;
+      return {
+        count,
+        isRepeated: count >= threshold,
+      };
+    },
+    clear(): void {
+      executions.clear();
+    },
+    size(): number {
+      return executions.size;
+    },
+  };
+}
+
+export interface QueryLogContext {
+  slowThresholdMs: number;
+  tracker: RecentQueryTracker;
+  logger: Logger;
+}
+
+export function handlePrismaQueryEvent(
+  event: PrismaQueryEvent,
+  context: QueryLogContext,
+  now: number = Date.now(),
+): void {
+  const { slowThresholdMs, tracker, logger } = context;
+  const duration = event.duration;
+  const isSlow = duration >= slowThresholdMs;
+  const { count, isRepeated } = tracker.recordQuery(event.query, now);
+
+  const meta: Record<string, unknown> = {
+    query: event.query,
+    durationMs: duration,
+  };
+  if (event.params && event.params !== "[]") {
+    meta.params = event.params;
+  }
+
+  if (isRepeated) {
+    logger.warn(
+      `Repeated query detected (${count}x in ${DEFAULT_REPEATED_QUERY_WINDOW_MS}ms): ${duration}ms`,
+      {
+        ...meta,
+        repeatedCount: count,
+      },
+    );
+  } else if (isSlow) {
+    logger.warn(`Slow query detected: ${duration}ms (threshold: ${slowThresholdMs}ms)`, meta);
+  } else {
+    logger.debug(`Prisma query (${duration}ms)`, meta);
+  }
+}
+
 const prismaClientSingleton = () => {
   const mockDb = resolveMockDb();
 
@@ -337,8 +465,46 @@ const prismaClientSingleton = () => {
   // 2. Wrap the pool in the Prisma pg adapter
   const adapter = new PrismaPg(pool);
 
-  // 3. Pass the adapter to the Prisma Client constructor
-  return new PrismaClient({ adapter });
+  // 3. Configure logging for development vs production
+  const loggingEnabled = shouldLogQueries();
+
+  const clientOptions: Record<string, unknown> = {
+    adapter,
+    log: loggingEnabled
+      ? [
+          { emit: "event", level: "query" },
+          { emit: "event", level: "warn" },
+          { emit: "event", level: "error" },
+        ]
+      : [{ emit: "stdout", level: "error" }],
+  };
+
+  // 4. Pass options to the Prisma Client constructor
+  const client = new PrismaClient(clientOptions as any);
+
+  // 5. In development, register query, slow-query and repeated-query listeners
+  if (loggingEnabled && typeof (client as any).$on === "function") {
+    const slowThresholdMs = resolveSlowQueryThreshold();
+    const tracker = createRecentQueryTracker();
+
+    (client as any).$on("query", (e: PrismaQueryEvent) => {
+      handlePrismaQueryEvent(e, {
+        slowThresholdMs,
+        tracker,
+        logger: log,
+      });
+    });
+
+    (client as any).$on("warn", (e: { message: string }) => {
+      log.warn(e.message);
+    });
+
+    (client as any).$on("error", (e: { message: string }) => {
+      log.error(e.message);
+    });
+  }
+
+  return client;
 };
 
 declare const globalThis: {
