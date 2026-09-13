@@ -51,7 +51,7 @@ export interface ResolvedPagination {
  */
 export function resolvePagination(
   input: PaginationInput = {},
-  maxPageSize: number = MAX_PAGE_SIZE
+  maxPageSize: number = MAX_PAGE_SIZE,
 ): ResolvedPagination {
   // `|| fallback` would be wrong here: it also swallows a legitimate 0, which
   // must clamp up to 1 rather than reset to the default. NaN is the only value
@@ -100,9 +100,9 @@ export function buildAuditLogWhere(filters: AuditLogFilters = {}): Record<string
   const search = filters.search?.trim();
   if (search) {
     where.OR = [
-      { action: { contains: search, mode: 'insensitive' } },
-      { resource: { contains: search, mode: 'insensitive' } },
-      { decision: { contains: search, mode: 'insensitive' } },
+      { action: { contains: search, mode: "insensitive" } },
+      { resource: { contains: search, mode: "insensitive" } },
+      { decision: { contains: search, mode: "insensitive" } },
     ];
   }
 
@@ -118,7 +118,7 @@ export function buildAuditLogWhere(filters: AuditLogFilters = {}): Record<string
 
 export interface UserFilters {
   search?: string;
-  role?: 'ADMIN' | 'USER' | 'ALL';
+  role?: "ADMIN" | "USER" | "ALL";
 }
 
 /** Build the `where` for a user query. Same empty-search rule as above. */
@@ -128,13 +128,13 @@ export function buildUserWhere(filters: UserFilters = {}): Record<string, unknow
   const search = filters.search?.trim();
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-      { codename: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { codename: { contains: search, mode: "insensitive" } },
     ];
   }
 
-  if (filters.role && filters.role !== 'ALL') {
+  if (filters.role && filters.role !== "ALL") {
     where.roles = { some: { role: { name: filters.role } } };
   }
 
@@ -168,7 +168,7 @@ export function collectActorIds(rows: Array<{ userId?: string | null }>): string
 export function actionsFromGroups(groups: Array<{ action?: string | null }>): string[] {
   const actions = groups
     .map((group) => group.action)
-    .filter((action): action is string => typeof action === 'string' && action.length > 0);
+    .filter((action): action is string => typeof action === "string" && action.length > 0);
 
   return [...new Set(actions)].sort((a, b) => a.localeCompare(b));
 }

@@ -22,16 +22,14 @@ describe("AlertDialog component", () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction>Continue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>,
     );
 
     expect(screen.getByText("Are you absolutely sure?")).toBeInTheDocument();
@@ -53,7 +51,7 @@ describe("AlertDialog component", () => {
             <AlertDialogAction onClick={handleAction}>Confirm</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>,
     );
 
     const actionBtn = screen.getByRole("button", { name: /confirm/i });
@@ -74,7 +72,7 @@ describe("AlertDialog component", () => {
             <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>,
     );
 
     const cancelBtn = screen.getByRole("button", { name: /cancel/i });
@@ -95,7 +93,7 @@ describe("AlertDialog component", () => {
             <AlertDialogAction className="custom-action">Action</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>,
     );
 
     expect(screen.getByText("Title")).toHaveClass("custom-title");

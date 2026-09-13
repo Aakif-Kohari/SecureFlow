@@ -21,14 +21,14 @@
  *   }, { secret: process.env.WEBHOOK_SECRET });
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import {
   admitWebhookRequest,
   signPayload,
   SIGNATURE_HEADER,
   TIMESTAMP_HEADER,
   DEFAULT_REPLAY_WINDOW_SECONDS,
-} from './hmacSigner';
+} from "./hmacSigner";
 
 export interface WebhookGuardOptions {
   /**
@@ -62,7 +62,7 @@ export interface WebhookGuardOptions {
  */
 const MISCONFIGURED = {
   status: 500,
-  message: 'Webhook endpoint is not configured for signature verification',
+  message: "Webhook endpoint is not configured for signature verification",
 } as const;
 
 /**
@@ -73,7 +73,7 @@ const MISCONFIGURED = {
  * treating it as real would key every signature off a single space character.
  */
 export function isUsableSecret(secret: unknown): secret is string {
-  return typeof secret === 'string' && secret.trim().length > 0;
+  return typeof secret === "string" && secret.trim().length > 0;
 }
 
 /**
@@ -90,7 +90,7 @@ export function isUsableSecret(secret: unknown): secret is string {
  */
 export function withWebhookGuard(
   handler: (req: NextRequest, payload: string) => Promise<NextResponse>,
-  options: WebhookGuardOptions
+  options: WebhookGuardOptions,
 ) {
   const {
     signatureHeader = SIGNATURE_HEADER,
@@ -100,7 +100,9 @@ export function withWebhookGuard(
   } = options;
 
   const fail = (error: { status: number; message: string }): NextResponse =>
-    onError ? onError(error) : NextResponse.json({ error: error.message }, { status: error.status });
+    onError
+      ? onError(error)
+      : NextResponse.json({ error: error.message }, { status: error.status });
 
   return async function guardedHandler(req: NextRequest): Promise<NextResponse> {
     // Read through the property rather than a value destructured above, so a
@@ -126,7 +128,7 @@ export function withWebhookGuard(
       secret,
       req.headers.get(signatureHeader),
       req.headers.get(timestampHeader),
-      replayWindowSeconds
+      replayWindowSeconds,
     );
 
     if (!result.ok) {
@@ -156,24 +158,23 @@ export function withWebhookGuard(
 export function signOutboundWebhook(
   payload: string,
   secret: string | undefined,
-  extraHeaders?: Record<string, string>
+  extraHeaders?: Record<string, string>,
 ): Headers {
   if (!isUsableSecret(secret)) {
-    throw new Error('Cannot sign an outbound webhook without a secret');
+    throw new Error("Cannot sign an outbound webhook without a secret");
   }
 
   const headers = new Headers(extraHeaders);
   headers.set(SIGNATURE_HEADER, signPayload(payload, secret));
   headers.set(TIMESTAMP_HEADER, String(Math.floor(Date.now() / 1000)));
-  headers.set('Content-Type', 'application/json');
+  headers.set("Content-Type", "application/json");
 
   return headers;
 }
 
 /** What `verifyWebhookRequest` reports back. */
 export type WebhookVerification =
-  | { ok: true; payload: string; error: null }
-  | { ok: false; payload: null; error: NextResponse };
+  { ok: true; payload: string; error: null } | { ok: false; payload: null; error: NextResponse };
 
 /**
  * Verify a webhook request in a route handler.
@@ -197,7 +198,7 @@ export async function verifyWebhookRequest(
     signatureHeader?: string;
     timestampHeader?: string;
     replayWindowSeconds?: number;
-  }
+  },
 ): Promise<WebhookVerification> {
   const reject = (error: { status: number; message: string }): WebhookVerification => ({
     ok: false,
@@ -216,7 +217,7 @@ export async function verifyWebhookRequest(
     secret,
     req.headers.get(options?.signatureHeader ?? SIGNATURE_HEADER),
     req.headers.get(options?.timestampHeader ?? TIMESTAMP_HEADER),
-    options?.replayWindowSeconds
+    options?.replayWindowSeconds,
   );
 
   if (!result.ok) return reject(result);

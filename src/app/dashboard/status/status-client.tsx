@@ -16,7 +16,10 @@ interface StatusClientProps {
 
 const STATUS_STYLES: Record<ComponentStatus, { badge: string; dot: string }> = {
   healthy: { badge: "bg-green-500/10 border-green-500/30 text-green-400", dot: "bg-green-400" },
-  degraded: { badge: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400", dot: "bg-yellow-400" },
+  degraded: {
+    badge: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
+    dot: "bg-yellow-400",
+  },
   down: { badge: "bg-red-500/10 border-red-500/30 text-red-400", dot: "bg-red-400" },
 };
 
@@ -81,8 +84,12 @@ export default function StatusClient({ status, timestamp, uptime, components }: 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-sm font-medium uppercase tracking-widest text-primary">System</span>
-          <h1 className="mt-1 font-headline text-4xl font-extrabold tracking-tight">Health Status</h1>
-          <p className="mt-2 max-w-xl text-muted-foreground">Live infrastructure health for all connected services.</p>
+          <h1 className="mt-1 font-headline text-4xl font-extrabold tracking-tight">
+            Health Status
+          </h1>
+          <p className="mt-2 max-w-xl text-muted-foreground">
+            Live infrastructure health for all connected services.
+          </p>
         </div>
         <Button
           variant="outline"
@@ -91,29 +98,47 @@ export default function StatusClient({ status, timestamp, uptime, components }: 
           disabled={refreshing}
           className="border-white/10 hover:border-primary/40 bg-white/5 cursor-pointer font-mono text-xs"
         >
-          <RefreshCw className={`w-3.5 h-3.5 mr-2 ${refreshing ? "animate-spin text-primary" : ""}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 mr-2 ${refreshing ? "animate-spin text-primary" : ""}`}
+          />
           {refreshing ? "Checking..." : "Refresh"}
         </Button>
       </div>
 
       {/* Overall Status Banner */}
-      <Card className={`glass-card overflow-hidden border ${style.dot.replace("bg-", "border-").replace("-400", "-500/30")}`}>
+      <Card
+        className={`glass-card overflow-hidden border ${style.dot.replace("bg-", "border-").replace("-400", "-500/30")}`}
+      >
         <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <span className={`w-4 h-4 rounded-full ${style.dot} animate-pulse`} />
             <div>
               <p className="text-xl font-headline font-extrabold uppercase">{data.status}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">All systems {data.status === "healthy" ? "operational" : data.status === "degraded" ? "partially operational" : "experiencing issues"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                All systems{" "}
+                {data.status === "healthy"
+                  ? "operational"
+                  : data.status === "degraded"
+                    ? "partially operational"
+                    : "experiencing issues"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5" />
-              <span>Uptime: <span className="text-white font-bold">{formatUptime(data.uptime)}</span></span>
+              <span>
+                Uptime: <span className="text-white font-bold">{formatUptime(data.uptime)}</span>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Zap className="w-3.5 h-3.5" />
-              <span>Checked: <span className="text-white font-bold">{new Date(data.timestamp).toLocaleTimeString()}</span></span>
+              <span>
+                Checked:{" "}
+                <span className="text-white font-bold">
+                  {new Date(data.timestamp).toLocaleTimeString()}
+                </span>
+              </span>
             </div>
           </div>
         </CardContent>

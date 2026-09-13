@@ -90,14 +90,14 @@ function buildStaticLines(
   tagline: string,
 ): TransmissionLine[] {
   const out: TransmissionLine[] = [
-    { kind: "system",    text: "> INITIALIZING SECURE CHANNEL............ [OK]", decode: true },
-    { kind: "system",    text: "> DECRYPTING TRANSMISSION................. [OK]", decode: true },
-    { kind: "system",    text: "> SENDER: THE PROFESSOR",                  decode: true },
-    { kind: "blank",     text: "",                                         decode: false },
-    { kind: "narrative", text: "Bella ciao, accomplice.",                  decode: true },
-    { kind: "blank",     text: "",                                         decode: false },
-    { kind: "narrative", text: `The heist on ${projectName} is complete.`,       decode: true },
-    { kind: "data",      text: "Audit status: PASSED",                     decode: true },
+    { kind: "system", text: "> INITIALIZING SECURE CHANNEL............ [OK]", decode: true },
+    { kind: "system", text: "> DECRYPTING TRANSMISSION................. [OK]", decode: true },
+    { kind: "system", text: "> SENDER: THE PROFESSOR", decode: true },
+    { kind: "blank", text: "", decode: false },
+    { kind: "narrative", text: "Bella ciao, accomplice.", decode: true },
+    { kind: "blank", text: "", decode: false },
+    { kind: "narrative", text: `The heist on ${projectName} is complete.`, decode: true },
+    { kind: "data", text: "Audit status: PASSED", decode: true },
   ];
   if (score !== undefined) {
     out.push({ kind: "data", text: `Security score: ${score}/100`, decode: true });
@@ -108,12 +108,12 @@ function buildStaticLines(
   if (findingsCount !== undefined) {
     out.push({ kind: "data", text: `Findings logged: ${findingsCount}`, decode: true });
   }
-  out.push({ kind: "blank",      text: "",                                       decode: false });
-  out.push({ kind: "narrative",  text: `"${tagline}"`,                           decode: true });
-  out.push({ kind: "blank",      text: "",                                       decode: false });
-  out.push({ kind: "narrative",  text: "The vault is sealed. Zero traces remain.", decode: true });
-  out.push({ kind: "blank",      text: "",                                       decode: false });
-  out.push({ kind: "system",     text: "> END OF TRANSMISSION.",                 decode: true });
+  out.push({ kind: "blank", text: "", decode: false });
+  out.push({ kind: "narrative", text: `"${tagline}"`, decode: true });
+  out.push({ kind: "blank", text: "", decode: false });
+  out.push({ kind: "narrative", text: "The vault is sealed. Zero traces remain.", decode: true });
+  out.push({ kind: "blank", text: "", decode: false });
+  out.push({ kind: "system", text: "> END OF TRANSMISSION.", decode: true });
   return out;
 }
 
@@ -126,12 +126,12 @@ function buildAiLines(
   aiMessage: string,
 ): TransmissionLine[] {
   const out: TransmissionLine[] = [
-    { kind: "system",    text: "> INITIALIZING SECURE CHANNEL............ [OK]", decode: true },
-    { kind: "system",    text: "> DECRYPTING TRANSMISSION................. [OK]", decode: true },
-    { kind: "system",    text: "> SENDER: THE PROFESSOR",                  decode: true },
-    { kind: "blank",     text: "",                                         decode: false },
-    { kind: "data",      text: `TARGET: ${projectName}`,                  decode: true },
-    { kind: "data",      text: "Audit status: PASSED",                     decode: true },
+    { kind: "system", text: "> INITIALIZING SECURE CHANNEL............ [OK]", decode: true },
+    { kind: "system", text: "> DECRYPTING TRANSMISSION................. [OK]", decode: true },
+    { kind: "system", text: "> SENDER: THE PROFESSOR", decode: true },
+    { kind: "blank", text: "", decode: false },
+    { kind: "data", text: `TARGET: ${projectName}`, decode: true },
+    { kind: "data", text: "Audit status: PASSED", decode: true },
   ];
   if (score !== undefined) {
     out.push({ kind: "data", text: `Security score: ${score}/100`, decode: true });
@@ -142,7 +142,7 @@ function buildAiLines(
   if (findingsCount !== undefined) {
     out.push({ kind: "data", text: `Findings logged: ${findingsCount}`, decode: true });
   }
-  out.push({ kind: "blank",     text: "",             decode: false });
+  out.push({ kind: "blank", text: "", decode: false });
 
   // Wrap each sentence of the AI message as its own narrative line for sequential decode.
   const sentences = aiMessage
@@ -154,7 +154,7 @@ function buildAiLines(
     out.push({ kind: "narrative", text: sentence, decode: true });
   }
 
-  out.push({ kind: "blank",  text: "",                 decode: false });
+  out.push({ kind: "blank", text: "", decode: false });
   out.push({ kind: "system", text: "> END OF TRANSMISSION.", decode: true });
   return out;
 }
@@ -212,7 +212,9 @@ export function HeistTransmission({
   const triggerKeywordEffect = (keyword: string) => {
     // Only fire visual effects + toast once across all keywords
     if (interceptToastFiredRef.current) {
-      console.log(`🎭 Thematic keyword "${keyword}" detected (visual effect already fired, skipping)`);
+      console.log(
+        `🎭 Thematic keyword "${keyword}" detected (visual effect already fired, skipping)`,
+      );
       return;
     }
     interceptToastFiredRef.current = true;
@@ -250,7 +252,7 @@ export function HeistTransmission({
     // Build the SSE URL with query params matching page.tsx logic.
     const params = new URLSearchParams({ project: projectName });
     if (score !== undefined) params.set("score", String(score));
-    if (rank)                params.set("rank", rank);
+    if (rank) params.set("rank", rank);
     if (findingsCount !== undefined) params.set("findingsCount", String(findingsCount));
 
     streamStartTimeRef.current = Date.now();
@@ -265,7 +267,16 @@ export function HeistTransmission({
     const textQueue: string[] = [];
     let isProcessingQueue = false;
 
-    const THEMATIC_KEYWORDS = ["BELLA CIAO", "PROFESSOR", "MINT", "BERLIN", "VAULT", "DENVER", "TOKYO", "RESISTANCE"];
+    const THEMATIC_KEYWORDS = [
+      "BELLA CIAO",
+      "PROFESSOR",
+      "MINT",
+      "BERLIN",
+      "VAULT",
+      "DENVER",
+      "TOKYO",
+      "RESISTANCE",
+    ];
     const seenKeywords = new Set<string>();
 
     const checkForKeywords = (text: string) => {
@@ -311,7 +322,7 @@ export function HeistTransmission({
           // Calculate tokens per second (approx 4 chars per token)
           streamCharCountRef.current = event.text.length;
           const elapsedSec = Math.max(0.1, (Date.now() - streamStartTimeRef.current) / 1000);
-          const tps = Math.round((streamCharCountRef.current / 4) / elapsedSec);
+          const tps = Math.round(streamCharCountRef.current / 4 / elapsedSec);
           setTokensPerSecond(tps || 30);
           setIsTyping(true);
 
@@ -359,12 +370,12 @@ export function HeistTransmission({
     return () => {
       es.close();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Build the Professor's transmission ─────────────────────────────────────
   // Memoised — stable so the sequential decode indices don't reset mid-stream.
-const lines = useMemo<TransmissionLine[]>(() => {
+  const lines = useMemo<TransmissionLine[]>(() => {
     if (!aiLoading && aiMessage) {
       return buildAiLines(projectName, score, rank, findingsCount, aiMessage);
     }
@@ -376,7 +387,7 @@ const lines = useMemo<TransmissionLine[]>(() => {
   // Starts `false` so the SSR markup matches the first client render (avoids
   // hydration mismatch); the effect flips it after mount.
   const [reducedMotion, setReducedMotion] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(REDUCED_MOTION_QUERY).matches
+    () => typeof window !== "undefined" && window.matchMedia(REDUCED_MOTION_QUERY).matches,
   );
   useEffect(() => {
     const mql = window.matchMedia(REDUCED_MOTION_QUERY);
@@ -517,8 +528,7 @@ const lines = useMemo<TransmissionLine[]>(() => {
 
               // Narrative lines from the AI stream use Orbitron for the
               // cyber-aesthetic called for in Feature #311.
-              const fontClass =
-                line.kind === "narrative" ? "font-orbitron tracking-wide" : "";
+              const fontClass = line.kind === "narrative" ? "font-orbitron tracking-wide" : "";
 
               // Already-decoded lines render as plain text so they never
               // re-scramble on subsequent renders.
@@ -540,7 +550,10 @@ const lines = useMemo<TransmissionLine[]>(() => {
               // Active line: drive the sequential decode through the shared
               // CyberTextReveal component in transmission mode.
               return (
-                <div key={i} className="flex items-start gap-1.5 sm:gap-2 break-words overflow-wrap-anywhere max-w-full overflow-hidden">
+                <div
+                  key={i}
+                  className="flex items-start gap-1.5 sm:gap-2 break-words overflow-wrap-anywhere max-w-full overflow-hidden"
+                >
                   <CyberTextReveal
                     as="div"
                     variant="transmission"
@@ -551,9 +564,7 @@ const lines = useMemo<TransmissionLine[]>(() => {
                       lineColor(line.kind),
                       fontClass,
                     )}
-                    onRevealComplete={() =>
-                      setRevealedCount((c) => Math.min(c + 1, total))
-                    }
+                    onRevealComplete={() => setRevealedCount((c) => Math.min(c + 1, total))}
                   />
                   {isActive && (
                     <span
@@ -569,7 +580,9 @@ const lines = useMemo<TransmissionLine[]>(() => {
             {transmissionComplete && !reducedMotion && (
               <div className="mt-3 flex items-center gap-2 text-red-500/80">
                 <span className="terminal-blink motion-reduce:animate-none">_</span>
-                <span className="text-[10px] sm:text-xs uppercase tracking-widest">channel idle</span>
+                <span className="text-[10px] sm:text-xs uppercase tracking-widest">
+                  channel idle
+                </span>
               </div>
             )}
           </div>

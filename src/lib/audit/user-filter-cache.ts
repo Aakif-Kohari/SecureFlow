@@ -121,13 +121,10 @@ export function __setUserFilterClockForTests(next: () => number = Date.now): voi
  * than no option — and the result is deduped and sorted so the dropdown order
  * does not depend on how Postgres happened to return the groups.
  */
-export function valuesFromGroups(
-  groups: Array<Record<string, unknown>>,
-  column: string
-): string[] {
+export function valuesFromGroups(groups: Array<Record<string, unknown>>, column: string): string[] {
   const values = groups
     .map((group) => group[column])
-    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
 
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }

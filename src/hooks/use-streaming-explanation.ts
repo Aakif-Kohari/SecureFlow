@@ -91,8 +91,8 @@ export function useStreamingExplanation(findingId: string) {
         const message = isRateLimit
           ? "AI provider rate limit reached (429). Please wait a moment and try again."
           : res.status === 401
-          ? "Session expired - refresh and try again."
-          : `Analysis request failed (${res.status}).`;
+            ? "Session expired - refresh and try again."
+            : `Analysis request failed (${res.status}).`;
         setState((prev) => ({ ...prev, isStreaming: false, error: message }));
         toast({
           variant: "destructive",
@@ -144,7 +144,9 @@ export function useStreamingExplanation(findingId: string) {
           } else if (event.type === "error") {
             hasFinishedStream = true;
             if (timeoutId) clearTimeout(timeoutId);
-            const isRateLimit = /429|rate limit|quota|too many requests|overloaded/i.test(event.message || "");
+            const isRateLimit = /429|rate limit|quota|too many requests|overloaded/i.test(
+              event.message || "",
+            );
             setState((prev) => ({ ...prev, isStreaming: false, error: event.message }));
             toast({
               variant: "destructive",

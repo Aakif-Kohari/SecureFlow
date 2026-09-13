@@ -36,7 +36,12 @@ function seed(options: {
   findings?: Array<{ scanResultId: string; severity: string | null }>;
   scans?: Array<{ id: string; authorLogin: string | null }>;
   suppressed?: string[];
-  codenames?: Array<{ githubLogin?: string | null; name?: string | null; email?: string | null; codename: string }>;
+  codenames?: Array<{
+    githubLogin?: string | null;
+    name?: string | null;
+    email?: string | null;
+    codename: string;
+  }>;
 }) {
   const { prs, findings = [], scans = [], suppressed = [], codenames = [] } = options;
 
@@ -63,7 +68,7 @@ function seed(options: {
 
   db.user.findMany.mockResolvedValue(codenames);
   db.scanResult.findMany.mockResolvedValue(
-    scans.map((s) => ({ id: s.id, pullRequest: { authorLogin: s.authorLogin } }))
+    scans.map((s) => ({ id: s.id, pullRequest: { authorLogin: s.authorLogin } })),
   );
   db.findingTriage.findMany.mockResolvedValue(suppressed.map((fingerprint) => ({ fingerprint })));
   db.finding.findMany.mockResolvedValue(findings);
@@ -152,7 +157,7 @@ describe("aggregateContributors", () => {
     const rows = await loadContributors();
 
     expect(db.scanResult.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ distinct: ["pullRequestId"] })
+      expect.objectContaining({ distinct: ["pullRequestId"] }),
     );
     expect(rows[0].findings.high).toBe(1);
   });
@@ -170,7 +175,7 @@ describe("aggregateContributors", () => {
     expect(db.finding.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ fingerprint: { notIn: ["fingerprint-abc"] } }),
-      })
+      }),
     );
   });
 
@@ -300,7 +305,7 @@ describe("aggregateContributors", () => {
     await loadContributors();
 
     const formCall = db.pullRequest.findMany.mock.calls.find(
-      (call: any[]) => call[0]?.take === __testing.FORM_SCAN_LIMIT
+      (call: any[]) => call[0]?.take === __testing.FORM_SCAN_LIMIT,
     );
     expect(formCall).toBeDefined();
   });
@@ -340,4 +345,3 @@ describe("aggregateContributors", () => {
     expect(ranked.every((r) => typeof r.rank === "number")).toBe(true);
   });
 });
-

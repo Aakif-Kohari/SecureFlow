@@ -29,18 +29,15 @@
  * So the conversions are centralised, named, and covered.
  */
 
-import type { ScanFinding } from '@/lib/armor/scanner';
-import {
-  normalizeFindingTypeEnum,
-  normalizePolicyDecisionEnum,
-} from '@/lib/finding-taxonomy';
-import { toStoredSeverity, totalRiskScore } from '@/lib/severity';
+import type { ScanFinding } from "@/lib/armor/scanner";
+import { normalizeFindingTypeEnum, normalizePolicyDecisionEnum } from "@/lib/finding-taxonomy";
+import { toStoredSeverity, totalRiskScore } from "@/lib/severity";
 
 /** The `PolicyDecision` members, mirroring `prisma/schema.prisma`. */
-export type StoredPolicyDecision = 'PASS' | 'REVIEW' | 'BLOCK';
+export type StoredPolicyDecision = "PASS" | "REVIEW" | "BLOCK";
 
 /** The `FindingType` members, mirroring `prisma/schema.prisma`. */
-export type StoredFindingType = 'SECRET' | 'VULNERABILITY' | 'MISCONFIG';
+export type StoredFindingType = "SECRET" | "VULNERABILITY" | "MISCONFIG";
 
 /**
  * A finding after the engine has been over it.
@@ -76,7 +73,7 @@ export interface EnrichedScanFinding extends ScanFinding {
 export class InvalidInstallationIdError extends Error {
   constructor(value: unknown) {
     super(`Scan job carries an unusable GitHub installation id: ${JSON.stringify(value)}`);
-    this.name = 'InvalidInstallationIdError';
+    this.name = "InvalidInstallationIdError";
   }
 }
 
@@ -91,7 +88,7 @@ export class InvalidInstallationIdError extends Error {
 export class ScanPersistenceError extends Error {
   constructor(reason: string) {
     super(`Scan completed but its results could not be persisted: ${reason}`);
-    this.name = 'ScanPersistenceError';
+    this.name = "ScanPersistenceError";
   }
 }
 
@@ -109,12 +106,12 @@ export class ScanPersistenceError extends Error {
  * would accept `'123abc'`.
  */
 export function parseInstallationId(value: number | string): number {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     if (!Number.isSafeInteger(value) || value <= 0) throw new InvalidInstallationIdError(value);
     return value;
   }
 
-  if (typeof value !== 'string') throw new InvalidInstallationIdError(value);
+  if (typeof value !== "string") throw new InvalidInstallationIdError(value);
 
   const trimmed = value.trim();
   if (!/^\d+$/.test(trimmed)) throw new InvalidInstallationIdError(value);
@@ -144,16 +141,14 @@ export function storedPolicyDecision(decision: unknown): StoredPolicyDecision {
  * normalizer as the database write means the check run and the stored row can
  * no longer disagree.
  */
-export function checkRunConclusion(
-  decision: unknown
-): 'success' | 'action_required' | 'failure' {
+export function checkRunConclusion(decision: unknown): "success" | "action_required" | "failure" {
   switch (storedPolicyDecision(decision)) {
-    case 'PASS':
-      return 'success';
-    case 'BLOCK':
-      return 'failure';
+    case "PASS":
+      return "success";
+    case "BLOCK":
+      return "failure";
     default:
-      return 'action_required';
+      return "action_required";
   }
 }
 
@@ -193,13 +188,13 @@ export function findingCreateInput(finding: EnrichedScanFinding): FindingCreateI
     type: normalizeFindingTypeEnum(finding.type),
     severity: toStoredSeverity(finding.severity),
     fileLocation: finding.fileLocation,
-    lineStart: typeof finding.lineStart === 'number' ? finding.lineStart : null,
-    lineEnd: typeof finding.lineEnd === 'number' ? finding.lineEnd : null,
+    lineStart: typeof finding.lineStart === "number" ? finding.lineStart : null,
+    lineEnd: typeof finding.lineEnd === "number" ? finding.lineEnd : null,
     codeSnippet: finding.codeSnippet || null,
     explanation: finding.explanation || null,
     remediation: finding.remediation || null,
     promptInjectionSuspected: Boolean(finding.promptInjectionSuspected),
-    fingerprint: finding.fingerprint || '',
+    fingerprint: finding.fingerprint || "",
   };
 }
 
@@ -248,7 +243,7 @@ export function scanResultCreateData(args: {
 
 /** The `ScanJob` update that closes out a successful run. */
 export interface ScanJobCompletion {
-  status: 'COMPLETED';
+  status: "COMPLETED";
   scannedFiles: number;
   vulnerabilitiesFound: number;
   riskScore: number;
@@ -274,10 +269,10 @@ export function scanJobCompletion(
     riskScore: number;
     policyDecision: unknown;
   },
-  completedAt: Date = new Date()
+  completedAt: Date = new Date(),
 ): ScanJobCompletion {
   return {
-    status: 'COMPLETED',
+    status: "COMPLETED",
     scannedFiles: result.scannedFiles,
     vulnerabilitiesFound: result.vulnerabilitiesFound,
     riskScore: Math.round(result.riskScore),

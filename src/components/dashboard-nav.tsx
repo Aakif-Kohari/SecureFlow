@@ -71,7 +71,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-bold uppercase tracking-wide transition-all",
                 isActive
                   ? "bg-primary/10 text-primary border-l-2 border-primary"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white border-l-2 border-transparent"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white border-l-2 border-transparent",
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -89,7 +89,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-bold uppercase tracking-wide transition-all mt-4",
                 pathname?.startsWith("/admin")
                   ? "bg-red-500/10 text-red-500 border-l-2 border-red-500"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-white border-l-2 border-transparent"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-white border-l-2 border-transparent",
               )}
             >
               <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -112,13 +112,7 @@ export function DashboardSidebar() {
 }
 
 // ─── Mobile Drawer ────────────────────────────────────────────────────────────
-export function MobileDrawer({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -132,7 +126,7 @@ export function MobileDrawer({
       <div
         className={cn(
           "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -142,7 +136,7 @@ export function MobileDrawer({
       <div
         className={cn(
           "fixed top-0 left-0 z-50 h-full w-72 bg-sidebar border-r border-white/5 flex flex-col gap-4 transition-transform duration-300 ease-in-out lg:hidden",
-          open ? "translate-x-0" : "-translate-x-full"
+          open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex justify-end px-4 pt-4">
@@ -176,7 +170,6 @@ export function DashboardHeader({
 }) {
   return (
     <header className="h-16 border-b border-white/5 px-4 sm:px-8 flex items-center justify-between glass-card sticky top-0 z-40">
-
       {/* ── Left: breadcrumb + username ───────────────────────── */}
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}

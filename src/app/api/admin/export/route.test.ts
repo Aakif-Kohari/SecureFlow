@@ -6,9 +6,9 @@
  * and whether the keyset clause is actually stable. The paging behaviour is
  * covered in `src/lib/utils/csv-stream.test.ts`.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from "vitest";
 
-vi.mock('@/auth', () => ({ auth: vi.fn(async () => null) }));
+vi.mock("@/auth", () => ({ auth: vi.fn(async () => null) }));
 
 import {
   AUDIT_LOG_EXPORT_COLUMNS,
@@ -22,46 +22,46 @@ import {
   parseLimitParam,
   resolveExportRange,
   type ExportRange,
-} from './route';
+} from "./route";
 
 const params = (query: string) => new URLSearchParams(query);
-const NOW = new Date('2026-08-20T12:00:00.000Z');
+const NOW = new Date("2026-08-20T12:00:00.000Z");
 
-describe('parseDateParam', () => {
-  it('returns undefined for an absent or empty value', () => {
-    expect(parseDateParam(null, 'from')).toBeUndefined();
-    expect(parseDateParam('', 'from')).toBeUndefined();
-    expect(parseDateParam('   ', 'from')).toBeUndefined();
+describe("parseDateParam", () => {
+  it("returns undefined for an absent or empty value", () => {
+    expect(parseDateParam(null, "from")).toBeUndefined();
+    expect(parseDateParam("", "from")).toBeUndefined();
+    expect(parseDateParam("   ", "from")).toBeUndefined();
   });
 
-  it('parses an ISO-8601 date', () => {
-    expect(parseDateParam('2026-01-01', 'from')?.toISOString()).toBe('2026-01-01T00:00:00.000Z');
+  it("parses an ISO-8601 date", () => {
+    expect(parseDateParam("2026-01-01", "from")?.toISOString()).toBe("2026-01-01T00:00:00.000Z");
   });
 
-  it('throws on a malformed date rather than ignoring it', () => {
+  it("throws on a malformed date rather than ignoring it", () => {
     // Silently ignoring a typo would hand back a different range than the
     // operator asked for, which for an audit export is worse than an error.
-    expect(() => parseDateParam('last-tuesday', 'from')).toThrow(/Invalid `from`/);
+    expect(() => parseDateParam("last-tuesday", "from")).toThrow(/Invalid `from`/);
   });
 });
 
-describe('parseLimitParam', () => {
-  it('returns undefined when absent', () => {
+describe("parseLimitParam", () => {
+  it("returns undefined when absent", () => {
     expect(parseLimitParam(null, 100)).toBeUndefined();
   });
 
-  it('clamps to the ceiling', () => {
-    expect(parseLimitParam('999999', 100)).toBe(100);
+  it("clamps to the ceiling", () => {
+    expect(parseLimitParam("999999", 100)).toBe(100);
   });
 
-  it.each(['0', '-1', '1.5', 'abc', 'Infinity'])('rejects %j', (raw) => {
+  it.each(["0", "-1", "1.5", "abc", "Infinity"])("rejects %j", (raw) => {
     expect(() => parseLimitParam(raw, 100)).toThrow(/Invalid `limit`/);
   });
 });
 
-describe('resolveExportRange', () => {
-  it('defaults to a bounded recent window rather than all of history', () => {
-    const range = resolveExportRange(params(''), NOW);
+describe("resolveExportRange", () => {
+  it("defaults to a bounded recent window rather than all of history", () => {
+    const range = resolveExportRange(params(""), NOW);
 
     expect(range.to).toBeUndefined();
     expect(range.from).toBeInstanceOf(Date);
@@ -70,54 +70,54 @@ describe('resolveExportRange', () => {
     expect(Math.round(days)).toBe(DEFAULT_EXPORT_WINDOW_DAYS);
   });
 
-  it('defaults the limit to the ceiling', () => {
-    expect(resolveExportRange(params(''), NOW).limit).toBe(MAX_EXPORT_ROWS);
+  it("defaults the limit to the ceiling", () => {
+    expect(resolveExportRange(params(""), NOW).limit).toBe(MAX_EXPORT_ROWS);
   });
 
-  it('honours an explicit from, and does not then apply the default window', () => {
+  it("honours an explicit from, and does not then apply the default window", () => {
     // The documented escape hatch for "I really do want everything".
-    const range = resolveExportRange(params('from=1970-01-01'), NOW);
+    const range = resolveExportRange(params("from=1970-01-01"), NOW);
 
-    expect(range.from?.toISOString()).toBe('1970-01-01T00:00:00.000Z');
+    expect(range.from?.toISOString()).toBe("1970-01-01T00:00:00.000Z");
   });
 
-  it('honours an explicit to on its own, leaving from open', () => {
-    const range = resolveExportRange(params('to=2026-01-01'), NOW);
+  it("honours an explicit to on its own, leaving from open", () => {
+    const range = resolveExportRange(params("to=2026-01-01"), NOW);
 
     expect(range.from).toBeUndefined();
-    expect(range.to?.toISOString()).toBe('2026-01-01T00:00:00.000Z');
+    expect(range.to?.toISOString()).toBe("2026-01-01T00:00:00.000Z");
   });
 
-  it('rejects an inverted range', () => {
-    expect(() => resolveExportRange(params('from=2026-06-01&to=2026-01-01'), NOW)).toThrow(
+  it("rejects an inverted range", () => {
+    expect(() => resolveExportRange(params("from=2026-06-01&to=2026-01-01"), NOW)).toThrow(
       /`from` is after `to`/,
     );
   });
 });
 
-describe('buildExportWhere', () => {
+describe("buildExportWhere", () => {
   const range: ExportRange = {
-    from: new Date('2026-01-01T00:00:00.000Z'),
-    to: new Date('2026-02-01T00:00:00.000Z'),
+    from: new Date("2026-01-01T00:00:00.000Z"),
+    to: new Date("2026-02-01T00:00:00.000Z"),
     limit: 100,
   };
 
-  it('bounds the first page by the range only', () => {
+  it("bounds the first page by the range only", () => {
     expect(buildExportWhere(range, null)).toEqual({
       timestamp: { gte: range.from, lte: range.to },
     });
   });
 
-  it('omits the timestamp filter entirely when the range is open', () => {
+  it("omits the timestamp filter entirely when the range is open", () => {
     expect(buildExportWhere({ limit: 10 }, null)).toEqual({});
   });
 
-  it('seeks past the cursor with a tuple comparison, not an offset', () => {
+  it("seeks past the cursor with a tuple comparison, not an offset", () => {
     // `timestamp` is not unique — the worker writes several AuditLog rows for a
     // single webhook — so a `timestamp < cursor` clause alone would skip every
     // row sharing the boundary timestamp. The id tiebreak is what makes the
     // walk complete.
-    const cursor = { timestamp: new Date('2026-01-15T00:00:00.000Z'), id: 'cuid-42' };
+    const cursor = { timestamp: new Date("2026-01-15T00:00:00.000Z"), id: "cuid-42" };
     const where = buildExportWhere(range, cursor) as Record<string, unknown>;
 
     expect(where.OR).toEqual([
@@ -126,50 +126,50 @@ describe('buildExportWhere', () => {
     ]);
   });
 
-  it('keeps the range filter alongside the cursor clause', () => {
-    const cursor = { timestamp: new Date('2026-01-15T00:00:00.000Z'), id: 'cuid-42' };
+  it("keeps the range filter alongside the cursor clause", () => {
+    const cursor = { timestamp: new Date("2026-01-15T00:00:00.000Z"), id: "cuid-42" };
     const where = buildExportWhere(range, cursor) as Record<string, unknown>;
 
     expect(where.timestamp).toEqual({ gte: range.from, lte: range.to });
   });
 });
 
-describe('response metadata', () => {
-  it('names the file after the range so two exports do not collide', () => {
+describe("response metadata", () => {
+  it("names the file after the range so two exports do not collide", () => {
     const range: ExportRange = {
-      from: new Date('2026-01-01T00:00:00.000Z'),
-      to: new Date('2026-02-01T00:00:00.000Z'),
+      from: new Date("2026-01-01T00:00:00.000Z"),
+      to: new Date("2026-02-01T00:00:00.000Z"),
       limit: 100,
     };
 
-    expect(exportFilename(range)).toBe('audit_logs_2026-01-01_to_2026-02-01.csv');
+    expect(exportFilename(range)).toBe("audit_logs_2026-01-01_to_2026-02-01.csv");
   });
 
-  it('marks an open bound rather than leaving a blank in the name', () => {
-    expect(exportFilename({ limit: 100 })).toBe('audit_logs_all_to_all.csv');
+  it("marks an open bound rather than leaving a blank in the name", () => {
+    expect(exportFilename({ limit: 100 })).toBe("audit_logs_all_to_all.csv");
   });
 
-  it('describes an open range in words', () => {
-    expect(describeRange({ limit: 100 })).toBe('beginning..now');
+  it("describes an open range in words", () => {
+    expect(describeRange({ limit: 100 })).toBe("beginning..now");
   });
 });
 
-describe('export shape', () => {
-  it('keeps the column order stable', () => {
+describe("export shape", () => {
+  it("keeps the column order stable", () => {
     // Downstream tooling parses this file positionally; reordering is a
     // breaking change, so the order is asserted rather than assumed.
     expect([...AUDIT_LOG_EXPORT_COLUMNS]).toEqual([
-      'id',
-      'userId',
-      'action',
-      'resource',
-      'decision',
-      'metadata',
-      'timestamp',
+      "id",
+      "userId",
+      "action",
+      "resource",
+      "decision",
+      "metadata",
+      "timestamp",
     ]);
   });
 
-  it('uses a batch size that bounds memory without one query per row', () => {
+  it("uses a batch size that bounds memory without one query per row", () => {
     expect(EXPORT_BATCH_SIZE).toBeGreaterThan(1);
     expect(EXPORT_BATCH_SIZE).toBeLessThanOrEqual(1000);
   });

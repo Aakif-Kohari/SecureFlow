@@ -158,7 +158,9 @@ function useCountUp(target: number, active: boolean) {
       if (k < 1) raf.current = requestAnimationFrame(step);
     };
     raf.current = requestAnimationFrame(step);
-    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+    return () => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
   }, [target, active]);
   return value;
 }
@@ -166,7 +168,11 @@ function useCountUp(target: number, active: boolean) {
 function Avatar({ src, alt, size }: { src: string; alt: string; size: number }) {
   return (
     <Image
-      src={src} alt={alt} width={size} height={size} unoptimized
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      unoptimized
       className="shrink-0 rounded-full object-cover ring-1 ring-red-500/40"
       style={{ width: size, height: size }}
     />
@@ -181,7 +187,9 @@ function PodiumCard({ entry, isHero }: { entry: ContributorRow; isHero: boolean 
   const shown = useCountUp(entry.score, isHero);
   return (
     <a
-      href={entry.htmlUrl} target="_blank" rel="noopener noreferrer"
+      href={entry.htmlUrl}
+      target="_blank"
+      rel="noopener noreferrer"
       className={`group relative flex flex-col overflow-hidden rounded-2xl border p-5 backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 sm:p-6 ${
         isHero
           ? "border-red-500/60 bg-gradient-to-b from-red-950/80 to-black shadow-[0_24px_60px_-30px] shadow-red-700/50 sm:p-7"
@@ -201,15 +209,25 @@ function PodiumCard({ entry, isHero }: { entry: ContributorRow; isHero: boolean 
         <Avatar src={entry.avatarUrl} alt={entry.login} size={isHero ? 52 : 40} />
         <span className="text-xl">{medalFor(entry.rank)}</span>
       </div>
-      <div className={`truncate font-bold uppercase tracking-wide text-foreground ${isHero ? "text-2xl sm:text-3xl" : "text-lg"}`}>
+      <div
+        className={`truncate font-bold uppercase tracking-wide text-foreground ${isHero ? "text-2xl sm:text-3xl" : "text-lg"}`}
+      >
         {entry.codename}
       </div>
       <div className="truncate font-mono text-xs text-muted-foreground">
-        <CyberTextReveal codename={entry.codename ?? entry.login} realName={`@${entry.login}`} duration={300} />
+        <CyberTextReveal
+          codename={entry.codename ?? entry.login}
+          realName={`@${entry.login}`}
+          duration={300}
+        />
       </div>
-      <div className={`mt-4 flex items-center gap-1.5 font-black tabular-nums text-foreground ${isHero ? "text-5xl" : "text-3xl"}`}>
+      <div
+        className={`mt-4 flex items-center gap-1.5 font-black tabular-nums text-foreground ${isHero ? "text-5xl" : "text-3xl"}`}
+      >
         {formatBounty(shown)}
-        <span className="ml-1 font-mono text-[11px] font-normal uppercase tracking-widest text-red-400/70">bounty</span>
+        <span className="ml-1 font-mono text-[11px] font-normal uppercase tracking-widest text-red-400/70">
+          bounty
+        </span>
       </div>
       <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
         Security score {entry.score}/100
@@ -219,13 +237,22 @@ function PodiumCard({ entry, isHero }: { entry: ContributorRow; isHero: boolean 
       </div>
       <div className="mt-4 flex gap-5 border-t border-red-900/30 pt-3">
         <div className="text-[11px] text-muted-foreground">
-          Heists<strong className="mt-0.5 block text-base font-semibold text-foreground">{entry.prCount}</strong>
+          Heists
+          <strong className="mt-0.5 block text-base font-semibold text-foreground">
+            {entry.prCount}
+          </strong>
         </div>
         <div className="text-[11px] text-muted-foreground">
-          Extractions<strong className="mt-0.5 block text-base font-semibold text-foreground">{entry.mergedCount}</strong>
+          Extractions
+          <strong className="mt-0.5 block text-base font-semibold text-foreground">
+            {entry.mergedCount}
+          </strong>
         </div>
         <div className="text-[11px] text-muted-foreground">
-          Clean<strong className="mt-0.5 block text-base font-semibold text-foreground">{entry.passedCount}</strong>
+          Clean
+          <strong className="mt-0.5 block text-base font-semibold text-foreground">
+            {entry.passedCount}
+          </strong>
         </div>
         <div className="text-[11px] text-muted-foreground">
           Breaches
@@ -248,7 +275,11 @@ function PodiumCard({ entry, isHero }: { entry: ContributorRow; isHero: boolean 
 export default function LeaderboardClient({ contributors }: { contributors: ContributorRow[] }) {
   const { entries, isLive, lastUpdated } = useLiveLeaderboard(contributors);
   const formattedTime = lastUpdated
-    ? new Date(lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    ? new Date(lastUpdated).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
     : null;
   const podium = entries.slice(0, 3);
   const isEmpty = entries.length === 0;
@@ -267,10 +298,14 @@ export default function LeaderboardClient({ contributors }: { contributors: Cont
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
           <div className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-950/30 px-4 py-2.5">
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-red-400">€10K per security point</span>
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-red-400">
+              €10K per security point
+            </span>
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5">
-            <span className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
+            <span
+              className={`h-2 w-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`}
+            />
             <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
               {isLive ? "Live Updates" : "Polling"}
             </span>
@@ -292,53 +327,104 @@ export default function LeaderboardClient({ contributors }: { contributors: Cont
 
       {isEmpty ? (
         <div className="mt-16 flex min-h-[30vh] items-center justify-center px-4 text-center">
-          <p className="text-sm text-muted-foreground">No operatives yet. Merge a clean pull request to claim your first bounty.</p>
+          <p className="text-sm text-muted-foreground">
+            No operatives yet. Merge a clean pull request to claim your first bounty.
+          </p>
         </div>
       ) : (
         <>
           <div className="mt-8 grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
-            {podium[1] && <div className="order-2 sm:order-1"><PodiumCard entry={podium[1]} isHero={false} /></div>}
-            {podium[0] && <div className="order-1 sm:order-2"><PodiumCard entry={podium[0]} isHero /></div>}
-            {podium[2] && <div className="order-3"><PodiumCard entry={podium[2]} isHero={false} /></div>}
+            {podium[1] && (
+              <div className="order-2 sm:order-1">
+                <PodiumCard entry={podium[1]} isHero={false} />
+              </div>
+            )}
+            {podium[0] && (
+              <div className="order-1 sm:order-2">
+                <PodiumCard entry={podium[0]} isHero />
+              </div>
+            )}
+            {podium[2] && (
+              <div className="order-3">
+                <PodiumCard entry={podium[2]} isHero={false} />
+              </div>
+            )}
           </div>
 
           <div className="mt-8 overflow-hidden rounded-2xl border border-red-900/30 bg-black/40">
             <div className="flex items-center justify-between border-b border-red-900/30 px-5 py-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">The Crew</h2>
-              <span className="font-mono text-[11px] uppercase tracking-widest text-red-400/60">{entries.length} operatives</span>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
+                The Crew
+              </h2>
+              <span className="font-mono text-[11px] uppercase tracking-widest text-red-400/60">
+                {entries.length} operatives
+              </span>
             </div>
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-left">
-                  <th className="px-5 py-3 font-mono text-[10px] uppercase tracking-widest text-red-400/50">#</th>
-                  <th className="px-5 py-3 font-mono text-[10px] uppercase tracking-widest text-red-400/50">Operative</th>
-                  <th className="hidden px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50 sm:table-cell">Heists</th>
-                  <th className="hidden px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50 sm:table-cell">Breaches</th>
-                  <th className="hidden px-5 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-red-400/50 md:table-cell">Form</th>
-                  <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50">Bounty</th>
+                  <th className="px-5 py-3 font-mono text-[10px] uppercase tracking-widest text-red-400/50">
+                    #
+                  </th>
+                  <th className="px-5 py-3 font-mono text-[10px] uppercase tracking-widest text-red-400/50">
+                    Operative
+                  </th>
+                  <th className="hidden px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50 sm:table-cell">
+                    Heists
+                  </th>
+                  <th className="hidden px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50 sm:table-cell">
+                    Breaches
+                  </th>
+                  <th className="hidden px-5 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-red-400/50 md:table-cell">
+                    Form
+                  </th>
+                  <th className="px-5 py-3 text-right font-mono text-[10px] uppercase tracking-widest text-red-400/50">
+                    Bounty
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((e) => (
-                  <tr key={e.id} className="border-t border-red-900/20 transition-colors hover:bg-red-950/20">
-                    <td className={`px-5 py-3 font-mono text-lg font-semibold tabular-nums ${e.rank <= 3 ? "text-red-400" : "text-muted-foreground"}`}>
+                  <tr
+                    key={e.id}
+                    className="border-t border-red-900/20 transition-colors hover:bg-red-950/20"
+                  >
+                    <td
+                      className={`px-5 py-3 font-mono text-lg font-semibold tabular-nums ${e.rank <= 3 ? "text-red-400" : "text-muted-foreground"}`}
+                    >
                       {String(e.rank).padStart(2, "0")}
                     </td>
                     <td className="px-5 py-3">
-                      <a href={e.htmlUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:underline">
+                      <a
+                        href={e.htmlUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 hover:underline"
+                      >
                         <Avatar src={e.avatarUrl} alt={e.login} size={30} />
                         <span className="min-w-0">
-                          <span className="block truncate font-mono text-sm font-semibold uppercase tracking-wide text-foreground">{e.codename}</span>
+                          <span className="block truncate font-mono text-sm font-semibold uppercase tracking-wide text-foreground">
+                            {e.codename}
+                          </span>
                           <span className="block truncate font-mono text-[11px] text-muted-foreground">
-                            <CyberTextReveal codename={e.codename ?? e.login} realName={`@${e.login}`} duration={200} />
+                            <CyberTextReveal
+                              codename={e.codename ?? e.login}
+                              realName={`@${e.login}`}
+                              duration={200}
+                            />
                           </span>
                         </span>
                       </a>
                       <div className="mt-2 hidden h-[3px] max-w-[240px] overflow-hidden rounded bg-red-900/30 sm:block">
-                        <div className="h-full origin-left rounded bg-gradient-to-r from-red-700 to-red-500" style={{ transform: `scaleX(${(e.score / maxScore).toFixed(3)})` }} />
+                        <div
+                          className="h-full origin-left rounded bg-gradient-to-r from-red-700 to-red-500"
+                          style={{ transform: `scaleX(${(e.score / maxScore).toFixed(3)})` }}
+                        />
                       </div>
                     </td>
-                    <td className="hidden px-5 py-3 text-right tabular-nums text-foreground sm:table-cell">{e.prCount}</td>
+                    <td className="hidden px-5 py-3 text-right tabular-nums text-foreground sm:table-cell">
+                      {e.prCount}
+                    </td>
                     <td
                       className={`hidden px-5 py-3 text-right tabular-nums sm:table-cell ${
                         totalFindings(e.findings) > 0 ? "text-red-400" : "text-emerald-400"

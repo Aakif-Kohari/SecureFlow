@@ -8,13 +8,13 @@
  * the routes differ only in the configuration they pass to it.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { withWebhookGuard } from '@/lib/security/webhookGuard';
-import { withErrorHandler, AppError } from '@/lib/middleware/error-handler';
-import { createLogger } from '@/lib/logger';
+import { NextRequest, NextResponse } from "next/server";
+import { withWebhookGuard } from "@/lib/security/webhookGuard";
+import { withErrorHandler, AppError } from "@/lib/middleware/error-handler";
+import { createLogger } from "@/lib/logger";
 
 /** Events the endpoint answers specifically. Anything else is acknowledged. */
-export type KnownWebhookEvent = 'ping' | 'alert' | 'notification';
+export type KnownWebhookEvent = "ping" | "alert" | "notification";
 
 export interface WebhookAck {
   status: string;
@@ -35,7 +35,7 @@ export interface InboundWebhookConfig {
  *
  * Falls back to an `event` property in the body when neither is present.
  */
-const EVENT_HEADERS = ['x-webhook-event', 'x-event-type'] as const;
+const EVENT_HEADERS = ["x-webhook-event", "x-event-type"] as const;
 
 /**
  * Event names we will echo back or log verbatim.
@@ -45,7 +45,7 @@ const EVENT_HEADERS = ['x-webhook-event', 'x-event-type'] as const;
  * reflected, so a crafted header cannot inject newlines into the log or
  * arbitrary text into the acknowledgement.
  */
-const KNOWN_EVENTS = new Set<string>(['ping', 'alert', 'notification']);
+const KNOWN_EVENTS = new Set<string>(["ping", "alert", "notification"]);
 
 /** The longest event name we will consider before giving up on it. */
 const MAX_EVENT_LENGTH = 64;
@@ -57,15 +57,15 @@ const MAX_EVENT_LENGTH = 64;
  */
 export function resolveEventType(
   headers: Headers,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
 ): string | null {
   for (const name of EVENT_HEADERS) {
     const value = headers.get(name);
-    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === "string" && value.trim()) return value.trim();
   }
 
   const fromBody = payload.event;
-  if (typeof fromBody === 'string' && fromBody.trim()) return fromBody.trim();
+  if (typeof fromBody === "string" && fromBody.trim()) return fromBody.trim();
 
   return null;
 }
@@ -77,9 +77,9 @@ export function resolveEventType(
  * whitespace-laden header -- becomes `unknown`.
  */
 export function safeEventLabel(event: string | null): string {
-  if (!event) return 'unknown';
-  if (event.length > MAX_EVENT_LENGTH) return 'unknown';
-  return KNOWN_EVENTS.has(event) ? event : 'unknown';
+  if (!event) return "unknown";
+  if (event.length > MAX_EVENT_LENGTH) return "unknown";
+  return KNOWN_EVENTS.has(event) ? event : "unknown";
 }
 
 /**
@@ -119,25 +119,25 @@ export function describePayload(payload: Record<string, unknown>): {
 export function processPayload(
   payload: Record<string, unknown>,
   event: string | null,
-  log: ReturnType<typeof createLogger>
+  log: ReturnType<typeof createLogger>,
 ): WebhookAck {
   const label = safeEventLabel(event);
 
   switch (label) {
-    case 'ping':
-      return { status: 'pong', message: 'Webhook verified' };
+    case "ping":
+      return { status: "pong", message: "Webhook verified" };
 
-    case 'alert':
-      log.info('Alert received', { event: label, ...describePayload(payload) });
-      return { status: 'received', message: 'Alert processed' };
+    case "alert":
+      log.info("Alert received", { event: label, ...describePayload(payload) });
+      return { status: "received", message: "Alert processed" };
 
-    case 'notification':
-      log.info('Notification received', { event: label, ...describePayload(payload) });
-      return { status: 'received', message: 'Notification processed' };
+    case "notification":
+      log.info("Notification received", { event: label, ...describePayload(payload) });
+      return { status: "received", message: "Notification processed" };
 
     default:
-      log.info('Webhook received', { event: label, ...describePayload(payload) });
-      return { status: 'received', message: 'Webhook acknowledged' };
+      log.info("Webhook received", { event: label, ...describePayload(payload) });
+      return { status: "received", message: "Webhook acknowledged" };
   }
 }
 
@@ -164,12 +164,12 @@ export function createInboundWebhookHandler(config: InboundWebhookConfig) {
           // `JSON.parse` accepts `null`, `7` and `"a"`. `Object.keys` on any of
           // those is fine, but `parsed.event` on a string returns a character,
           // so reject anything that is not a plain object up front.
-          if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-            throw new SyntaxError('not an object');
+          if (value === null || typeof value !== "object" || Array.isArray(value)) {
+            throw new SyntaxError("not an object");
           }
           parsed = value as Record<string, unknown>;
         } catch {
-          throw new AppError('Request body is not valid JSON', 400);
+          throw new AppError("Request body is not valid JSON", 400);
         }
 
         const event = resolveEventType(req.headers, parsed);
@@ -178,9 +178,9 @@ export function createInboundWebhookHandler(config: InboundWebhookConfig) {
       },
       {
         get secret() {
-          return config.readSecret() ?? '';
+          return config.readSecret() ?? "";
         },
-      }
-    )
+      },
+    ),
   );
 }

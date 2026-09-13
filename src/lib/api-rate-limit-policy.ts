@@ -34,7 +34,7 @@
  * their own controls (an HMAC signature, a route-level `withRateLimit`); what
  * they must not have is a blanket IP bucket shared with unrelated traffic.
  */
-export type ApiRateLimitClass = 'exempt' | 'auth' | 'stream' | 'standard';
+export type ApiRateLimitClass = "exempt" | "auth" | "stream" | "standard";
 
 export interface ApiRateLimitTier {
   /** Requests permitted per window. */
@@ -50,7 +50,7 @@ export interface ApiRateLimitTier {
   keyPrefix: string;
 }
 
-export type LimitedApiRateLimitClass = Exclude<ApiRateLimitClass, 'exempt'>;
+export type LimitedApiRateLimitClass = Exclude<ApiRateLimitClass, "exempt">;
 
 /**
  * Default budgets per class.
@@ -61,9 +61,9 @@ export type LimitedApiRateLimitClass = Exclude<ApiRateLimitClass, 'exempt'>;
  * a model completion each.
  */
 export const API_RATE_LIMIT_TIERS: Readonly<Record<LimitedApiRateLimitClass, ApiRateLimitTier>> = {
-  auth: { limit: 60, windowSeconds: 60, keyPrefix: 'api:auth' },
-  stream: { limit: 20, windowSeconds: 60, keyPrefix: 'api:stream' },
-  standard: { limit: 20, windowSeconds: 60, keyPrefix: 'api:standard' },
+  auth: { limit: 60, windowSeconds: 60, keyPrefix: "api:auth" },
+  stream: { limit: 20, windowSeconds: 60, keyPrefix: "api:stream" },
+  standard: { limit: 20, windowSeconds: 60, keyPrefix: "api:standard" },
 };
 
 /**
@@ -73,15 +73,15 @@ export const API_RATE_LIMIT_TIERS: Readonly<Record<LimitedApiRateLimitClass, Api
  */
 export const EXEMPT_PREFIXES: readonly string[] = [
   // HMAC-signed and delivery-deduplicated; see src/app/api/webhooks/github.
-  '/api/webhooks',
+  "/api/webhooks",
   // Liveness and readiness probes. A platform health check that gets 429'd is
   // read as an outage, which is the opposite of what the probe is for.
-  '/api/health',
-  '/api/ready',
+  "/api/health",
+  "/api/ready",
 ];
 
 /** NextAuth's routes. */
-export const AUTH_PREFIX = '/api/auth';
+export const AUTH_PREFIX = "/api/auth";
 
 /**
  * Routes that hold a connection open and cost a model completion.
@@ -90,13 +90,10 @@ export const AUTH_PREFIX = '/api/auth';
  * class exists so the middleware's decision matches rather than silently
  * overriding it with whichever number happens to be stricter.
  */
-export const STREAM_PREFIXES: readonly string[] = [
-  '/api/heist-transmission',
-  '/api/og/heist',
-];
+export const STREAM_PREFIXES: readonly string[] = ["/api/heist-transmission", "/api/og/heist"];
 
 /** Suffix of an AI streaming route under `/api/findings/[id]/`. */
-const FINDINGS_STREAM_SUFFIX = '/explain-stream';
+const FINDINGS_STREAM_SUFFIX = "/explain-stream";
 
 /**
  * Normalise a pathname before matching.
@@ -107,15 +104,15 @@ const FINDINGS_STREAM_SUFFIX = '/explain-stream';
  * for an exemption is a bypass in the wrong direction.
  */
 export function normalizeApiPath(pathname: string): string {
-  if (!pathname) return '';
-  const collapsed = pathname.replace(/\/{2,}/g, '/').toLowerCase();
-  return collapsed.length > 1 ? collapsed.replace(/\/+$/, '') : collapsed;
+  if (!pathname) return "";
+  const collapsed = pathname.replace(/\/{2,}/g, "/").toLowerCase();
+  return collapsed.length > 1 ? collapsed.replace(/\/+$/, "") : collapsed;
 }
 
 /** True when a path is under `/api`. */
 export function isApiPath(pathname: string): boolean {
   const normalized = normalizeApiPath(pathname);
-  return normalized === '/api' || normalized.startsWith('/api/');
+  return normalized === "/api" || normalized.startsWith("/api/");
 }
 
 function matchesPrefix(normalized: string, prefix: string): boolean {
@@ -132,28 +129,28 @@ function matchesPrefix(normalized: string, prefix: string): boolean {
 export function classifyApiPath(pathname: string): ApiRateLimitClass {
   const normalized = normalizeApiPath(pathname);
 
-  if (!isApiPath(normalized)) return 'exempt';
+  if (!isApiPath(normalized)) return "exempt";
 
   if (EXEMPT_PREFIXES.some((prefix) => matchesPrefix(normalized, prefix))) {
-    return 'exempt';
+    return "exempt";
   }
 
-  if (matchesPrefix(normalized, AUTH_PREFIX)) return 'auth';
+  if (matchesPrefix(normalized, AUTH_PREFIX)) return "auth";
 
   if (
     STREAM_PREFIXES.some((prefix) => matchesPrefix(normalized, prefix)) ||
     normalized.endsWith(FINDINGS_STREAM_SUFFIX)
   ) {
-    return 'stream';
+    return "stream";
   }
 
-  return 'standard';
+  return "standard";
 }
 
 /** Resolve the tier for a path, or `null` when the path is not limited here. */
 export function tierForPath(pathname: string): ApiRateLimitTier | null {
   const classification = classifyApiPath(pathname);
-  return classification === 'exempt' ? null : API_RATE_LIMIT_TIERS[classification];
+  return classification === "exempt" ? null : API_RATE_LIMIT_TIERS[classification];
 }
 
 /**
@@ -196,16 +193,16 @@ export function retryAfterSeconds(reset: number, now: number = Date.now()): numb
  */
 export function rateLimitHeaders(
   decision: RateLimitDecision,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): Record<string, string> {
   const headers: Record<string, string> = {
-    'X-RateLimit-Limit': String(decision.limit),
-    'X-RateLimit-Remaining': String(Math.max(0, decision.remaining)),
-    'X-RateLimit-Reset': String(Math.ceil(decision.reset / 1000)),
+    "X-RateLimit-Limit": String(decision.limit),
+    "X-RateLimit-Remaining": String(Math.max(0, decision.remaining)),
+    "X-RateLimit-Reset": String(Math.ceil(decision.reset / 1000)),
   };
 
   if (!decision.success) {
-    headers['Retry-After'] = String(retryAfterSeconds(decision.reset, now));
+    headers["Retry-After"] = String(retryAfterSeconds(decision.reset, now));
   }
 
   return headers;

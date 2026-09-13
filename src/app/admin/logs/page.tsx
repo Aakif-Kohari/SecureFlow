@@ -1,8 +1,4 @@
-import {
-  getAuditLogs,
-  getAuditLogMetrics,
-  getAuditLogFilters,
-} from "@/lib/actions/admin";
+import { getAuditLogs, getAuditLogMetrics, getAuditLogFilters } from "@/lib/actions/admin";
 import LogsTable from "@/components/admin/LogsTable";
 import MetricsCard from "@/components/admin/MetricsCard";
 import { ScrollText } from "lucide-react";
@@ -31,9 +27,7 @@ export default async function AdminLogsPage() {
           <ScrollText className="w-5 h-5 text-red-600 dark:text-red-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Audit Logs
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Audit Logs</h1>
           <p className="text-muted-foreground mt-2">
             Comprehensive audit trail of every administrative and system event.
           </p>
@@ -43,19 +37,15 @@ export default async function AdminLogsPage() {
       <div className="grid gap-6 sm:grid-cols-3">
         <MetricsCard title="Total Logs" value={metrics.total} />
         <MetricsCard title="Last 24 Hours" value={metrics.last24h} />
-        <MetricsCard
-          title="Top Action"
-          value={topAction ? `${topAction.action}` : "—"}
-        />
+        <MetricsCard title="Top Action" value={topAction ? `${topAction.action}` : "—"} />
       </div>
 
       <LogsTable logs={result.logs} actions={filters.actions} />
 
       {result.total > INITIAL_PAGE_SIZE && (
         <p className="text-xs text-muted-foreground text-center">
-          Showing the most recent {result.logs.length} of {result.total} log
-          entries. Use the server action&apos;s pagination parameters for full
-          history access.
+          Showing the most recent {result.logs.length} of {result.total} log entries. Use the server
+          action&apos;s pagination parameters for full history access.
         </p>
       )}
     </div>

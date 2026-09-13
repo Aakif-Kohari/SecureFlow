@@ -32,12 +32,8 @@ import {
   parseStoredSeverity,
   type Severity,
   type StoredSeverity,
-} from '@/lib/severity';
-import {
-  SUPPRESSED_STATUSES,
-  TRIAGE_STATUSES,
-  type TriageStatus,
-} from '@/lib/triage/statuses';
+} from "@/lib/severity";
+import { SUPPRESSED_STATUSES, TRIAGE_STATUSES, type TriageStatus } from "@/lib/triage/statuses";
 
 /**
  * Triage states a finding can be filtered by, and the ones that hide it from
@@ -59,10 +55,10 @@ export type FindingStatus = TriageStatus;
 export const DISMISSED_STATUSES: readonly FindingStatus[] = SUPPRESSED_STATUSES;
 
 /** Sort keys the UI exposes. */
-export const FINDING_SORTS = ['newest', 'oldest', 'severity', 'file'] as const;
+export const FINDING_SORTS = ["newest", "oldest", "severity", "file"] as const;
 export type FindingSort = (typeof FINDING_SORTS)[number];
 
-export const DEFAULT_SORT: FindingSort = 'newest';
+export const DEFAULT_SORT: FindingSort = "newest";
 export const DEFAULT_PAGE_SIZE = 20;
 
 /**
@@ -120,14 +116,14 @@ const MAX_FILTER_VALUES = 20;
  * return nothing.
  */
 export function clampPage(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
+  const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed)) return 1;
   return Math.max(1, Math.floor(parsed));
 }
 
 /** Clamp a page size into `1..MAX_PAGE_SIZE`, defaulting when unparseable. */
 export function clampPageSize(value: unknown, fallback: number = DEFAULT_PAGE_SIZE): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
+  const parsed = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(parsed)));
 }
@@ -148,8 +144,8 @@ export function parseListParam(value: string | string[] | undefined | null): str
   const seen = new Set<string>();
 
   for (const entry of raw) {
-    if (typeof entry !== 'string') continue;
-    for (const token of entry.split(',')) {
+    if (typeof entry !== "string") continue;
+    for (const token of entry.split(",")) {
       const trimmed = token.trim();
       if (!trimmed || seen.has(trimmed)) continue;
       seen.add(trimmed);
@@ -202,7 +198,7 @@ export function parseStatusFilter(values: readonly string[]): FindingStatus[] {
 
 /** Resolve a sort key, falling back to `newest` for anything unrecognised. */
 export function parseSort(value: unknown): FindingSort {
-  if (typeof value !== 'string') return DEFAULT_SORT;
+  if (typeof value !== "string") return DEFAULT_SORT;
   const candidate = value.trim().toLowerCase();
   return (FINDING_SORTS as readonly string[]).includes(candidate)
     ? (candidate as FindingSort)
@@ -218,7 +214,7 @@ export function parseSort(value: unknown): FindingSort {
  * row while looking like a filter.
  */
 export function normalizeSearch(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
   return trimmed.slice(0, MAX_SEARCH_LENGTH);
@@ -235,9 +231,10 @@ export function normalizeFindingsQuery(query: FindingsQuery = {}): NormalizedFin
       .filter(Boolean)
       .slice(0, MAX_FILTER_VALUES),
     status: parseStatusFilter(query.status ?? []),
-    repositoryId: typeof query.repositoryId === 'string' && query.repositoryId.trim()
-      ? query.repositoryId.trim()
-      : null,
+    repositoryId:
+      typeof query.repositoryId === "string" && query.repositoryId.trim()
+        ? query.repositoryId.trim()
+        : null,
     search: normalizeSearch(query.search),
     sort: parseSort(query.sort),
   };
@@ -246,23 +243,23 @@ export function normalizeFindingsQuery(query: FindingsQuery = {}): NormalizedFin
 /** Prisma `orderBy` for a sort key. */
 export function buildFindingsOrderBy(sort: FindingSort): Record<string, unknown>[] {
   switch (sort) {
-    case 'oldest':
-      return [{ createdAt: 'asc' }];
-    case 'file':
-      return [{ fileLocation: 'asc' }, { createdAt: 'desc' }];
-    case 'severity':
+    case "oldest":
+      return [{ createdAt: "asc" }];
+    case "file":
+      return [{ fileLocation: "asc" }, { createdAt: "desc" }];
+    case "severity":
       // Handled by planSeverityPage rather than by an orderBy — see below. This
       // is only the within-bucket tiebreaker.
-      return [{ createdAt: 'desc' }];
-    case 'newest':
+      return [{ createdAt: "desc" }];
+    case "newest":
     default:
-      return [{ createdAt: 'desc' }];
+      return [{ createdAt: "desc" }];
   }
 }
 
 /** True when the sort cannot be expressed as a plain Prisma `orderBy`. */
 export function requiresSeverityPlan(sort: FindingSort): boolean {
-  return sort === 'severity';
+  return sort === "severity";
 }
 
 /** One contiguous read from a single severity bucket. */
@@ -301,7 +298,7 @@ export interface SeveritySlice {
 export function planSeverityPage(
   counts: Readonly<Partial<Record<StoredSeverity, number>>>,
   page: number,
-  pageSize: number
+  pageSize: number,
 ): SeveritySlice[] {
   const safePage = clampPage(page);
   const safeSize = clampPageSize(pageSize);
@@ -358,13 +355,11 @@ export interface FindingsWhereContext {
 export function buildFindingsWhere(
   context: FindingsWhereContext,
   query: NormalizedFindingsQuery,
-  options: { includeDismissed?: boolean } = {}
+  options: { includeDismissed?: boolean } = {},
 ): Record<string, unknown> {
   const { userId, dismissedFingerprints, fingerprintsByStatus = {} } = context;
 
-  const asksForDismissed = query.status.some((status) =>
-    DISMISSED_STATUSES.includes(status)
-  );
+  const asksForDismissed = query.status.some((status) => DISMISSED_STATUSES.includes(status));
   const includeDismissed = options.includeDismissed ?? asksForDismissed;
 
   const where: Record<string, unknown> = {
@@ -411,7 +406,7 @@ export function buildFindingsWhere(
     let includesOpen = false;
 
     for (const status of query.status) {
-      if (status === 'OPEN') {
+      if (status === "OPEN") {
         // OPEN is the implicit default: a finding with no triage row at all.
         includesOpen = true;
         continue;
@@ -441,10 +436,10 @@ export function buildFindingsWhere(
   if (query.search) {
     andClauses.push({
       OR: [
-        { type: { contains: query.search, mode: 'insensitive' } },
-        { fileLocation: { contains: query.search, mode: 'insensitive' } },
-        { explanation: { contains: query.search, mode: 'insensitive' } },
-        { remediation: { contains: query.search, mode: 'insensitive' } },
+        { type: { contains: query.search, mode: "insensitive" } },
+        { fileLocation: { contains: query.search, mode: "insensitive" } },
+        { explanation: { contains: query.search, mode: "insensitive" } },
+        { remediation: { contains: query.search, mode: "insensitive" } },
       ],
     });
   }
@@ -487,21 +482,21 @@ export function hasActiveFilters(query: NormalizedFindingsQuery): boolean {
 export function toSearchParams(query: NormalizedFindingsQuery): string {
   const params = new URLSearchParams();
 
-  if (query.page > 1) params.set('page', String(query.page));
-  if (query.pageSize !== DEFAULT_PAGE_SIZE) params.set('pageSize', String(query.pageSize));
-  if (query.sort !== DEFAULT_SORT) params.set('sort', query.sort);
-  if (query.repositoryId) params.set('repo', query.repositoryId);
-  if (query.search) params.set('q', query.search);
-  for (const severity of query.severity) params.append('severity', severity);
-  for (const type of query.type) params.append('type', type);
-  for (const status of query.status) params.append('status', status);
+  if (query.page > 1) params.set("page", String(query.page));
+  if (query.pageSize !== DEFAULT_PAGE_SIZE) params.set("pageSize", String(query.pageSize));
+  if (query.sort !== DEFAULT_SORT) params.set("sort", query.sort);
+  if (query.repositoryId) params.set("repo", query.repositoryId);
+  if (query.search) params.set("q", query.search);
+  for (const severity of query.severity) params.append("severity", severity);
+  for (const type of query.type) params.append("type", type);
+  for (const status of query.status) params.append("status", status);
 
   return params.toString();
 }
 
 /** Parse the `searchParams` object a server component receives. */
 export function fromSearchParams(
-  params: Record<string, string | string[] | undefined> = {}
+  params: Record<string, string | string[] | undefined> = {},
 ): NormalizedFindingsQuery {
   const single = (value: string | string[] | undefined): string | undefined =>
     Array.isArray(value) ? value[0] : value;

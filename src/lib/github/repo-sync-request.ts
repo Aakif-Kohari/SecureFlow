@@ -49,9 +49,7 @@ export interface RepositoryLookupStore {
   }) => Promise<SyncedRepository | null>;
 }
 
-export type SyncTarget =
-  | { ok: true; repositoryId: string | null }
-  | { ok: false; message: string };
+export type SyncTarget = { ok: true; repositoryId: string | null } | { ok: false; message: string };
 
 /**
  * Which repository, if any, this request is about.
@@ -70,21 +68,21 @@ export type SyncTarget =
 export function parseSyncTarget(body: unknown): SyncTarget {
   if (body === null || body === undefined) return { ok: true, repositoryId: null };
 
-  if (typeof body !== 'object' || Array.isArray(body)) {
-    return { ok: false, message: 'Request body must be a JSON object' };
+  if (typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Request body must be a JSON object" };
   }
 
   const raw = (body as Record<string, unknown>).repositoryId;
 
   if (raw === undefined || raw === null) return { ok: true, repositoryId: null };
 
-  if (typeof raw !== 'string') {
-    return { ok: false, message: '`repositoryId` must be a string' };
+  if (typeof raw !== "string") {
+    return { ok: false, message: "`repositoryId` must be a string" };
   }
 
   const trimmed = raw.trim();
-  if (trimmed === '') {
-    return { ok: false, message: '`repositoryId` must not be empty' };
+  if (trimmed === "") {
+    return { ok: false, message: "`repositoryId` must not be empty" };
   }
 
   return { ok: true, repositoryId: trimmed };
@@ -101,7 +99,7 @@ export interface SyncOutcome {
 
 export interface SingleRepositorySyncResponse {
   success: boolean;
-  status: 'COMPLETED' | 'NO_INSTALLATION' | 'FAILED';
+  status: "COMPLETED" | "PARTIAL" | "NO_INSTALLATION" | "FAILED";
   repository: SyncedRepository;
   /** Repositories the run actually wrote, across the whole installation. */
   synced: number;
@@ -115,25 +113,28 @@ export interface SingleRepositorySyncResponse {
  * The reply for a request that named one repository.
  *
  * `status` is derived from what the run reported rather than hardcoded to
- * `"COMPLETED"`. That is the substance of this change: a caller has to be able
- * to tell a sync that ran from one that could not, and the previous branch gave
- * the same `success: true, status: "COMPLETED"` to every input it was handed.
+ * `"COMPLETED"`. A run with repository write failures is `"PARTIAL"`: some
+ * writes may have succeeded, but callers must not mistake that for complete
+ * synchronization. Explicit errors remain `"FAILED"`, and an account without
+ * an installation remains `"NO_INSTALLATION"`.
  *
  * `repository` carries the row as it stands *after* the run, so the caller sees
  * the refreshed name and active flag rather than a count of imaginary files.
  */
 export function singleRepositorySyncResponse(
   repository: SyncedRepository,
-  outcome: SyncOutcome
+  outcome: SyncOutcome,
 ): SingleRepositorySyncResponse {
-  const status: SingleRepositorySyncResponse['status'] = outcome.error
-    ? 'FAILED'
-    : outcome.hasInstallation
-      ? 'COMPLETED'
-      : 'NO_INSTALLATION';
+  const status: SingleRepositorySyncResponse["status"] = outcome.error
+    ? "FAILED"
+    : !outcome.hasInstallation
+      ? "NO_INSTALLATION"
+      : (outcome.failed ?? 0) > 0
+        ? "PARTIAL"
+        : "COMPLETED";
 
   return {
-    success: status === 'COMPLETED',
+    success: status === "COMPLETED",
     status,
     repository,
     synced: outcome.synced,

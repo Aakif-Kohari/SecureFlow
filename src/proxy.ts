@@ -1,10 +1,10 @@
-import NextAuth from 'next-auth';
-import authConfig from './auth.config';
-import { NextRequest, NextResponse } from 'next/server';
-import { getApiRateLimiter } from '@/lib/rate-limit';
-import { getClientIp } from '@/lib/client-ip';
-import { classifyApiPath, rateLimitHeaders } from '@/lib/api-rate-limit-policy';
-import { applySecurityHeaders, securityHeaderOptionsFromEnv } from '@/lib/security-headers';
+import NextAuth from "next-auth";
+import authConfig from "./auth.config";
+import { NextRequest, NextResponse } from "next/server";
+import { getApiRateLimiter } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/client-ip";
+import { classifyApiPath, rateLimitHeaders } from "@/lib/api-rate-limit-policy";
+import { applySecurityHeaders, securityHeaderOptionsFromEnv } from "@/lib/security-headers";
 
 const { auth } = NextAuth(authConfig);
 
@@ -31,7 +31,7 @@ export default auth(async function middleware(
       user?: { roles?: string[] };
       roles?: string[];
     } | null;
-  }
+  },
 ) {
   const token = request.auth;
 
@@ -43,7 +43,7 @@ export default auth(async function middleware(
   // meant a busy minute silently lost scans to a 429 GitHub never retries.
   const rateLimitClass = classifyApiPath(request.nextUrl.pathname);
 
-  if (rateLimitClass !== 'exempt') {
+  if (rateLimitClass !== "exempt") {
     const limiter = getApiRateLimiter(rateLimitClass);
 
     if (limiter) {
@@ -56,105 +56,104 @@ export default auth(async function middleware(
       if (!decision.success) {
         return secured(
           NextResponse.json(
-            { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+            { error: "Too Many Requests", message: "Rate limit exceeded" },
             {
               status: 429,
               // The route-level `withRateLimit` has always emitted these; the
               // middleware emitted none of them, so the two paths disagreed
               // about whether a caller could learn when to retry.
               headers: rateLimitHeaders(decision),
-            }
-          )
+            },
+          ),
         );
       }
     }
   }
 
   // 2. RBAC Admin Route Guarding (/admin/* and /api/admin/*)
-  const isAdminWebRoute = request.nextUrl.pathname.startsWith('/admin');
-  const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin');
+  const isAdminWebRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isAdminApiRoute = request.nextUrl.pathname.startsWith("/api/admin");
 
   if (isAdminWebRoute || isAdminApiRoute) {
-    if (process.env.NEXT_PUBLIC_MOCK_AUTH === 'true') {
-      const mockSession = request.cookies.get('mock-session')?.value;
-      if (mockSession === 'admin') {
+    if (process.env.NEXT_PUBLIC_MOCK_AUTH === "true") {
+      const mockSession = request.cookies.get("mock-session")?.value;
+      if (mockSession === "admin") {
         return NextResponse.next();
       }
       if (isAdminApiRoute) {
         return secured(
           NextResponse.json(
-            { error: 'Unauthorized', message: 'Forbidden' },
-            { status: mockSession === 'user' ? 403 : 401 }
-          )
+            { error: "Unauthorized", message: "Forbidden" },
+            { status: mockSession === "user" ? 403 : 401 },
+          ),
         );
       }
-      if (mockSession === 'user') {
-        return secured(NextResponse.redirect(new URL('/dashboard', request.nextUrl)));
+      if (mockSession === "user") {
+        return secured(NextResponse.redirect(new URL("/dashboard", request.nextUrl)));
       }
-      return secured(NextResponse.redirect(new URL('/login', request.nextUrl)));
+      return secured(NextResponse.redirect(new URL("/login", request.nextUrl)));
     }
 
-    const roles: string[] =
-      (token?.user?.roles as string[]) || (token?.roles as string[]) || [];
+    const roles: string[] = (token?.user?.roles as string[]) || (token?.roles as string[]) || [];
 
     if (!token) {
       if (isAdminApiRoute) {
         return secured(
           NextResponse.json(
-            { error: 'Unauthorized', message: 'Authentication required' },
-            { status: 401 }
-          )
+            { error: "Unauthorized", message: "Authentication required" },
+            { status: 401 },
+          ),
         );
       }
-      return secured(NextResponse.redirect(new URL('/login', request.nextUrl)));
+      return secured(NextResponse.redirect(new URL("/login", request.nextUrl)));
     }
 
-    if (!roles.includes('ADMIN')) {
+    if (!roles.includes("ADMIN")) {
       if (isAdminApiRoute) {
         return secured(
           NextResponse.json(
-            { error: 'Forbidden', message: 'Admin role required' },
-            { status: 403 }
-          )
+            { error: "Forbidden", message: "Admin role required" },
+            { status: 403 },
+          ),
         );
       }
-      return secured(NextResponse.redirect(new URL('/dashboard', request.nextUrl)));
+      return secured(NextResponse.redirect(new URL("/dashboard", request.nextUrl)));
     }
   }
 
   // 3. Codename Onboarding Interception ("The Naming Ceremony") (#185)
-  const isCodenameSetupRoute = request.nextUrl.pathname === '/setup/codename';
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  const isCodenameSetupRoute = request.nextUrl.pathname === "/setup/codename";
+  const isDashboardRoute = request.nextUrl.pathname.startsWith("/dashboard");
 
-  if (process.env.NEXT_PUBLIC_MOCK_AUTH === 'true') {
-    const mockSession = request.cookies.get('mock-session')?.value;
+  if (process.env.NEXT_PUBLIC_MOCK_AUTH === "true") {
+    const mockSession = request.cookies.get("mock-session")?.value;
     if (isCodenameSetupRoute) {
-      if (!mockSession || mockSession === 'none') {
-        return secured(NextResponse.redirect(new URL('/login', request.nextUrl)));
+      if (!mockSession || mockSession === "none") {
+        return secured(NextResponse.redirect(new URL("/login", request.nextUrl)));
       }
-      if (mockSession === 'admin' || mockSession === 'user') {
-        return secured(NextResponse.redirect(new URL('/dashboard', request.nextUrl)));
+      if (mockSession === "admin" || mockSession === "user") {
+        return secured(NextResponse.redirect(new URL("/dashboard", request.nextUrl)));
       }
       return NextResponse.next();
     }
-    if (isDashboardRoute && (mockSession === 'no-codename' || mockSession === 'recruit')) {
-      return secured(NextResponse.redirect(new URL('/setup/codename', request.nextUrl)));
+    if (isDashboardRoute && (mockSession === "no-codename" || mockSession === "recruit")) {
+      return secured(NextResponse.redirect(new URL("/setup/codename", request.nextUrl)));
     }
   } else {
     const userCodename = (token?.user as any)?.codename || (token as any)?.codename;
 
     if (isCodenameSetupRoute) {
       if (!token) {
-        return secured(NextResponse.redirect(new URL('/login', request.nextUrl)));
+        return secured(NextResponse.redirect(new URL("/login", request.nextUrl)));
       }
       if (userCodename) {
-        return secured(NextResponse.redirect(new URL('/dashboard', request.nextUrl)));
+        return secured(NextResponse.redirect(new URL("/dashboard", request.nextUrl)));
       }
       return NextResponse.next();
     }
 
     if (isDashboardRoute && token && !userCodename) {
-      return secured(NextResponse.redirect(new URL('/setup/codename', request.nextUrl)));
+      return secured(NextResponse.redirect(new URL("/setup/codename", request.nextUrl)));
     }
   }
 
@@ -164,5 +163,5 @@ export default auth(async function middleware(
 export const config = {
   // 3. Matcher Update: Removed 'api|' from the negative lookahead
   // This ensures the middleware actually triggers on all /api/ requests
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

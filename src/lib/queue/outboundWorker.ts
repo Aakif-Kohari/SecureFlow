@@ -1,14 +1,14 @@
-import { Worker, Job, UnrecoverableError } from 'bullmq';
-import { redis } from './redis';
-import { outboundWebhookDLQ, OutboundWebhookData } from './outboundWebhookQueue';
+import { Worker, Job, UnrecoverableError } from "bullmq";
+import { redis } from "./redis";
+import { outboundWebhookDLQ, OutboundWebhookData } from "./outboundWebhookQueue";
 import {
   OutboundDeliveryError,
   OutboundDestinationError,
   dispatchOutboundWebhook,
-} from './outbound-dispatch';
-import { createLogger } from '@/lib/logger';
+} from "./outbound-dispatch";
+import { createLogger } from "@/lib/logger";
 
-const log = createLogger({ context: { component: 'outbound-worker' } });
+const log = createLogger({ context: { component: "outbound-worker" } });
 
 /**
  * Process one outbound delivery.
@@ -33,7 +33,7 @@ export async function processOutboundWebhook(job: Job<OutboundWebhookData>): Pro
       deliveryId: job.id ? String(job.id) : undefined,
     });
 
-    log.info('Outbound webhook delivered', {
+    log.info("Outbound webhook delivered", {
       jobId: job.id,
       // Scheme + host only. Most providers put a token in the path or query
       // string, so the full URL must not reach a log drain.
@@ -55,7 +55,7 @@ export async function processOutboundWebhook(job: Job<OutboundWebhookData>): Pro
     const status = error instanceof OutboundDeliveryError ? error.status : undefined;
 
     if (permanent) {
-      log.error('Outbound webhook permanently rejected', {
+      log.error("Outbound webhook permanently rejected", {
         jobId: job.id,
         reason: message,
         status,
@@ -63,7 +63,7 @@ export async function processOutboundWebhook(job: Job<OutboundWebhookData>): Pro
       throw new UnrecoverableError(message);
     }
 
-    log.warn('Outbound webhook failed, will retry', {
+    log.warn("Outbound webhook failed, will retry", {
       jobId: job.id,
       attempt: job.attemptsMade,
       reason: message,
@@ -74,16 +74,16 @@ export async function processOutboundWebhook(job: Job<OutboundWebhookData>): Pro
 }
 
 export const outboundWorker = new Worker<OutboundWebhookData>(
-  'outbound-webhooks',
+  "outbound-webhooks",
   processOutboundWebhook,
-  { connection: redis as any }
+  { connection: redis as any },
 );
 
-outboundWorker.on('completed', (job: Job) => {
-  log.debug('Outbound job completed', { jobId: job.id });
+outboundWorker.on("completed", (job: Job) => {
+  log.debug("Outbound job completed", { jobId: job.id });
 });
 
-outboundWorker.on('failed', async (job: Job | undefined, err: Error) => {
+outboundWorker.on("failed", async (job: Job | undefined, err: Error) => {
   if (!job) return;
 
   const maxAttempts = job.opts.attempts || 3;
@@ -93,10 +93,10 @@ outboundWorker.on('failed', async (job: Job | undefined, err: Error) => {
   // without ever being recorded in the DLQ, and `/admin/queue` would show
   // nothing at all for a delivery that will never happen.
   const exhausted = job.attemptsMade >= maxAttempts;
-  const unrecoverable = err.name === 'UnrecoverableError';
+  const unrecoverable = err.name === "UnrecoverableError";
 
   if (!exhausted && !unrecoverable) {
-    log.warn('Outbound job failed, retrying with exponential backoff', {
+    log.warn("Outbound job failed, retrying with exponential backoff", {
       jobId: job.id,
       attempt: job.attemptsMade,
       maxAttempts,
@@ -105,7 +105,7 @@ outboundWorker.on('failed', async (job: Job | undefined, err: Error) => {
     return;
   }
 
-  log.error('Outbound job failed permanently', {
+  log.error("Outbound job failed permanently", {
     jobId: job.id,
     attempts: job.attemptsMade,
     unrecoverable,
@@ -114,7 +114,7 @@ outboundWorker.on('failed', async (job: Job | undefined, err: Error) => {
 
   try {
     await outboundWebhookDLQ.add(
-      'dispatch-webhook-dlq',
+      "dispatch-webhook-dlq",
       {
         originalJobId: job.id,
         data: job.data,
@@ -123,10 +123,10 @@ outboundWorker.on('failed', async (job: Job | undefined, err: Error) => {
         attemptsMade: job.attemptsMade,
         unrecoverable,
       },
-      { attempts: 1 }
+      { attempts: 1 },
     );
   } catch (dlqErr) {
-    log.error('Failed to route outbound job to DLQ', {
+    log.error("Failed to route outbound job to DLQ", {
       jobId: job.id,
       reason: dlqErr instanceof Error ? dlqErr.message : String(dlqErr),
     });

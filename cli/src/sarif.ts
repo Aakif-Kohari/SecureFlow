@@ -6,7 +6,7 @@
  */
 
 // Added `type` prefix for verbatimModuleSyntax compliance
-import type { FileScanResult } from './scanner.js';
+import type { FileScanResult } from "./scanner.js";
 
 export interface SarifArtifactLocation {
   uri: string;
@@ -42,7 +42,7 @@ export interface SarifReportingDescriptor {
     text: string;
   };
   defaultConfiguration?: {
-    level: 'error' | 'warning' | 'note' | 'none';
+    level: "error" | "warning" | "note" | "none";
   };
   helpUri?: string;
   properties?: Record<string, unknown>;
@@ -51,7 +51,7 @@ export interface SarifReportingDescriptor {
 export interface SarifResult {
   ruleId: string;
   ruleIndex?: number;
-  level: 'error' | 'warning' | 'note' | 'none';
+  level: "error" | "warning" | "note" | "none";
   message: {
     text: string;
   };
@@ -75,49 +75,49 @@ export interface SarifRun {
 
 export interface SarifDocument {
   $schema: string;
-  version: '2.1.0';
+  version: "2.1.0";
   runs: SarifRun[];
 }
 
 const DEFAULT_RULE_DEFINITIONS: Record<string, SarifReportingDescriptor> = {
-  'environment variable': {
-    id: 'SECUREFLOW-001',
-    name: 'ConsoleSecretLoggingEnvironmentVariable',
+  "environment variable": {
+    id: "SECUREFLOW-001",
+    name: "ConsoleSecretLoggingEnvironmentVariable",
     shortDescription: {
-      text: 'Console logging of environment variable containing potential secret',
+      text: "Console logging of environment variable containing potential secret",
     },
     fullDescription: {
-      text: 'Passing process.env or other environment variable getters into console methods exposes credentials in build logs or standard output.',
+      text: "Passing process.env or other environment variable getters into console methods exposes credentials in build logs or standard output.",
     },
     defaultConfiguration: {
-      level: 'error',
+      level: "error",
     },
-    helpUri: 'https://github.com/GauravKarakoti/SecureFlow#rules',
+    helpUri: "https://github.com/GauravKarakoti/SecureFlow#rules",
   },
-  'secret-named identifier': {
-    id: 'SECUREFLOW-002',
-    name: 'ConsoleSecretLoggingSecretIdentifier',
+  "secret-named identifier": {
+    id: "SECUREFLOW-002",
+    name: "ConsoleSecretLoggingSecretIdentifier",
     shortDescription: {
-      text: 'Console logging of secret-named identifier or credential parameter',
+      text: "Console logging of secret-named identifier or credential parameter",
     },
     fullDescription: {
-      text: 'Identifiers containing secret, password, apikey, token, or auth parameters passed directly into console logging statements.',
+      text: "Identifiers containing secret, password, apikey, token, or auth parameters passed directly into console logging statements.",
     },
     defaultConfiguration: {
-      level: 'error',
+      level: "error",
     },
-    helpUri: 'https://github.com/GauravKarakoti/SecureFlow#rules',
+    helpUri: "https://github.com/GauravKarakoti/SecureFlow#rules",
   },
-  'generic-secret-logging': {
-    id: 'SECUREFLOW-000',
-    name: 'ConsoleSecretLoggingGeneric',
+  "generic-secret-logging": {
+    id: "SECUREFLOW-000",
+    name: "ConsoleSecretLoggingGeneric",
     shortDescription: {
-      text: 'Potential secret credential logging in console output',
+      text: "Potential secret credential logging in console output",
     },
     defaultConfiguration: {
-      level: 'error',
+      level: "error",
     },
-    helpUri: 'https://github.com/GauravKarakoti/SecureFlow#rules',
+    helpUri: "https://github.com/GauravKarakoti/SecureFlow#rules",
   },
 };
 
@@ -129,9 +129,9 @@ export function generateSarifReport(
   options?: {
     toolVersion?: string;
     repoUri?: string;
-  }
+  },
 ): SarifDocument {
-  const version = options?.toolVersion || '0.1.0';
+  const version = options?.toolVersion || "0.1.0";
   const rulesMap = new Map<string, { descriptor: SarifReportingDescriptor; index: number }>();
   const sarifResults: SarifResult[] = [];
 
@@ -141,7 +141,7 @@ export function generateSarifReport(
     }
 
     for (const violation of fileResult.violations) {
-      const reasonKey = violation.reason || 'generic-secret-logging';
+      const reasonKey = violation.reason || "generic-secret-logging";
       let ruleInfo = rulesMap.get(reasonKey);
 
       if (!ruleInfo) {
@@ -152,9 +152,9 @@ export function generateSarifReport(
             text: `Console logging of ${violation.reason}`,
           },
           defaultConfiguration: {
-            level: 'error',
+            level: "error",
           },
-          helpUri: 'https://github.com/GauravKarakoti/SecureFlow#rules',
+          helpUri: "https://github.com/GauravKarakoti/SecureFlow#rules",
         };
 
         ruleInfo = { descriptor, index: rulesMap.size };
@@ -164,7 +164,7 @@ export function generateSarifReport(
       sarifResults.push({
         ruleId: ruleInfo.descriptor.id,
         ruleIndex: ruleInfo.index,
-        level: ruleInfo.descriptor.defaultConfiguration?.level || 'error',
+        level: ruleInfo.descriptor.defaultConfiguration?.level || "error",
         message: {
           text: `[SecureFlow] ${violation.reason} passed to console call: "${violation.text}"`,
         },
@@ -172,7 +172,7 @@ export function generateSarifReport(
           {
             physicalLocation: {
               artifactLocation: {
-                uri: fileResult.path.replace(/\\/g, '/'),
+                uri: fileResult.path.replace(/\\/g, "/"),
               },
               region: {
                 startLine: Math.max(1, violation.line),
@@ -193,19 +193,19 @@ export function generateSarifReport(
   const rulesArray = Array.from(rulesMap.values()).map((r) => r.descriptor);
   if (rulesArray.length === 0) {
     // Appended `!` to override 'undefined' error resulting from Record<string, ...> signature
-    rulesArray.push(DEFAULT_RULE_DEFINITIONS['generic-secret-logging']!);
+    rulesArray.push(DEFAULT_RULE_DEFINITIONS["generic-secret-logging"]!);
   }
 
   return {
-    $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
-    version: '2.1.0',
+    $schema: "https://json.schemastore.org/sarif-2.1.0.json",
+    version: "2.1.0",
     runs: [
       {
         tool: {
           driver: {
-            name: 'SecureFlow CLI',
+            name: "SecureFlow CLI",
             semanticVersion: version,
-            informationUri: 'https://github.com/GauravKarakoti/SecureFlow',
+            informationUri: "https://github.com/GauravKarakoti/SecureFlow",
             rules: rulesArray,
           },
         },
@@ -218,7 +218,10 @@ export function generateSarifReport(
 /**
  * Format SARIF report as pretty JSON string.
  */
-export function formatSarifJson(scanResults: FileScanResult[], options?: { toolVersion?: string }): string {
+export function formatSarifJson(
+  scanResults: FileScanResult[],
+  options?: { toolVersion?: string },
+): string {
   const sarifDoc = generateSarifReport(scanResults, options);
   return JSON.stringify(sarifDoc, null, 2);
 }

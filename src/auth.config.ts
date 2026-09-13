@@ -30,7 +30,7 @@ export default {
     maxAge: 365 * 24 * 60 * 60, // 1 year access token
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   callbacks: {
     async jwt({ token, account, user, trigger, session }: any) {
@@ -60,7 +60,10 @@ export default {
       // Access token has expired, try to update it
       try {
         const response = await fetch("https://github.com/login/oauth/access_token", {
-          headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
           body: new URLSearchParams({
             client_id: process.env.GITHUB_CLIENT_ID!,
             client_secret: process.env.GITHUB_CLIENT_SECRET!,
@@ -92,7 +95,7 @@ export default {
       if (!session) {
         return session;
       }
-      
+
       // ⭐ Check both session.user AND token before destructuring
       if (session?.user && token) {
         session.user.id = token.userId || "";

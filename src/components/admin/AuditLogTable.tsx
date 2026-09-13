@@ -55,7 +55,10 @@ export default function AuditLogTable({ logs }: { logs: any[] }) {
         <tbody>
           {currentLogs.length > 0 ? (
             currentLogs.map((log) => (
-              <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <tr
+                key={log.id}
+                className="border-b border-white/5 hover:bg-white/5 transition-colors"
+              >
                 <td className="px-6 py-4 text-foreground">{log.action}</td>
                 <td className="px-6 py-4">{log.resource}</td>
                 <td className="px-6 py-4" suppressHydrationWarning>
@@ -73,7 +76,10 @@ export default function AuditLogTable({ logs }: { logs: any[] }) {
         </tbody>
       </table>
       <div className="p-4 border-t border-white/5 flex justify-between items-center text-sm">
-        <span>Showing {totalItems === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} results</span>
+        <span>
+          Showing {totalItems === 0 ? 0 : startIndex + 1} to{" "}
+          {Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} results
+        </span>
         <div className="space-x-2">
           <button
             onClick={handlePrev}

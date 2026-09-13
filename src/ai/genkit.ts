@@ -1,6 +1,6 @@
-import 'dotenv/config';
-import { genkit } from 'genkit';
-import { groq, gptOssx20b } from 'genkitx-groq';
+import "dotenv/config";
+import { genkit } from "genkit";
+import { groq, gptOssx20b } from "genkitx-groq";
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -43,14 +43,14 @@ import { groq, gptOssx20b } from 'genkitx-groq';
 // build steps — which import this module but never actually call the model —
 // don't need a real Groq key configured. A running server still requires a
 // real key below.
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
 const groqApiKey =
   process.env.GROQ_API_KEY ??
-  (process.env.NODE_ENV === 'test' || isBuildPhase ? 'dummy-key-for-build' : undefined);
+  (process.env.NODE_ENV === "test" || isBuildPhase ? "dummy-key-for-build" : undefined);
 
 if (!groqApiKey) {
   throw new Error(
-    'GROQ_API_KEY is not set. Provide it via environment variables (see .env.example).'
+    "GROQ_API_KEY is not set. Provide it via environment variables (see .env.example).",
   );
 }
 
@@ -76,7 +76,7 @@ export const ai = genkit({
 // `gpt-oss-20b` is Groq's current recommended default for general-purpose
 // low-latency inference. Override via `GROQ_MODEL` if your account still
 // has access to a deprecated model.
-const GROQ_MODEL = process.env.GROQ_MODEL ?? 'openai/gpt-oss-20b';
+const GROQ_MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
 
 /** Model reference flows should use unless they need to override it explicitly. */
 export const defaultModel = `groq/${GROQ_MODEL}`;
@@ -115,9 +115,9 @@ export const securityExplanationModel = gptOssx20b;
  * Prevents rate-limit bottlenecks (HTTP 429) and timeouts during bulk repository scans.
  */
 export const securityExplanationFallbackModels = [
-  'groq/llama-3.3-70b-versatile',
-  'groq/llama-3.1-8b-instant',
-  'groq/mixtral-8x7b-32768',
+  "groq/llama-3.3-70b-versatile",
+  "groq/llama-3.1-8b-instant",
+  "groq/mixtral-8x7b-32768",
 ] as const;
 
 /**
@@ -130,4 +130,3 @@ export function getSecurityExplanationModelChain(): Array<typeof gptOssx20b | st
   }
   return [securityExplanationModel, ...securityExplanationFallbackModels];
 }
-

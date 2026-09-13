@@ -11,15 +11,15 @@
  *   scanWorkerPool.stop();    // Graceful shutdown
  */
 
-import { Worker, Job, UnrecoverableError } from 'bullmq';
-import { redis } from './redis';
-import { scanDLQ, type ScanJobData, updateScanJobProgress } from './scanQueue';
-import { processScanJob } from '@/lib/scanner/scanEngine';
+import { Worker, Job, UnrecoverableError } from "bullmq";
+import { redis } from "./redis";
+import { scanDLQ, type ScanJobData, updateScanJobProgress } from "./scanQueue";
+import { processScanJob } from "@/lib/scanner/scanEngine";
 import {
   InvalidInstallationIdError,
   ScanPersistenceError,
   scanJobCompletion,
-} from '@/lib/scanner/scan-persistence';
+} from "@/lib/scanner/scan-persistence";
 
 /** Maximum concurrent scans. Avoids overwhelming the LLM API and DB connection pool. */
 const DEFAULT_CONCURRENCY = 3;
@@ -64,12 +64,12 @@ class ScanWorkerPool {
    */
   start(): void {
     if (this.running) {
-      console.warn('[WorkerPool] Already running');
+      console.warn("[WorkerPool] Already running");
       return;
     }
 
     this.worker = new Worker<ScanJobData>(
-      'vulnerability-scans',
+      "vulnerability-scans",
       async (job: Job<ScanJobData>) => {
         return await this.processJob(job);
       },
@@ -80,21 +80,25 @@ class ScanWorkerPool {
         lockRenewTime: 30_000, // Renew lock every 30s
         stalledInterval: STALLED_CHECK_INTERVAL_MS,
         maxStalledCount: 1,
-      }
+      },
     );
 
-    this.worker.on('completed', (job) => {
-      console.log(`[WorkerPool] Job ${job.id} completed for ${job.data.repositoryFullName}#${job.data.prNumber}`);
+    this.worker.on("completed", (job) => {
+      console.log(
+        `[WorkerPool] Job ${job.id} completed for ${job.data.repositoryFullName}#${job.data.prNumber}`,
+      );
     });
 
-    this.worker.on('failed', async (job, err) => {
+    this.worker.on("failed", async (job, err) => {
       console.error(`[WorkerPool] Job ${job?.id} failed:`, err.message);
 
       // Route to DLQ on permanent failure
       if (job && job.attemptsMade >= (job.opts.attempts ?? 2)) {
-        console.warn(`[WorkerPool] Routing job ${job.id} to DLQ after ${job.attemptsMade} attempts`);
+        console.warn(
+          `[WorkerPool] Routing job ${job.id} to DLQ after ${job.attemptsMade} attempts`,
+        );
         try {
-          await scanDLQ.add('failed-scan', {
+          await scanDLQ.add("failed-scan", {
             ...job.data,
             error: err.message,
           } as any);
@@ -108,8 +112,8 @@ class ScanWorkerPool {
       }
     });
 
-    this.worker.on('error', (err) => {
-      console.error('[WorkerPool] Worker error:', err);
+    this.worker.on("error", (err) => {
+      console.error("[WorkerPool] Worker error:", err);
     });
 
     this.running = true;
@@ -126,11 +130,11 @@ class ScanWorkerPool {
       return;
     }
 
-    console.log('[WorkerPool] Stopping...');
+    console.log("[WorkerPool] Stopping...");
     await this.worker.close();
     this.worker = null;
     this.running = false;
-    console.log('[WorkerPool] Stopped');
+    console.log("[WorkerPool] Stopped");
   }
 
   /**
@@ -153,16 +157,18 @@ class ScanWorkerPool {
   private async processJob(job: Job<ScanJobData>): Promise<{ scanJobId: string }> {
     const { scanJobId } = job.data;
 
-    console.log(`[WorkerPool] Processing scan job ${job.id} (${job.data.repositoryFullName}#${job.data.prNumber})`);
+    console.log(
+      `[WorkerPool] Processing scan job ${job.id} (${job.data.repositoryFullName}#${job.data.prNumber})`,
+    );
 
     // Mark as processing
     await updateScanJobProgress(scanJobId, {
-      status: 'PROCESSING',
+      status: "PROCESSING",
       startedAt: new Date(),
     });
 
     // Report initial progress
-    await job.updateProgress({ phase: 'starting', scannedFiles: 0 });
+    await job.updateProgress({ phase: "starting", scannedFiles: 0 });
 
     try {
       const result = await processScanJob(job.data, (progress) => {
@@ -178,11 +184,11 @@ class ScanWorkerPool {
 
       return { scanJobId };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
 
       // Mark as failed
       await updateScanJobProgress(scanJobId, {
-        status: 'FAILED',
+        status: "FAILED",
         error: errorMessage,
         completedAt: new Date(),
       }).catch(() => {});
@@ -206,7 +212,7 @@ class ScanWorkerPool {
 // --- Singleton ---
 
 export const scanWorkerPool = new ScanWorkerPool(
-  parseInt(process.env.SCAN_WORKER_CONCURRENCY ?? '3', 10)
+  parseInt(process.env.SCAN_WORKER_CONCURRENCY ?? "3", 10),
 );
 
 /**

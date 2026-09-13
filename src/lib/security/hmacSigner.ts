@@ -30,13 +30,13 @@
  *   const result = admitWebhookRequest(body, secret, sigHeader, tsHeader);
  */
 
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from "crypto";
 
 /** Header name used for HMAC-SHA256 signatures. */
-export const SIGNATURE_HEADER = 'X-SecureFlow-Signature';
+export const SIGNATURE_HEADER = "X-SecureFlow-Signature";
 
 /** Header name for the request timestamp (replay protection). */
-export const TIMESTAMP_HEADER = 'X-SecureFlow-Timestamp';
+export const TIMESTAMP_HEADER = "X-SecureFlow-Timestamp";
 
 /**
  * Version tag on the canonical signature header.
@@ -44,10 +44,10 @@ export const TIMESTAMP_HEADER = 'X-SecureFlow-Timestamp';
  * Must match `SIGNATURE_VERSION` in `src/lib/queue/outbound-dispatch.ts`; the
  * contract test in this module's spec asserts that it does.
  */
-export const SIGNATURE_VERSION = 'v1';
+export const SIGNATURE_VERSION = "v1";
 
 /** Legacy signature prefix: `sha256=<hex>`. */
-const SIGNATURE_PREFIX = 'sha256=';
+const SIGNATURE_PREFIX = "sha256=";
 
 /** SHA-256 hex digest is exactly 64 characters. */
 const SIGNATURE_HEX_LENGTH = 64;
@@ -68,8 +68,7 @@ const TIMESTAMP_AGREEMENT_SECONDS = 1;
 
 /** A parsed `X-SecureFlow-Signature` value. */
 export type ParsedSignature =
-  | { scheme: 'v1'; hex: string; timestampSeconds: number }
-  | { scheme: 'legacy'; hex: string };
+  { scheme: "v1"; hex: string; timestampSeconds: number } | { scheme: "legacy"; hex: string };
 
 /**
  * Sign a payload with the canonical v1 scheme.
@@ -82,11 +81,11 @@ export type ParsedSignature =
 export function signPayloadV1(
   payload: string,
   secret: string,
-  timestampSeconds: number = Math.floor(Date.now() / 1000)
+  timestampSeconds: number = Math.floor(Date.now() / 1000),
 ): string {
-  const digest = createHmac('sha256', secret)
-    .update(`${timestampSeconds}.${payload}`, 'utf8')
-    .digest('hex');
+  const digest = createHmac("sha256", secret)
+    .update(`${timestampSeconds}.${payload}`, "utf8")
+    .digest("hex");
   return `t=${timestampSeconds},${SIGNATURE_VERSION}=${digest}`;
 }
 
@@ -103,9 +102,7 @@ export function signPayloadV1(
  * @returns The signature in `sha256=<hex>` format.
  */
 export function signPayload(payload: string, secret: string): string {
-  const digest = createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex');
+  const digest = createHmac("sha256", secret).update(payload, "utf8").digest("hex");
   return `${SIGNATURE_PREFIX}${digest}`;
 }
 
@@ -118,23 +115,23 @@ export function signPayload(payload: string, secret: string): string {
  * a zero-length buffer and reach the comparison.
  */
 export function parseSignatureHeader(
-  signatureHeader: string | null | undefined
+  signatureHeader: string | null | undefined,
 ): ParsedSignature | null {
-  if (typeof signatureHeader !== 'string') return null;
+  if (typeof signatureHeader !== "string") return null;
 
   const trimmed = signatureHeader.trim();
   if (!trimmed) return null;
 
   if (trimmed.toLowerCase().startsWith(SIGNATURE_PREFIX)) {
     const hex = normalizeHex(trimmed.slice(SIGNATURE_PREFIX.length));
-    return hex ? { scheme: 'legacy', hex } : null;
+    return hex ? { scheme: "legacy", hex } : null;
   }
 
   // v1: comma-separated `key=value` pairs, order-independent, so a sender that
   // emits `v1=...,t=...` is not rejected over field order.
   const fields = new Map<string, string>();
-  for (const segment of trimmed.split(',')) {
-    const eq = segment.indexOf('=');
+  for (const segment of trimmed.split(",")) {
+    const eq = segment.indexOf("=");
     if (eq <= 0) continue;
     const key = segment.slice(0, eq).trim().toLowerCase();
     const value = segment.slice(eq + 1).trim();
@@ -143,7 +140,7 @@ export function parseSignatureHeader(
     if (!fields.has(key)) fields.set(key, value);
   }
 
-  const rawTimestamp = fields.get('t');
+  const rawTimestamp = fields.get("t");
   const hex = normalizeHex(fields.get(SIGNATURE_VERSION));
   if (rawTimestamp === undefined || !hex) return null;
 
@@ -153,12 +150,12 @@ export function parseSignatureHeader(
   const timestampSeconds = Number(rawTimestamp);
   if (!Number.isSafeInteger(timestampSeconds)) return null;
 
-  return { scheme: 'v1', hex, timestampSeconds };
+  return { scheme: "v1", hex, timestampSeconds };
 }
 
 /** Exactly 64 hex characters, lowercased. `null` for anything else. */
 function normalizeHex(value: string | null | undefined): string | null {
-  if (typeof value !== 'string') return null;
+  if (typeof value !== "string") return null;
   if (value.length !== SIGNATURE_HEX_LENGTH) return null;
   if (!/^[0-9a-fA-F]+$/.test(value)) return null;
   return value.toLowerCase();
@@ -179,7 +176,7 @@ function normalizeHex(value: string | null | undefined): string | null {
 export function verifySignature(
   payload: string,
   secret: string,
-  signatureHeader: string | null | undefined
+  signatureHeader: string | null | undefined,
 ): boolean {
   const parsed = parseSignatureHeader(signatureHeader);
   if (!parsed) return false;
@@ -189,13 +186,12 @@ export function verifySignature(
 
 /** Constant-time comparison of the expected digest against a parsed header. */
 function digestMatches(payload: string, secret: string, parsed: ParsedSignature): boolean {
-  const material =
-    parsed.scheme === 'v1' ? `${parsed.timestampSeconds}.${payload}` : payload;
+  const material = parsed.scheme === "v1" ? `${parsed.timestampSeconds}.${payload}` : payload;
 
-  const digest = createHmac('sha256', secret).update(material, 'utf8').digest('hex');
+  const digest = createHmac("sha256", secret).update(material, "utf8").digest("hex");
 
-  const expected = Buffer.from(parsed.hex, 'hex');
-  const provided = Buffer.from(digest, 'hex');
+  const expected = Buffer.from(parsed.hex, "hex");
+  const provided = Buffer.from(digest, "hex");
 
   if (provided.length !== expected.length) return false;
 
@@ -209,7 +205,7 @@ function digestMatches(payload: string, secret: string, parsed: ParsedSignature)
  * @returns The parsed timestamp in milliseconds, or `null` if invalid.
  */
 export function parseTimestamp(timestampHeader: string | null | undefined): number | null {
-  if (typeof timestampHeader !== 'string') return null;
+  if (typeof timestampHeader !== "string") return null;
 
   const trimmed = timestampHeader.trim();
   if (!trimmed) return null;
@@ -230,7 +226,7 @@ export function parseTimestamp(timestampHeader: string | null | undefined): numb
  */
 export function isWithinReplayWindow(
   timestampMs: number,
-  toleranceSeconds: number = DEFAULT_REPLAY_WINDOW_SECONDS
+  toleranceSeconds: number = DEFAULT_REPLAY_WINDOW_SECONDS,
 ): boolean {
   const now = Date.now();
   const toleranceMs = toleranceSeconds * 1000;
@@ -261,48 +257,48 @@ export function admitWebhookRequest(
   secret: string,
   signatureHeader: string | null | undefined,
   timestampHeader: string | null | undefined,
-  replayWindowSeconds: number = DEFAULT_REPLAY_WINDOW_SECONDS
-): { ok: true; scheme: 'v1' | 'legacy' } | { ok: false; status: number; message: string } {
+  replayWindowSeconds: number = DEFAULT_REPLAY_WINDOW_SECONDS,
+): { ok: true; scheme: "v1" | "legacy" } | { ok: false; status: number; message: string } {
   // 1. Signature required
   if (!signatureHeader) {
-    return { ok: false, status: 401, message: 'Missing signature header' };
+    return { ok: false, status: 401, message: "Missing signature header" };
   }
 
   // 2. Timestamp required for replay protection
   if (!timestampHeader) {
-    return { ok: false, status: 401, message: 'Missing timestamp header' };
+    return { ok: false, status: 401, message: "Missing timestamp header" };
   }
 
   const timestampMs = parseTimestamp(timestampHeader);
   if (timestampMs === null) {
-    return { ok: false, status: 400, message: 'Invalid timestamp format' };
+    return { ok: false, status: 400, message: "Invalid timestamp format" };
   }
 
   // 3. Check replay window (reject old requests)
   if (!isWithinReplayWindow(timestampMs, replayWindowSeconds)) {
-    return { ok: false, status: 401, message: 'Request timestamp outside allowed window' };
+    return { ok: false, status: 401, message: "Request timestamp outside allowed window" };
   }
 
   const parsed = parseSignatureHeader(signatureHeader);
   if (!parsed) {
-    return { ok: false, status: 401, message: 'Invalid signature' };
+    return { ok: false, status: 401, message: "Invalid signature" };
   }
 
   // 4. For v1, the signed timestamp and the header must be the same instant.
-  if (parsed.scheme === 'v1') {
+  if (parsed.scheme === "v1") {
     const skewSeconds = Math.abs(parsed.timestampSeconds - timestampMs / 1000);
     if (skewSeconds > TIMESTAMP_AGREEMENT_SECONDS) {
       return {
         ok: false,
         status: 401,
-        message: 'Signature timestamp does not match timestamp header',
+        message: "Signature timestamp does not match timestamp header",
       };
     }
   }
 
   // 5. Verify signature (constant-time)
   if (!digestMatches(payload, secret, parsed)) {
-    return { ok: false, status: 401, message: 'Invalid signature' };
+    return { ok: false, status: 401, message: "Invalid signature" };
   }
 
   return { ok: true, scheme: parsed.scheme };

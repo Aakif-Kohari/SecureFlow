@@ -7,7 +7,7 @@
  */
 
 export interface LLMProviderSecurityConfig {
-  provider: 'groq-enterprise' | 'local-self-hosted' | 'custom-tee-enclave';
+  provider: "groq-enterprise" | "local-self-hosted" | "custom-tee-enclave";
   zeroDataRetention: boolean;
   endpointUrl?: string;
   maxRetries?: number;
@@ -18,7 +18,7 @@ export interface LLMProviderSecurityConfig {
 }
 
 export const DEFAULT_ENTERPRISE_SECURITY_CONFIG: LLMProviderSecurityConfig = {
-  provider: 'groq-enterprise',
+  provider: "groq-enterprise",
   zeroDataRetention: true,
   enablePrecomputationScrubbing: true,
   enableEntropyMasking: true,
@@ -29,18 +29,20 @@ export const DEFAULT_ENTERPRISE_SECURITY_CONFIG: LLMProviderSecurityConfig = {
 /**
  * Returns customized HTTP headers for enterprise zero-data-retention APIs.
  */
-export function getEnterprisePrivacyHeaders(config: LLMProviderSecurityConfig = DEFAULT_ENTERPRISE_SECURITY_CONFIG): Record<string, string> {
+export function getEnterprisePrivacyHeaders(
+  config: LLMProviderSecurityConfig = DEFAULT_ENTERPRISE_SECURITY_CONFIG,
+): Record<string, string> {
   const headers: Record<string, string> = {};
 
   if (config.zeroDataRetention) {
-    headers['X-Enterprise-Zero-Retention'] = 'true';
-    headers['X-Data-Opt-Out'] = '1';
-    headers['X-No-Model-Training'] = 'true';
+    headers["X-Enterprise-Zero-Retention"] = "true";
+    headers["X-Data-Opt-Out"] = "1";
+    headers["X-No-Model-Training"] = "true";
   }
 
-  if (config.provider === 'custom-tee-enclave') {
-    headers['X-TEE-Attestation-Required'] = 'true';
-    headers['X-Enclave-Mode'] = 'isolated';
+  if (config.provider === "custom-tee-enclave") {
+    headers["X-TEE-Attestation-Required"] = "true";
+    headers["X-Enclave-Mode"] = "isolated";
   }
 
   return headers;
@@ -52,12 +54,12 @@ export function getEnterprisePrivacyHeaders(config: LLMProviderSecurityConfig = 
 export function isLocalEndpoint(url: string): boolean {
   if (!url) return false;
   return (
-    url.includes('localhost') ||
-    url.includes('127.0.0.1') ||
-    url.includes('0.0.0.0') ||
-    url.includes('10.0.') ||
-    url.includes('192.168.') ||
-    url.endsWith('.local')
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("0.0.0.0") ||
+    url.includes("10.0.") ||
+    url.includes("192.168.") ||
+    url.endsWith(".local")
   );
 }
 
@@ -77,7 +79,7 @@ export class EgressSecurityAuditor {
     provider: string,
     fileCount: number,
     secretsRedactedCount: number,
-    zeroRetentionEnforced: boolean
+    zeroRetentionEnforced: boolean,
   ): void {
     const entry = {
       timestamp: Date.now(),

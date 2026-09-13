@@ -15,8 +15,8 @@
  */
 
 export type LeaderboardEvent =
-  | { type: 'update'; contributors: unknown[]; timestamp: number }
-  | { type: 'error'; message: string };
+  | { type: "update"; contributors: unknown[]; timestamp: number }
+  | { type: "error"; message: string };
 
 export type LeaderboardSubscriber = (event: LeaderboardEvent) => void;
 
@@ -47,7 +47,7 @@ export class LeaderboardBroadcaster {
 
   constructor(
     private readonly loader: LeaderboardLoader,
-    options: LeaderboardBroadcasterOptions = {}
+    options: LeaderboardBroadcasterOptions = {},
   ) {
     this.intervalMs = options.intervalMs ?? DEFAULT_LEADERBOARD_INTERVAL_MS;
     this.limit = options.limit ?? DEFAULT_LEADERBOARD_LIMIT;
@@ -132,12 +132,12 @@ export class LeaderboardBroadcaster {
 
     try {
       const contributors = await this.loader(this.limit);
-      this.emit({ type: 'update', contributors, timestamp: this.now() });
+      this.emit({ type: "update", contributors, timestamp: this.now() });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load leaderboard data';
+      const message = err instanceof Error ? err.message : "Failed to load leaderboard data";
       // A transient database error is reported to viewers but does not stop the
       // poll — the next tick may well succeed.
-      this.emit({ type: 'error', message });
+      this.emit({ type: "error", message });
     } finally {
       this.inFlight = false;
     }
@@ -167,7 +167,7 @@ let sharedBroadcaster: LeaderboardBroadcaster | null = null;
  */
 export function getLeaderboardBroadcaster(
   loader: LeaderboardLoader,
-  options?: LeaderboardBroadcasterOptions
+  options?: LeaderboardBroadcasterOptions,
 ): LeaderboardBroadcaster {
   if (sharedBroadcaster === null) {
     sharedBroadcaster = new LeaderboardBroadcaster(loader, options);

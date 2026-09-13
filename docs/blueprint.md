@@ -1,6 +1,6 @@
 # **App Name**: SecureFlow
 
-*"In this heist, we're not stealing — we're protecting." SecureFlow casts every Pull Request as a member of the crew trying to reach The Vault (your codebase), with **The Professor** — SecureFlow's AI mastermind — checking credentials at the door before any breach gets through.*
+_"In this heist, we're not stealing — we're protecting." SecureFlow casts every Pull Request as a member of the crew trying to reach The Vault (your codebase), with **The Professor** — SecureFlow's AI mastermind — checking credentials at the door before any breach gets through._
 
 ## Core Features:
 
@@ -26,15 +26,15 @@
 
 Use these terms consistently across UI copy, docs, and marketing surfaces so the theme stays coherent app-wide:
 
-| Theme Term | Refers To |
-|---|---|
-| The Professor | The AI security reasoner/persona behind explanations and remediation |
-| The Vault | The codebase / protected repository |
-| Mission Control | Main dashboard overview (`/dashboard`) |
-| Breach Attempts | Security findings page (`/dashboard/findings`) |
-| Defense Strategy | Policy management page (`/dashboard/policies`) |
-| Vault Logs | Audit log page (`/dashboard/audit`) |
-| The Resistance | SecureFlow's users/community defending their codebases |
-| Bella Ciao | Tagline motif used for "all clear" / passed-audit moments |
+| Theme Term       | Refers To                                                            |
+| ---------------- | -------------------------------------------------------------------- |
+| The Professor    | The AI security reasoner/persona behind explanations and remediation |
+| The Vault        | The codebase / protected repository                                  |
+| Mission Control  | Main dashboard overview (`/dashboard`)                               |
+| Breach Attempts  | Security findings page (`/dashboard/findings`)                       |
+| Defense Strategy | Policy management page (`/dashboard/policies`)                       |
+| Vault Logs       | Audit log page (`/dashboard/audit`)                                  |
+| The Resistance   | SecureFlow's users/community defending their codebases               |
+| Bella Ciao       | Tagline motif used for "all clear" / passed-audit moments            |
 
 Keep the tone confident and cinematic, never juvenile — SecureFlow is a serious security tool wearing a fun theme, not the other way around.

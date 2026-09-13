@@ -40,9 +40,9 @@ export default async function LoginPage({
         {/* Server Action Form to trigger Auth.js SignIn */}
         <form className="w-full" action={handleGithubSignIn}>
           <input type="hidden" name="callbackUrl" value={callbackUrl || ""} />
-          <Button 
-            type="submit" 
-            size="lg" 
+          <Button
+            type="submit"
+            size="lg"
             className="w-full bg-primary text-background hover:bg-primary/90 glow-primary font-semibold h-12 text-md"
           >
             <GitBranch className="w-5 h-5 mr-2" />
@@ -55,7 +55,10 @@ export default async function LoginPage({
             <Shield className="w-4 h-4 text-green-400" />
             Secure, automated OAuth login
           </div>
-          <Link href="/" className="text-sm text-muted-foreground hover:text-white transition-colors">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:text-white transition-colors"
+          >
             ← Back to home
           </Link>
         </div>

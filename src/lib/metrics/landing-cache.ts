@@ -57,7 +57,7 @@ interface CacheState<T> {
  */
 export function createTtlCache<T>(
   load: () => Promise<T>,
-  options: TtlCacheOptions = {}
+  options: TtlCacheOptions = {},
 ): {
   get: () => Promise<T>;
   peek: () => T | null;

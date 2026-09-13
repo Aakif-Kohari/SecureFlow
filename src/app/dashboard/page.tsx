@@ -18,7 +18,7 @@ export default async function OverviewPage() {
 
   // 0. Auto-sync repositories for returning users or check GitHub App status (#634)
   let repoCount = await prisma.repository.count({
-    where: { userId, isActive: true }
+    where: { userId, isActive: true },
   });
 
   let needsGitHubAppInstall = false;
@@ -28,7 +28,7 @@ export default async function OverviewPage() {
       const syncResult = await syncUserRepositories(
         userId,
         (session.user as any).githubLogin,
-        (session as any).accessToken
+        (session as any).accessToken,
       );
       if (syncResult.synced > 0) {
         repoCount = syncResult.synced;
@@ -48,21 +48,19 @@ export default async function OverviewPage() {
   // owns — including the free-text notes nothing here renders (#689).
   const { fingerprints: suppressedFingerprints } = await getSuppressedFingerprints(userId);
   const notDismissed =
-    suppressedFingerprints.length > 0
-      ? { fingerprint: { notIn: suppressedFingerprints } }
-      : {};
+    suppressedFingerprints.length > 0 ? { fingerprint: { notIn: suppressedFingerprints } } : {};
 
   // 1. Fetch High-level Stats (Filtered by user's repositories)
   const totalScans = await prisma.scanResult.count({
-    where: { pullRequest: { repository: { userId } } }
+    where: { pullRequest: { repository: { userId } } },
   });
 
   const blockedPRs = await prisma.pullRequest.count({
-    where: { status: 'BLOCKED', repository: { userId } }
+    where: { status: "BLOCKED", repository: { userId } },
   });
 
   const approvedPRs = await prisma.pullRequest.count({
-    where: { status: 'PASS', repository: { userId } }
+    where: { status: "PASS", repository: { userId } },
   });
 
   // `Finding.type` and `Finding.severity` are Prisma enums (#633), so the
@@ -73,21 +71,21 @@ export default async function OverviewPage() {
     where: {
       type: "SECRET",
       scanResult: { pullRequest: { repository: { userId } } },
-      ...notDismissed
-    }
+      ...notDismissed,
+    },
   });
 
   // 2. Fetch Recent Pull Requests
   const recentPRsRaw = await prisma.pullRequest.findMany({
     where: { repository: { userId } },
     take: 5,
-    orderBy: { createdAt: 'desc' },
-    include: { repository: true }
+    orderBy: { createdAt: "desc" },
+    include: { repository: true },
   });
   const recentPRs = recentPRsRaw.map((pr: any) => ({
     ...pr,
     githubId: pr.githubId.toString(),
-    repository: { ...pr.repository, githubId: pr.repository.githubId.toString() }
+    repository: { ...pr.repository, githubId: pr.repository.githubId.toString() },
   }));
 
   // 3. Fetch Severity Distribution (dismissed findings excluded)
@@ -111,14 +109,14 @@ export default async function OverviewPage() {
   const recentScans = await prisma.scanResult.findMany({
     where: {
       createdAt: { gte: sevenDaysAgo },
-      pullRequest: { repository: { userId } }
+      pullRequest: { repository: { userId } },
     },
-    select: { createdAt: true }
+    select: { createdAt: true },
   });
 
   // Group scans by date
   const scansByDate = recentScans.reduce((acc: Record<string, number>, scan: any) => {
-    const date = scan.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const date = scan.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {});
@@ -127,7 +125,7 @@ export default async function OverviewPage() {
   const chartData = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     return { name: dateStr, scans: scansByDate[dateStr] || 0 };
   });
 
@@ -135,14 +133,14 @@ export default async function OverviewPage() {
   const distribution = { critical, high, medium, low };
 
   return (
-    <DashboardClient 
-      stats={stats} 
-      prs={recentPRs} 
-      distribution={distribution} 
-      chartData={chartData} 
+    <DashboardClient
+      stats={stats}
+      prs={recentPRs}
+      distribution={distribution}
+      chartData={chartData}
       repoCount={repoCount}
       needsGitHubAppInstall={needsGitHubAppInstall}
-      githubAppUrl={process.env.GITHUB_APP_URL || '/setup'}
+      githubAppUrl={process.env.GITHUB_APP_URL || "/setup"}
     />
   );
 }

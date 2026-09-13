@@ -479,7 +479,7 @@ describe("Expanded Signature Registry Catalog and Multi-Language Detection", () 
       "repo",
       "main.go",
       "RCE",
-      "cmd := exec.Command(\"sh\", \"-c\", fmt.Sprintf(\"cat %s\", filePath))",
+      'cmd := exec.Command("sh", "-c", fmt.Sprintf("cat %s", filePath))',
     );
     expect(goExecRes.matchedSignatures.some((s) => s.id === "SIG-GO-001")).toBe(true);
 

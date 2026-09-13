@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { addWebhookJob } from '@/lib/queue/webhookQueue';
-import { withErrorHandler, AppError } from '@/lib/middleware/error-handler';
-import { withRateLimit } from '@/lib/middleware/rate-limit';
+import { NextRequest, NextResponse } from "next/server";
+import { addWebhookJob } from "@/lib/queue/webhookQueue";
+import { withErrorHandler, AppError } from "@/lib/middleware/error-handler";
+import { withRateLimit } from "@/lib/middleware/rate-limit";
 import {
   isPayloadTooLarge,
   isTrackedEvent,
@@ -17,6 +17,7 @@ import prisma from '@/lib/prisma';
 import { Octokit } from 'octokit';
 import { parseManifestFile } from '@/lib/sbom/dependency-parser';
 import { matchVulnerabilities } from '@/lib/sbom/vulnerability-matcher';
+import { env } from "@/lib/env";
 
 /**
  * GitHub webhook ingest (#562).
@@ -42,13 +43,13 @@ async function fetchFileContent(
   owner: string,
   repo: string,
   path: string,
-  ref: string
+  ref: string,
 ) {
   try {
     // Added .rest namespace
     const { data } = await octokit.rest.repos.getContent({ owner, repo, path, ref });
-    if ('content' in data && data.content) {
-      return Buffer.from(data.content, 'base64').toString('utf-8');
+    if ("content" in data && data.content) {
+      return Buffer.from(data.content, "base64").toString("utf-8");
     }
     return null;
   } catch (error) {
@@ -65,13 +66,15 @@ export async function handlePullRequestSynchronize(payload: Record<string, unkno
   const repoName = payload.repository?.full_name;
   const headSha = payload.pull_request?.head?.sha;
 
-  console.log(`[PR_SYNC] New code pushed to PR #${prNumber} on repo ${repoName}. Head SHA: ${headSha}`);
+  console.log(
+    `[PR_SYNC] New code pushed to PR #${prNumber} on repo ${repoName}. Head SHA: ${headSha}`,
+  );
 
   // Extract necessary fields for SBOM scanning
   const { pull_request, repository, installation } = payload;
 
   if (!pull_request || !repository || !installation) {
-    console.warn('[PR_SYNC] Missing required fields for SBOM processing');
+    console.warn("[PR_SYNC] Missing required fields for SBOM processing");
     return;
   }
 
@@ -82,7 +85,7 @@ export async function handlePullRequestSynchronize(payload: Record<string, unkno
       update: {
         title: pull_request.title,
         state: pull_request.state,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       create: {
         githubPrId: pull_request.id.toString(),
@@ -96,11 +99,11 @@ export async function handlePullRequestSynchronize(payload: Record<string, unkno
             create: {
               githubRepoId: repository.id.toString(),
               name: repository.full_name,
-              owner: repository.owner.login
-            }
-          }
-        }
-      }
+              owner: repository.owner.login,
+            },
+          },
+        },
+      },
     });
 
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
@@ -123,11 +126,17 @@ export async function handlePullRequestSynchronize(payload: Record<string, unkno
 
     for (const file of files) {
       // Detect manifest files
-      if (file.filename.endsWith('package.json') || file.filename.endsWith('requirements.txt')) {
+      if (file.filename.endsWith("package.json") || file.filename.endsWith("requirements.txt")) {
         console.log(`[SBOM] Detected manifest: ${file.filename}`);
 
         // Fetch content (using PR head ref to get the version being merged)
-        const content = await fetchFileContent(octokit, owner, repo, file.filename, pull_request.head.ref);
+        const content = await fetchFileContent(
+          octokit,
+          owner,
+          repo,
+          file.filename,
+          pull_request.head.ref,
+        );
 
         if (content) {
           // Parse dependencies
@@ -143,22 +152,22 @@ export async function handlePullRequestSynchronize(payload: Record<string, unkno
             await prisma.finding.create({
               data: {
                 pullRequestId: prRecord.id,
-                type: 'DEPENDENCY_VULNERABILITY',
+                type: "DEPENDENCY_VULNERABILITY",
                 severity: vuln.severity,
                 file: file.filename,
                 description: `${vuln.dependency.name}@${vuln.dependency.version}: ${vuln.description}`,
-                codeSnippet: `Dependency: ${vuln.dependency.name}\nCurrent: ${vuln.dependency.version}\nPatched: ${vuln.patchedVersion || 'Unknown'}`,
+                codeSnippet: `Dependency: ${vuln.dependency.name}\nCurrent: ${vuln.dependency.version}\nPatched: ${vuln.patchedVersion || "Unknown"}`,
                 remediation: `Update ${vuln.dependency.name} to version ${vuln.patchedVersion} or higher.`,
                 line: 0, // Line 0 indicates manifest-level finding
-                aiExplanation: `Detected known vulnerability ${vuln.cveId} in ${vuln.dependency.name}.`
-              }
+                aiExplanation: `Detected known vulnerability ${vuln.cveId} in ${vuln.dependency.name}.`,
+              },
             });
           }
         }
       }
     }
   } catch (error) {
-    console.error('[PR_SYNC] Error during SBOM processing:', error);
+    console.error("[PR_SYNC] Error during SBOM processing:", error);
     // Don't throw - we still want to queue the job even if SBOM fails
   }
 }
@@ -171,12 +180,14 @@ export async function handleBranchProtectionMutation(payload: Record<string, unk
   const ruleName = payload.rule?.name;
   const repoName = payload.repository?.full_name;
 
-  console.warn(`[SECURITY_GOVERNANCE] Branch protection rule '${ruleName}' was ${action} on repo ${repoName}.`);
+  console.warn(
+    `[SECURITY_GOVERNANCE] Branch protection rule '${ruleName}' was ${action} on repo ${repoName}.`,
+  );
   // Hook up secondary administrative logging mechanisms or compliance monitoring flags here
 }
 
 const handler = withErrorHandler(async function POST(req: NextRequest) {
-  const maxBytes = parseMaxWebhookBytes(process.env.GITHUB_WEBHOOK_MAX_BYTES);
+  const maxBytes = parseMaxWebhookBytes(env.GITHUB_WEBHOOK_MAX_BYTES);
 
   // 1. Size, from the header, before reading a single byte.
   //
@@ -184,16 +195,10 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   // and no cap, one source could make the process buffer ~1.25 GB per minute of
   // unverified bytes — and since verification came after the read, without ever
   // holding a valid signature.
-  if (isPayloadTooLarge(req.headers.get('content-length'), maxBytes)) {
-    throw new AppError('Webhook payload exceeds the configured size limit', 413);
+  if (isPayloadTooLarge(req.headers.get("content-length"), maxBytes)) {
+    throw new AppError("Webhook payload exceeds the configured size limit", 413);
   }
-
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    // A deployment fault rather than a caller fault: not operational, so the
-    // error handler returns a generic message instead of naming the variable.
-    throw new AppError('GITHUB_WEBHOOK_SECRET is not set', 500, false);
-  }
+  const webhookSecret = env.GITHUB_WEBHOOK_SECRET;
 
   // 2. Delivery ID, required.
   //
@@ -201,14 +206,16 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   // delivery without the header used to skip the duplicate check entirely — and
   // with `attempts: 3` on the queue, a job failing after the scan but before the
   // completion record was fully re-processed on every retry.
-  const deliveryId = normalizeDeliveryId(req.headers.get('x-github-delivery'));
+  const deliveryId = normalizeDeliveryId(req.headers.get("x-github-delivery"));
   if (!deliveryId) {
-    throw new AppError('Missing or invalid x-github-delivery header', 400);
+    throw new AppError("Missing or invalid x-github-delivery header", 400);
   }
 
-  const signatureHex = parseGithubSignature(req.headers.get('x-hub-signature-256'));
+  const signatureHex = parseGithubSignature(
+    req.headers.get("x-hub-signature-256") ?? req.headers.get("X-Hub-Signature-256"),
+  );
   if (!signatureHex) {
-    throw new AppError('Missing or invalid x-hub-signature-256 header', 401);
+    throw new AppError("Missing or invalid x-hub-signature-256 header", 401);
   }
 
   // Read the raw text so the signature is verified over the exact bytes sent,
@@ -219,12 +226,12 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
   // chunked request legitimately omits the header, which is why the first check
   // cannot be the only one.
   if (isPayloadTooLarge(payloadByteLength(rawPayloadText), maxBytes)) {
-    throw new AppError('Webhook payload exceeds the configured size limit', 413);
+    throw new AppError("Webhook payload exceeds the configured size limit", 413);
   }
 
   // 3. Signature, before the body is interpreted in any way.
   if (!verifySignature(rawPayloadText, webhookSecret, signatureHex)) {
-    throw new AppError('Invalid GitHub webhook signature', 401);
+    throw new AppError("Invalid GitHub webhook signature", 401);
   }
 
   // 4. Parse.
@@ -238,26 +245,26 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
     throw new AppError(parsed.reason, 400);
   }
 
-  const event = req.headers.get('x-github-event');
+  const event = req.headers.get("x-github-event");
 
   // 5. Dispatch — now that the delivery is known to be genuine.
-  if (event === 'ping') {
+  if (event === "ping") {
     // Answered only after verification, so a successful ping is real evidence
     // that the configured secret matches ours.
     return NextResponse.json(
-      { status: 'pong', deliveryId, message: 'Webhook signature verified' },
-      { status: 200 }
+      { status: "pong", deliveryId, message: "Webhook signature verified" },
+      { status: 200 },
     );
   }
 
   if (!isTrackedEvent(event)) {
-    return NextResponse.json({ message: 'Event not tracked', deliveryId }, { status: 200 });
+    return NextResponse.json({ message: "Event not tracked", deliveryId }, { status: 200 });
   }
 
   // Route event actions
-  if (event === 'pull_request' && parsed.payload.action === 'synchronize') {
+  if (event === "pull_request" && parsed.payload.action === "synchronize") {
     await handlePullRequestSynchronize(parsed.payload);
-  } else if (event === 'branch_protection_rule') {
+  } else if (event === "branch_protection_rule") {
     await handleBranchProtectionMutation(parsed.payload);
   }
 
@@ -275,14 +282,14 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
       deliveryId,
       event,
     },
-    { jobId: webhookJobId(deliveryId) }
+    { jobId: webhookJobId(deliveryId) },
   );
 
-  return NextResponse.json({ status: 'queued', deliveryId }, { status: 202 });
+  return NextResponse.json({ status: "queued", deliveryId }, { status: 202 });
 });
 
 export const POST = withRateLimit(handler, {
   limit: 50,
   windowSeconds: 60,
-  keyPrefix: 'webhook:github',
+  keyPrefix: "webhook:github",
 });

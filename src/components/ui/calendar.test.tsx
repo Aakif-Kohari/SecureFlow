@@ -17,13 +17,7 @@ describe("Calendar component", () => {
   it("handles date selection on click", () => {
     const handleSelect = vi.fn();
     const testDate = new Date(2026, 7, 1);
-    render(
-      <Calendar
-        defaultMonth={testDate}
-        mode="single"
-        onSelect={handleSelect}
-      />
-    );
+    render(<Calendar defaultMonth={testDate} mode="single" onSelect={handleSelect} />);
 
     const day15 = screen.getByText("15");
     fireEvent.click(day15);
@@ -33,10 +27,7 @@ describe("Calendar component", () => {
   it("renders custom classNames", () => {
     const testDate = new Date(2026, 7, 1);
     const { container } = render(
-      <Calendar
-        defaultMonth={testDate}
-        className="custom-calendar-root"
-      />
+      <Calendar defaultMonth={testDate} className="custom-calendar-root" />,
     );
 
     expect(container.querySelector(".custom-calendar-root")).toBeInTheDocument();

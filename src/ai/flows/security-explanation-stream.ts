@@ -1,9 +1,10 @@
 import "dotenv/config";
-import Groq from 'groq-sdk';
-import { getVulnerabilityMetadata } from '../../database/vulnerabilityDb';
-import { __internal, isRateLimitError, isTimeoutError, withRetry } from './security-helpers';
-import { ai, securityExplanationModel, getSecurityExplanationModelChain } from '@/ai/genkit';
-import { executeWithFallbackAndRetry } from '../resilience';
+import Groq from "groq-sdk";
+import { getVulnerabilityMetadata } from "../../database/vulnerabilityDb";
+import { __internal, isRateLimitError, isTimeoutError, withRetry } from "./security-helpers";
+import { ai, securityExplanationModel, getSecurityExplanationModelChain } from "@/ai/genkit";
+import { env } from "@/lib/env";
+import { executeWithFallbackAndRetry } from "../resilience";
 import {
   AISecurityExplanationApiSchema,
   AISecurityExplanationInputSchema,
@@ -11,9 +12,9 @@ import {
   SYSTEM_PROMPT,
   type AISecurityExplanationInput,
   type AISecurityExplanationOutput,
-} from './security-explanation-schemas';
+} from "./security-explanation-schemas";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build' });
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
 interface StreamOptions {
   vulnerabilityId: string;
@@ -24,9 +25,13 @@ interface StreamOptions {
 /**
  * Highly optimized, low-latency streaming pipeline for real-time security explanations.
  */
-export async function streamSecurityExplanation({ vulnerabilityId, sourceCode, onChunk }: StreamOptions): Promise<void> {
+export async function streamSecurityExplanation({
+  vulnerabilityId,
+  sourceCode,
+  onChunk,
+}: StreamOptions): Promise<void> {
   try {
-    // Optimization 1: Execute local metadata lookups concurrently with the initial stream preparation 
+    // Optimization 1: Execute local metadata lookups concurrently with the initial stream preparation
     const metadataPromise = getVulnerabilityMetadata(vulnerabilityId);
 
     const systemPrompt = `You are an expert security engineer. Analyze the provided source code for the specified vulnerability.
@@ -36,7 +41,7 @@ Provide a concise explanation, architectural impact, and immediate remediation s
 
     // Resolve concurrent metadata lookup
     const metadata = await metadataPromise;
-    const contextualPrompt = metadata 
+    const contextualPrompt = metadata
       ? `${userPrompt}\nContextual Details: ${metadata.description} (CVSS: ${metadata.cvss})`
       : userPrompt;
 
@@ -44,14 +49,14 @@ Provide a concise explanation, architectural impact, and immediate remediation s
     // - Set 'stream: true' for instantaneous chunk emissions
     // - Use Groq's low-latency streaming inference
     const responseStream = await groq.chat.completions.create({
-      model: process.env.STREAM_AI_MODEL || process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+      model: process.env.STREAM_AI_MODEL || process.env.GROQ_MODEL || "llama-3.1-8b-instant",
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: contextualPrompt }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: contextualPrompt },
       ],
       stream: true,
-      temperature: 0.1,      // Low temperature reduces sampling variance latency
-      max_tokens: 800        // Cap max tokens to bound total transmission time
+      temperature: 0.1, // Low temperature reduces sampling variance latency
+      max_tokens: 800, // Cap max tokens to bound total transmission time
     });
 
     // Optimization 3: Inline memory handling utilizing single string buffers instead of array push/join allocations
@@ -62,23 +67,24 @@ Provide a concise explanation, architectural impact, and immediate remediation s
       }
     }
   } catch (error) {
-    console.error('[AI_STREAM_ERROR] Critical failure in latency-optimized streaming pipeline:', error);
-    throw new Error('Streaming optimization pipeline encountered an internal execution fault.');
+    console.error(
+      "[AI_STREAM_ERROR] Critical failure in latency-optimized streaming pipeline:",
+      error,
+    );
+    throw new Error("Streaming optimization pipeline encountered an internal execution fault.");
   }
 }
 
 const { detectPromptInjection, contradictsSeverity, buildPrompt } = __internal;
 
 /** Streamed while the explanation text is still arriving (typewriter-style UI). */
-export type StreamExplanationChunkEvent = { type: 'chunk'; explanation: string };
+export type StreamExplanationChunkEvent = { type: "chunk"; explanation: string };
 /** Emitted once, after the full response has arrived and all safety checks have run. */
-export type StreamExplanationDoneEvent = { type: 'done'; result: AISecurityExplanationOutput };
+export type StreamExplanationDoneEvent = { type: "done"; result: AISecurityExplanationOutput };
 /** Emitted if generation fails partway through; the caller should fall back gracefully. */
-export type StreamExplanationErrorEvent = { type: 'error'; message: string };
+export type StreamExplanationErrorEvent = { type: "error"; message: string };
 export type StreamExplanationEvent =
-  | StreamExplanationChunkEvent
-  | StreamExplanationDoneEvent
-  | StreamExplanationErrorEvent;
+  StreamExplanationChunkEvent | StreamExplanationDoneEvent | StreamExplanationErrorEvent;
 
 /**
  * Streaming variant of developerReceivesAISecurityExplanations.
@@ -96,7 +102,7 @@ export type StreamExplanationEvent =
  */
 export async function* streamDeveloperSecurityExplanations(
   input: AISecurityExplanationInput,
-  options: { signal?: AbortSignal } = {}
+  options: { signal?: AbortSignal } = {},
 ): AsyncGenerator<StreamExplanationEvent, void, unknown> {
   const { signal } = options;
   if (signal?.aborted) return;
@@ -105,12 +111,13 @@ export async function* streamDeveloperSecurityExplanations(
   try {
     validatedInput = AISecurityExplanationInputSchema.parse(input);
   } catch (err) {
-    yield { type: 'error', message: err instanceof Error ? err.message : 'Invalid input.' };
+    yield { type: "error", message: err instanceof Error ? err.message : "Invalid input." };
     return;
   }
 
   const injectionPreFilterFlagged =
-    detectPromptInjection(validatedInput.codeSnippet) || detectPromptInjection(validatedInput.description);
+    detectPromptInjection(validatedInput.codeSnippet) ||
+    detectPromptInjection(validatedInput.description);
 
   const prompt = buildPrompt(validatedInput);
 
@@ -130,7 +137,7 @@ export async function* streamDeveloperSecurityExplanations(
               prompt,
               ...(signal ? { abortSignal: signal } : {}),
               output: {
-                format: 'json',
+                format: "json",
                 schema: AISecurityExplanationApiSchema,
               },
               config: {
@@ -139,13 +146,15 @@ export async function* streamDeveloperSecurityExplanations(
               },
             }),
           {
-            initialDelayMs: process.env.NODE_ENV === 'test' ? 10 : 100,
-          }
+            initialDelayMs: process.env.NODE_ENV === "test" ? 10 : 100,
+          },
         );
         break;
       } catch (modelErr) {
         if (i < modelChain.length - 1 && (isRateLimitError(modelErr) || isTimeoutError(modelErr))) {
-          console.warn(`[AI_FALLBACK] Model ${String(activeModel)} failed (${String(modelErr)}). Switching to fallback model: ${String(modelChain[i + 1])}`);
+          console.warn(
+            `[AI_FALLBACK] Model ${String(activeModel)} failed (${String(modelErr)}). Switching to fallback model: ${String(modelChain[i + 1])}`,
+          );
           continue;
         }
         throw modelErr;
@@ -154,14 +163,14 @@ export async function* streamDeveloperSecurityExplanations(
 
     const { stream, response } = streamResult;
 
-    let lastExplanation = '';
+    let lastExplanation = "";
     for await (const chunk of stream) {
       // Stop pulling from the model as soon as the caller has disconnected.
       if (signal?.aborted) return;
       const partial = chunk.output as Partial<AISecurityExplanationOutput> | undefined;
       if (partial?.explanation && partial.explanation !== lastExplanation) {
         lastExplanation = partial.explanation;
-        yield { type: 'chunk', explanation: lastExplanation };
+        yield { type: "chunk", explanation: lastExplanation };
       }
     }
 
@@ -172,7 +181,7 @@ export async function* streamDeveloperSecurityExplanations(
       parsedContent = finalResponse.output as AISecurityExplanationOutput;
     } else {
       try {
-        const withoutThoughts = finalResponse.text.replace(/<think>[\s\S]*?(<\/think>|$)/ig, '');
+        const withoutThoughts = finalResponse.text.replace(/<think>[\s\S]*?(<\/think>|$)/gi, "");
         const jsonMatch = withoutThoughts.match(/[\{\[][\s\S]*[\}\]]/);
 
         if (!jsonMatch) {
@@ -185,37 +194,40 @@ export async function* streamDeveloperSecurityExplanations(
         console.error("RAW STREAM OUTPUT WAS:\n", finalResponse.text);
 
         parsedContent = {
-          explanation: 'Signal lost. The Professor is recalculating.',
-          remediationSuggestions: 'Adjust the plan: lock down the perimeter manually and review the intercepted payload.',
+          explanation: "Signal lost. The Professor is recalculating.",
+          remediationSuggestions:
+            "Adjust the plan: lock down the perimeter manually and review the intercepted payload.",
         };
       }
     }
 
-    const explanation: string = parsedContent.explanation || lastExplanation || 'No explanation provided.';
+    const explanation: string =
+      parsedContent.explanation || lastExplanation || "No explanation provided.";
     const consistencyFlagged = contradictsSeverity(validatedInput.severity, explanation);
 
     const result = AISecurityExplanationOutputSchema.parse({
       explanation,
-      remediationSuggestions: parsedContent.remediationSuggestions || 'No remediation suggestions provided.',
+      remediationSuggestions:
+        parsedContent.remediationSuggestions || "No remediation suggestions provided.",
       promptInjectionSuspected: injectionPreFilterFlagged || consistencyFlagged,
     });
 
     // The final, fully-validated explanation is always the authoritative text, even if it
     // differs slightly from the last streamed partial (e.g. the partial JSON parser dropped a
     // trailing fragment) - callers should render `result.explanation` once `done` arrives.
-    yield { type: 'done', result };
+    yield { type: "done", result };
   } catch (err) {
     const isRateLimit = isRateLimitError(err);
     const isTimeout = isTimeoutError(err);
     const message = isRateLimit
-      ? 'AI provider rate limit reached (429). Please wait a moment and try again.'
+      ? "AI provider rate limit reached (429). Please wait a moment and try again."
       : isTimeout
-      ? 'AI provider connection timed out. Please try again.'
-      : err instanceof Error
-      ? err.message
-      : 'AI generation failed.';
+        ? "AI provider connection timed out. Please try again."
+        : err instanceof Error
+          ? err.message
+          : "AI generation failed.";
     yield {
-      type: 'error',
+      type: "error",
       message,
     };
   }

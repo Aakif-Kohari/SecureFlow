@@ -43,16 +43,16 @@ export function scrubCredentials(text: string): string {
   // puts straight into its message.
   sanitized = sanitized.replace(
     /[a-zA-Z]+:\/\/[^/\s]+:[^/\s]+@[^\s]+/g,
-    '[REDACTED_CONNECTION_STRING]'
+    "[REDACTED_CONNECTION_STRING]",
   );
 
   // Any remaining userinfo in a URL authority.
-  sanitized = sanitized.replace(/:\/\/[^@\s]+@/g, '://[REDACTED_CREDENTIALS]@');
+  sanitized = sanitized.replace(/:\/\/[^@\s]+@/g, "://[REDACTED_CREDENTIALS]@");
 
   // GITHUB_CLIENT_SECRET=..., authToken = ..., etc.
   sanitized = sanitized.replace(
     /[\w.-]*(?:key|secret|token|password|auth|db_url|database_url)[\w.-]*\s*=\s*[^\s]+/gi,
-    '[REDACTED_SECRET]'
+    "[REDACTED_SECRET]",
   );
 
   // A credential quoted in prose rather than assigned to anything. The rules
@@ -64,12 +64,12 @@ export function scrubCredentials(text: string): string {
   // unambiguous, so there is no false positive to trade against. Ordinary hex
   // digests and base64 blobs are deliberately left alone, since a fingerprint
   // in a log line is evidence rather than a leak.
-  sanitized = sanitized.replace(TOKEN_PREFIXES, '[REDACTED_TOKEN]');
+  sanitized = sanitized.replace(TOKEN_PREFIXES, "[REDACTED_TOKEN]");
 
   // `Authorization: Bearer <token>` as it appears in an HTTP client's error.
   sanitized = sanitized.replace(
     /\b(Bearer|Basic|Token)\s+[A-Za-z0-9\-._~+/]{8,}=*/gi,
-    '$1 [REDACTED_TOKEN]'
+    "$1 [REDACTED_TOKEN]",
   );
 
   return sanitized;
@@ -87,10 +87,10 @@ export function scrubFilesystemPaths(text: string): string {
   let sanitized = text;
 
   // Windows: D:\Struggle\Open Source\SecureFlow\...
-  sanitized = sanitized.replace(/[a-zA-Z]:\\[\\\w\s.-]+/g, '[REDACTED_PATH]');
+  sanitized = sanitized.replace(/[a-zA-Z]:\\[\\\w\s.-]+/g, "[REDACTED_PATH]");
   // Unix: /usr/local/bin/... — anchored on a leading slash, so a repository
   // -relative path such as `src/db.ts` is left alone.
-  sanitized = sanitized.replace(/\/(?:[a-zA-Z0-9._-]+\/)+[a-zA-Z0-9._-]+/g, '[REDACTED_PATH]');
+  sanitized = sanitized.replace(/\/(?:[a-zA-Z0-9._-]+\/)+[a-zA-Z0-9._-]+/g, "[REDACTED_PATH]");
 
   return sanitized;
 }

@@ -22,7 +22,7 @@ vi.mock("next/link", () => ({
 /** A thrown error as the boundaries actually receive it in production. */
 function boundaryError(digest?: string): Error & { digest?: string } {
   const error = new Error(
-    "Can't reach database server at postgresql://neondb_owner:hunter2@ep-x.neon.tech/neondb"
+    "Can't reach database server at postgresql://neondb_owner:hunter2@ep-x.neon.tech/neondb",
   ) as Error & { digest?: string };
   if (digest) error.digest = digest;
   return error;
@@ -102,7 +102,7 @@ describe("app/not-found.tsx", () => {
     expect(screen.getByText("404")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /back to dashboard/i })).toHaveAttribute(
       "href",
-      "/dashboard"
+      "/dashboard",
     );
     expect(screen.getByRole("link", { name: /home/i })).toHaveAttribute("href", "/");
   });
@@ -124,7 +124,7 @@ describe("app/global-error.tsx", () => {
     // whole document, not a fragment, and mounting it inside an existing <body>
     // would not exercise the thing that matters.
     const markup = renderToStaticMarkup(
-      <GlobalError error={boundaryError("g1")} reset={() => {}} />
+      <GlobalError error={boundaryError("g1")} reset={() => {}} />,
     );
 
     expect(markup).toContain("<html");
@@ -134,7 +134,7 @@ describe("app/global-error.tsx", () => {
 
   it("shows the digest without the message", () => {
     const markup = renderToStaticMarkup(
-      <GlobalError error={boundaryError("g1")} reset={() => {}} />
+      <GlobalError error={boundaryError("g1")} reset={() => {}} />,
     );
 
     expect(markup).toContain("g1");
@@ -144,27 +144,21 @@ describe("app/global-error.tsx", () => {
   it("styles itself inline, since globals.css may not have been applied", () => {
     // It replaces the root layout, so it cannot rely on ThemeProvider,
     // SessionProvider or the stylesheet the layout imports.
-    const markup = renderToStaticMarkup(
-      <GlobalError error={boundaryError()} reset={() => {}} />
-    );
+    const markup = renderToStaticMarkup(<GlobalError error={boundaryError()} reset={() => {}} />);
 
     expect(markup).toContain("style=");
     expect(markup).not.toContain("glass-card");
   });
 
   it("offers a retry button", () => {
-    const markup = renderToStaticMarkup(
-      <GlobalError error={boundaryError()} reset={() => {}} />
-    );
+    const markup = renderToStaticMarkup(<GlobalError error={boundaryError()} reset={() => {}} />);
 
     expect(markup).toContain("Try again");
     expect(markup).toContain('type="button"');
   });
 
   it("marks its content as an alert", () => {
-    const markup = renderToStaticMarkup(
-      <GlobalError error={boundaryError()} reset={() => {}} />
-    );
+    const markup = renderToStaticMarkup(<GlobalError error={boundaryError()} reset={() => {}} />);
 
     expect(markup).toContain('role="alert"');
   });

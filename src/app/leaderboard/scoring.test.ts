@@ -52,21 +52,19 @@ describe("computeContributorScore", () => {
         mergedPRs: 10,
         passedPRs: 0,
         vulnsIntroduced: { critical: 12, high: 0, medium: 0, low: 0 },
-      })
+      }),
     );
-    const bob = computeContributorScore(
-      contributor({ totalPRs: 4, mergedPRs: 4, passedPRs: 4 })
-    );
+    const bob = computeContributorScore(contributor({ totalPRs: 4, mergedPRs: 4, passedPRs: 4 }));
 
     expect(bob).toBeGreaterThan(alice);
   });
 
   it("penalises more severe vulnerabilities more heavily", () => {
     const withCritical = computeContributorScore(
-      contributor({ vulnsIntroduced: { ...noVulns, critical: 1 } })
+      contributor({ vulnsIntroduced: { ...noVulns, critical: 1 } }),
     );
     const withLow = computeContributorScore(
-      contributor({ vulnsIntroduced: { ...noVulns, low: 1 } })
+      contributor({ vulnsIntroduced: { ...noVulns, low: 1 } }),
     );
 
     expect(withCritical).toBeLessThan(withLow);
@@ -77,10 +75,10 @@ describe("computeContributorScore", () => {
     // (40 base + 25 pass bonus + 15 merged bonus) bottoms out at 20 rather than
     // at 0. Doubling the vulnerability count past the cap changes nothing.
     const many = computeContributorScore(
-      contributor({ vulnsIntroduced: { critical: 50, high: 50, medium: 50, low: 50 } })
+      contributor({ vulnsIntroduced: { critical: 50, high: 50, medium: 50, low: 50 } }),
     );
     const absurd = computeContributorScore(
-      contributor({ vulnsIntroduced: { critical: 5000, high: 5000, medium: 5000, low: 5000 } })
+      contributor({ vulnsIntroduced: { critical: 5000, high: 5000, medium: 5000, low: 5000 } }),
     );
 
     expect(many).toBe(absurd);
@@ -101,7 +99,7 @@ describe("computeContributorScore", () => {
   it("caps the merged bonus so volume alone cannot dominate", () => {
     const eight = computeContributorScore(contributor({ mergedPRs: 8, totalPRs: 8, passedPRs: 8 }));
     const eightHundred = computeContributorScore(
-      contributor({ mergedPRs: 800, totalPRs: 800, passedPRs: 800 })
+      contributor({ mergedPRs: 800, totalPRs: 800, passedPRs: 800 }),
     );
     expect(eightHundred).toBe(eight);
   });
@@ -114,7 +112,9 @@ describe("computeContributorScore", () => {
 
   it("rewards a higher pass rate", () => {
     const half = computeContributorScore(contributor({ totalPRs: 10, passedPRs: 5, mergedPRs: 0 }));
-    const full = computeContributorScore(contributor({ totalPRs: 10, passedPRs: 10, mergedPRs: 0 }));
+    const full = computeContributorScore(
+      contributor({ totalPRs: 10, passedPRs: 10, mergedPRs: 0 }),
+    );
     expect(full).toBeGreaterThan(half);
   });
 });
@@ -129,7 +129,7 @@ describe("computeContributorBadges", () => {
 
   it("awards no vulnerability badges to a contributor who shipped criticals", () => {
     const labels = computeContributorBadges(
-      contributor({ passedPRs: 0, vulnsIntroduced: { ...noVulns, critical: 3 } })
+      contributor({ passedPRs: 0, vulnsIntroduced: { ...noVulns, critical: 3 } }),
     ).map((b) => b.label);
 
     expect(labels).not.toContain("Zero Vulns Introduced");
@@ -139,7 +139,7 @@ describe("computeContributorBadges", () => {
 
   it("awards No Criticals only when there are findings but none critical", () => {
     const withOnlyLows = computeContributorBadges(
-      contributor({ vulnsIntroduced: { ...noVulns, low: 2 } })
+      contributor({ vulnsIntroduced: { ...noVulns, low: 2 } }),
     ).map((b) => b.label);
     expect(withOnlyLows).toContain("No Criticals");
 
@@ -149,14 +149,14 @@ describe("computeContributorBadges", () => {
 
   it("withholds Prolific Merger below five merges", () => {
     const labels = computeContributorBadges(
-      contributor({ totalPRs: 4, mergedPRs: 4, passedPRs: 4 })
+      contributor({ totalPRs: 4, mergedPRs: 4, passedPRs: 4 }),
     ).map((b) => b.label);
     expect(labels).not.toContain("Prolific Merger");
   });
 
   it("gives a contributor with no PRs at all no participation badges", () => {
     const labels = computeContributorBadges(
-      contributor({ totalPRs: 0, mergedPRs: 0, passedPRs: 0 })
+      contributor({ totalPRs: 0, mergedPRs: 0, passedPRs: 0 }),
     ).map((b) => b.label);
     expect(labels).not.toContain("Zero Vulns Introduced");
     expect(labels).not.toContain("Clean Record");
@@ -332,7 +332,7 @@ describe("computeSecurityScore (repository view)", () => {
   it("stays within 0-100", () => {
     expect(computeSecurityScore(repo())).toBeLessThanOrEqual(100);
     expect(
-      computeSecurityScore(repo({ findings: { critical: 50, high: 50, medium: 50, low: 50 } }))
+      computeSecurityScore(repo({ findings: { critical: 50, high: 50, medium: 50, low: 50 } })),
     ).toBeGreaterThanOrEqual(0);
   });
 

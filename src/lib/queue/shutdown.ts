@@ -1,5 +1,5 @@
-import { Worker } from 'bullmq';
-import { redis, closeQueueRedis } from './redis';
+import { Worker } from "bullmq";
+import { redis, closeQueueRedis } from "./redis";
 
 export interface GracefulShutdownOptions {
   workers?: Worker[];
@@ -43,7 +43,7 @@ export function resetShutdownState(): void {
  */
 export async function gracefulShutdown(
   signal: string,
-  options: GracefulShutdownOptions = {}
+  options: GracefulShutdownOptions = {},
 ): Promise<void> {
   if (isShuttingDown) {
     console.log(`[Shutdown] Shutdown already in progress. Ignoring duplicate signal (${signal}).`);
@@ -62,15 +62,15 @@ export async function gracefulShutdown(
       await Promise.allSettled(
         workers.map(async (w) => {
           try {
-            if (w && typeof w.close === 'function') {
+            if (w && typeof w.close === "function") {
               await w.close();
             }
           } catch (err: any) {
             console.error(`[Shutdown] Error closing worker:`, err?.message || err);
           }
-        })
+        }),
       );
-      console.log('[Shutdown] All BullMQ workers closed.');
+      console.log("[Shutdown] All BullMQ workers closed.");
     }
 
     // 1b. Drain anything that is not a bare Worker — the scan worker pool, in
@@ -83,17 +83,17 @@ export async function gracefulShutdown(
           try {
             await stop();
           } catch (err: any) {
-            console.error('[Shutdown] Error draining worker:', err?.message || err);
+            console.error("[Shutdown] Error draining worker:", err?.message || err);
           }
-        })
+        }),
       );
-      console.log('[Shutdown] Additional workers drained.');
+      console.log("[Shutdown] Additional workers drained.");
     }
 
     // 2. Close queue redis connection
-    console.log('[Shutdown] Closing Redis connection...');
+    console.log("[Shutdown] Closing Redis connection...");
     await closeQueueRedis();
-    console.log('[Shutdown] Redis connection closed.');
+    console.log("[Shutdown] Redis connection closed.");
 
     if (onShutdownComplete) {
       onShutdownComplete();
@@ -102,13 +102,15 @@ export async function gracefulShutdown(
 
   const timeoutPromise = new Promise<void>((resolve) => {
     setTimeout(() => {
-      console.warn(`[Shutdown] Graceful shutdown timed out after ${timeoutMs}ms. Forcing shutdown.`);
+      console.warn(
+        `[Shutdown] Graceful shutdown timed out after ${timeoutMs}ms. Forcing shutdown.`,
+      );
       resolve();
     }, timeoutMs);
   });
 
   await Promise.race([shutdownPromise, timeoutPromise]);
-  console.log('[Shutdown] Graceful shutdown sequence completed.');
+  console.log("[Shutdown] Graceful shutdown sequence completed.");
 }
 
 /**
@@ -118,16 +120,16 @@ export function setupWorkerSignalHandlers(options: GracefulShutdownOptions = {})
   const handleSignal = async (signal: string) => {
     await gracefulShutdown(signal, options);
     // If not running in test environment, exit the process
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== "test") {
       process.exit(0);
     }
   };
 
-  process.once('SIGINT', () => {
-    void handleSignal('SIGINT');
+  process.once("SIGINT", () => {
+    void handleSignal("SIGINT");
   });
 
-  process.once('SIGTERM', () => {
-    void handleSignal('SIGTERM');
+  process.once("SIGTERM", () => {
+    void handleSignal("SIGTERM");
   });
 }

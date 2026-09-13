@@ -1,9 +1,10 @@
-import Groq from 'groq-sdk';
+import Groq from "groq-sdk";
 import type { AISecurityExplanationInput } from "./security-explanation-schemas";
 import { isAtLeast } from '@/lib/severity';
+import { env } from "@/lib/env";
 
 const _groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || 'dummy-key-for-build',
+  apiKey: env.GROQ_API_KEY!,
 });
 
 /**
@@ -18,7 +19,7 @@ const _groq = new Groq({
 async function llmInjectionCheck(text: string): Promise<boolean> {
   try {
     const response = await _groq.chat.completions.create({
-      model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant',
+      model: env.GROQ_MODEL || 'llama-3.1-8b-instant',
       temperature: 0,
       max_tokens: 5,
       messages: [
@@ -51,7 +52,7 @@ async function llmInjectionCheck(text: string): Promise<boolean> {
  * flag from one that was also confirmed by the secondary model.
  */
 export async function evaluateForInjection(
-  text: string
+  text: string,
 ): Promise<{ flagged: boolean; confirmedByLLM: boolean }> {
   const flagged = detectPromptInjection(text);
   if (!flagged) return { flagged: false, confirmedByLLM: false };
@@ -61,9 +62,9 @@ export async function evaluateForInjection(
 
 function sanitizeForPrompt(input: string): string {
   return input
-    .replace(/```/g, '~~~')
-    .replace(/ignore previous/gi, '')
-    .replace(/disregard (all )?instructions/gi, '')
+    .replace(/```/g, "~~~")
+    .replace(/ignore previous/gi, "")
+    .replace(/disregard (all )?instructions/gi, "")
     .slice(0, 2000);
 }
 
@@ -125,7 +126,7 @@ function contradictsSeverity(severity: string, explanation: string): boolean {
   // `isAtLeast` replaces an open-coded membership list, so this threshold moves
   // with the shared severity ordering rather than needing a hand edit here. It
   // is also null-safe, where `severity.toUpperCase()` was not.
-  const highStakes = isAtLeast(severity, 'HIGH');
+  const highStakes = isAtLeast(severity, "HIGH");
   if (!highStakes || !explanation) return false;
   return DISMISSIVE_PHRASES.some((pattern) => pattern.test(explanation));
 }
@@ -168,8 +169,10 @@ Respond ONLY with a valid JSON object with keys "explanation" and "remediationSu
 export function isRateLimitError(err: unknown): boolean {
   if (!err) return false;
   const msg = err instanceof Error ? err.message : String(err);
-  const code = (err as { code?: string }).code ?? '';
-  const status = (err as { status?: number; statusCode?: number }).status ?? (err as { statusCode?: number }).statusCode;
+  const code = (err as { code?: string }).code ?? "";
+  const status =
+    (err as { status?: number; statusCode?: number }).status ??
+    (err as { statusCode?: number }).statusCode;
   return (
     status === 429 ||
     /rate_limit|rate-limit|too_many_requests/i.test(code) ||
@@ -183,8 +186,10 @@ export function isRateLimitError(err: unknown): boolean {
 export function isTimeoutError(err: unknown): boolean {
   if (!err) return false;
   const msg = err instanceof Error ? err.message : String(err);
-  const code = (err as { code?: string }).code ?? '';
-  const status = (err as { status?: number; statusCode?: number }).status ?? (err as { statusCode?: number }).statusCode;
+  const code = (err as { code?: string }).code ?? "";
+  const status =
+    (err as { status?: number; statusCode?: number }).status ??
+    (err as { statusCode?: number }).statusCode;
   return (
     status === 408 ||
     status === 504 ||
@@ -201,14 +206,16 @@ export interface RetryOptions {
 export async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetriesOrOptions: number | RetryOptions = 3,
-  baseDelayMs: number = 1000
+  baseDelayMs: number = 1000,
 ): Promise<T> {
-  const maxRetries = typeof maxRetriesOrOptions === 'number' 
-    ? maxRetriesOrOptions 
-    : (maxRetriesOrOptions?.retries ?? 3);
-  const initialDelay = typeof maxRetriesOrOptions === 'object' && maxRetriesOrOptions.initialDelayMs !== undefined
-    ? maxRetriesOrOptions.initialDelayMs
-    : baseDelayMs;
+  const maxRetries =
+    typeof maxRetriesOrOptions === "number"
+      ? maxRetriesOrOptions
+      : (maxRetriesOrOptions?.retries ?? 3);
+  const initialDelay =
+    typeof maxRetriesOrOptions === "object" && maxRetriesOrOptions.initialDelayMs !== undefined
+      ? maxRetriesOrOptions.initialDelayMs
+      : baseDelayMs;
 
   let attempt = 0;
   while (true) {
@@ -216,17 +223,17 @@ export async function withRetry<T>(
       return await operation();
     } catch (error) {
       attempt++;
-      
+
       // Stop retrying if we hit the limit or if the error isn't retryable
       if (attempt > maxRetries || (!isRateLimitError(error) && !isTimeoutError(error))) {
         throw error;
       }
-      
+
       // Calculate delay with exponential backoff and a small random jitter.
       // Bypass the delay during testing so Vitest doesn't time out waiting for retries.
-      const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+      const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
       const delay = isTest ? 0 : initialDelay * Math.pow(2, attempt - 1) + Math.random() * 200;
-      
+
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

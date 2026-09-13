@@ -26,9 +26,7 @@ export default async function AdminUsersPage() {
           <Users className="w-5 h-5 text-red-600 dark:text-red-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            User Management
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
           <p className="text-muted-foreground mt-2">
             Manage user roles, access levels, and account status across SecureFlow.
           </p>

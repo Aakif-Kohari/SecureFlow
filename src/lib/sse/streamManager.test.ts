@@ -1,42 +1,42 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StreamManager, streamManager } from './streamManager';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { StreamManager, streamManager } from "./streamManager";
 
-describe('StreamManager', () => {
+describe("StreamManager", () => {
   let manager: StreamManager;
 
   beforeEach(() => {
     manager = new StreamManager();
   });
 
-  describe('register', () => {
-    it('returns a connection ID and signal', () => {
+  describe("register", () => {
+    it("returns a connection ID and signal", () => {
       const { id, signal } = manager.register();
       expect(id).toMatch(/^sse-\d+$/);
       expect(signal).toBeInstanceOf(AbortSignal);
       expect(signal.aborted).toBe(false);
     });
 
-    it('increments the connection counter', () => {
+    it("increments the connection counter", () => {
       manager.register();
       manager.register();
       expect(manager.getStats().activeConnections).toBe(2);
     });
 
-    it('increments totalRegistered', () => {
+    it("increments totalRegistered", () => {
       manager.register();
       manager.register();
       expect(manager.getStats().totalRegistered).toBe(2);
     });
 
-    it('stores optional label', () => {
-      const { id } = manager.register(undefined, 'test-route');
+    it("stores optional label", () => {
+      const { id } = manager.register(undefined, "test-route");
       // Label is stored but not exposed via public API directly
       expect(id).toBeTruthy();
     });
   });
 
-  describe('upstream signal integration', () => {
-    it('aborts the controller when upstream signal fires', () => {
+  describe("upstream signal integration", () => {
+    it("aborts the controller when upstream signal fires", () => {
       const upstream = new AbortController();
       const { signal } = manager.register(upstream.signal);
 
@@ -45,7 +45,7 @@ describe('StreamManager', () => {
       expect(signal.aborted).toBe(true);
     });
 
-    it('unregisters the connection when upstream signal fires', () => {
+    it("unregisters the connection when upstream signal fires", () => {
       const upstream = new AbortController();
       manager.register(upstream.signal);
 
@@ -54,7 +54,7 @@ describe('StreamManager', () => {
       expect(manager.getStats().activeConnections).toBe(0);
     });
 
-    it('increments totalCleanedUp on disconnect', () => {
+    it("increments totalCleanedUp on disconnect", () => {
       const upstream = new AbortController();
       manager.register(upstream.signal);
 
@@ -63,7 +63,7 @@ describe('StreamManager', () => {
       expect(manager.getStats().totalCleanedUp).toBe(1);
     });
 
-    it('immediately cleans up if upstream signal is already aborted', () => {
+    it("immediately cleans up if upstream signal is already aborted", () => {
       const upstream = new AbortController();
       upstream.abort();
 
@@ -72,15 +72,15 @@ describe('StreamManager', () => {
       expect(manager.getStats().activeConnections).toBe(0);
     });
 
-    it('works without an upstream signal', () => {
+    it("works without an upstream signal", () => {
       const { signal } = manager.register();
       expect(signal.aborted).toBe(false);
       expect(manager.getStats().activeConnections).toBe(1);
     });
   });
 
-  describe('unregister', () => {
-    it('aborts the controller and removes the connection', () => {
+  describe("unregister", () => {
+    it("aborts the controller and removes the connection", () => {
       const { id, signal } = manager.register();
       expect(manager.getStats().activeConnections).toBe(1);
 
@@ -89,12 +89,12 @@ describe('StreamManager', () => {
       expect(manager.getStats().activeConnections).toBe(0);
     });
 
-    it('is safe to call with unknown ID', () => {
-      manager.unregister('sse-999');
+    it("is safe to call with unknown ID", () => {
+      manager.unregister("sse-999");
       expect(manager.getStats().activeConnections).toBe(0);
     });
 
-    it('is safe to call multiple times', () => {
+    it("is safe to call multiple times", () => {
       const { id } = manager.register();
       manager.unregister(id);
       manager.unregister(id); // second call should not throw
@@ -102,44 +102,44 @@ describe('StreamManager', () => {
     });
   });
 
-  describe('getController / getSignal', () => {
-    it('returns the controller for a valid ID', () => {
+  describe("getController / getSignal", () => {
+    it("returns the controller for a valid ID", () => {
       const { id } = manager.register();
       const controller = manager.getController(id);
       expect(controller).toBeInstanceOf(AbortController);
     });
 
-    it('returns undefined for unknown ID', () => {
-      expect(manager.getController('sse-999')).toBeUndefined();
+    it("returns undefined for unknown ID", () => {
+      expect(manager.getController("sse-999")).toBeUndefined();
     });
 
-    it('returns the signal for a valid ID', () => {
+    it("returns the signal for a valid ID", () => {
       const { id, signal } = manager.register();
       expect(manager.getSignal(id)).toBe(signal);
     });
 
-    it('returns undefined signal for unknown ID', () => {
-      expect(manager.getSignal('sse-999')).toBeUndefined();
+    it("returns undefined signal for unknown ID", () => {
+      expect(manager.getSignal("sse-999")).toBeUndefined();
     });
   });
 
-  describe('isActive', () => {
-    it('returns true for active connection', () => {
+  describe("isActive", () => {
+    it("returns true for active connection", () => {
       const { id } = manager.register();
       expect(manager.isActive(id)).toBe(true);
     });
 
-    it('returns false after unregister', () => {
+    it("returns false after unregister", () => {
       const { id } = manager.register();
       manager.unregister(id);
       expect(manager.isActive(id)).toBe(false);
     });
 
-    it('returns false for unknown ID', () => {
-      expect(manager.isActive('sse-999')).toBe(false);
+    it("returns false for unknown ID", () => {
+      expect(manager.isActive("sse-999")).toBe(false);
     });
 
-    it('returns false after upstream abort', () => {
+    it("returns false after upstream abort", () => {
       const upstream = new AbortController();
       const { id } = manager.register(upstream.signal);
       upstream.abort();
@@ -147,8 +147,8 @@ describe('StreamManager', () => {
     });
   });
 
-  describe('getStats', () => {
-    it('starts with zero stats', () => {
+  describe("getStats", () => {
+    it("starts with zero stats", () => {
       const stats = manager.getStats();
       expect(stats.activeConnections).toBe(0);
       expect(stats.totalRegistered).toBe(0);
@@ -156,7 +156,7 @@ describe('StreamManager', () => {
       expect(stats.oldestConnectionMs).toBeNull();
     });
 
-    it('tracks oldest connection age', async () => {
+    it("tracks oldest connection age", async () => {
       manager.register();
       // Small delay to create measurable age difference
       await new Promise((r) => setTimeout(r, 5));
@@ -167,27 +167,27 @@ describe('StreamManager', () => {
     });
   });
 
-  describe('getActiveIds', () => {
-    it('returns empty array when no connections', () => {
+  describe("getActiveIds", () => {
+    it("returns empty array when no connections", () => {
       expect(manager.getActiveIds()).toEqual([]);
     });
 
-    it('returns all active connection IDs', () => {
+    it("returns all active connection IDs", () => {
       const { id: id1 } = manager.register();
       const { id: id2 } = manager.register();
       expect(manager.getActiveIds()).toContain(id1);
       expect(manager.getActiveIds()).toContain(id2);
     });
 
-    it('removes ID after unregister', () => {
+    it("removes ID after unregister", () => {
       const { id } = manager.register();
       manager.unregister(id);
       expect(manager.getActiveIds()).not.toContain(id);
     });
   });
 
-  describe('abortAll', () => {
-    it('aborts all active connections', () => {
+  describe("abortAll", () => {
+    it("aborts all active connections", () => {
       const { signal: sig1 } = manager.register();
       const { signal: sig2 } = manager.register();
 
@@ -200,23 +200,23 @@ describe('StreamManager', () => {
   });
 });
 
-describe('streamManager singleton', () => {
-  it('is a StreamManager instance', () => {
+describe("streamManager singleton", () => {
+  it("is a StreamManager instance", () => {
     expect(streamManager).toBeInstanceOf(StreamManager);
   });
 });
 
-describe('release (#722)', () => {
-  it('is returned alongside the id and signal', () => {
+describe("release (#722)", () => {
+  it("is returned alongside the id and signal", () => {
     const m = new StreamManager();
     const reg = m.register();
 
-    expect(typeof reg.release).toBe('function');
-    expect(typeof reg.id).toBe('string');
+    expect(typeof reg.release).toBe("function");
+    expect(typeof reg.id).toBe("string");
     expect(reg.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it('unregisters and aborts', () => {
+  it("unregisters and aborts", () => {
     const m = new StreamManager();
     const { signal, release } = m.register();
 
@@ -226,7 +226,7 @@ describe('release (#722)', () => {
     expect(m.getStats().activeConnections).toBe(0);
   });
 
-  it('is idempotent, so a finally block can call it unconditionally', () => {
+  it("is idempotent, so a finally block can call it unconditionally", () => {
     const m = new StreamManager();
     const { release } = m.register();
 
@@ -237,13 +237,13 @@ describe('release (#722)', () => {
     expect(m.getStats().totalCleanedUp).toBe(1);
   });
 
-  it('still releases after the caller has stopped writing to its stream', () => {
+  it("still releases after the caller has stopped writing to its stream", () => {
     // The route bug: `send` sets `closed = true` on a failed enqueue, and
     // `finish()` opened with `if (closed) return` -- so every later finish()
     // returned at the guard and unregister was never reached. Cleanup must
     // not be reachable only through that flag.
     const m = new StreamManager();
-    const { release } = m.register(undefined, 'explain-stream');
+    const { release } = m.register(undefined, "explain-stream");
 
     let closed = false;
     const send = () => {
@@ -262,8 +262,8 @@ describe('release (#722)', () => {
   });
 });
 
-describe('upstream listener detachment (#722)', () => {
-  it('detaches the abort listener when a connection is released', () => {
+describe("upstream listener detachment (#722)", () => {
+  it("detaches the abort listener when a connection is released", () => {
     // Before: `cleanup` deleted the entry but left the listener attached, so
     // the closure stayed on the signal's listener list for the life of the
     // signal. Five registrations released, then an abort, used to re-enter
@@ -281,7 +281,7 @@ describe('upstream listener detachment (#722)', () => {
     expect(m.getStats().activeConnections).toBe(0);
   });
 
-  it('still cleans up on abort when the connection was not released first', () => {
+  it("still cleans up on abort when the connection was not released first", () => {
     const m = new StreamManager();
     const controller = new AbortController();
     const { signal } = m.register(controller.signal);
@@ -293,7 +293,7 @@ describe('upstream listener detachment (#722)', () => {
     expect(m.getStats().totalCleanedUp).toBe(1);
   });
 
-  it('counts one cleanup per connection, not one per abort path', () => {
+  it("counts one cleanup per connection, not one per abort path", () => {
     const m = new StreamManager();
     const controller = new AbortController();
     const { release } = m.register(controller.signal);
@@ -304,11 +304,11 @@ describe('upstream listener detachment (#722)', () => {
     expect(m.getStats().totalCleanedUp).toBe(1);
   });
 
-  it('does not disturb other listeners on the same signal', () => {
+  it("does not disturb other listeners on the same signal", () => {
     const m = new StreamManager();
     const controller = new AbortController();
     const unrelated = vi.fn();
-    controller.signal.addEventListener('abort', unrelated);
+    controller.signal.addEventListener("abort", unrelated);
 
     m.register(controller.signal).release();
     controller.abort();
@@ -317,19 +317,19 @@ describe('upstream listener detachment (#722)', () => {
   });
 });
 
-describe('capacity bound (#722)', () => {
-  it('holds the registry at maxConnections', () => {
+describe("capacity bound (#722)", () => {
+  it("holds the registry at maxConnections", () => {
     // Was unbounded: 10,000 signal-less registrations sat in the map with
     // nothing able to clean them up.
     const m = new StreamManager({ maxConnections: 10 });
 
-    for (let i = 0; i < 500; i++) m.register(undefined, 'no-signal');
+    for (let i = 0; i < 500; i++) m.register(undefined, "no-signal");
 
     expect(m.getStats().activeConnections).toBe(10);
     expect(m.getStats().totalRegistered).toBe(500);
   });
 
-  it('evicts the oldest first', () => {
+  it("evicts the oldest first", () => {
     const m = new StreamManager({ maxConnections: 3 });
     const first = m.register();
     m.register();
@@ -341,7 +341,7 @@ describe('capacity bound (#722)', () => {
     expect(m.isActive(newest.id)).toBe(true);
   });
 
-  it('aborts what it evicts, so the work behind it stops', () => {
+  it("aborts what it evicts, so the work behind it stops", () => {
     const m = new StreamManager({ maxConnections: 1 });
     const evicted = m.register();
 
@@ -350,7 +350,7 @@ describe('capacity bound (#722)', () => {
     expect(evicted.signal.aborted).toBe(true);
   });
 
-  it('counts evictions separately from ordinary cleanups', () => {
+  it("counts evictions separately from ordinary cleanups", () => {
     // Cap 2: the first two register freely, and each of the next three evicts
     // one to make room.
     const m = new StreamManager({ maxConnections: 2 });
@@ -360,7 +360,7 @@ describe('capacity bound (#722)', () => {
     expect(m.getStats().activeConnections).toBe(2);
   });
 
-  it('treats a cap below one as one', () => {
+  it("treats a cap below one as one", () => {
     const m = new StreamManager({ maxConnections: 0 });
     m.register();
 
@@ -370,15 +370,14 @@ describe('capacity bound (#722)', () => {
 
 /** Age a tracked connection by `ms`, so a sweep can be tested without waiting. */
 function backdate(manager: StreamManager, id: string, ms: number): void {
-  const connections = (
-    manager as unknown as { connections: Map<string, { registeredAt: number }> }
-  ).connections;
+  const connections = (manager as unknown as { connections: Map<string, { registeredAt: number }> })
+    .connections;
   const conn = connections.get(id);
   if (conn) conn.registeredAt -= ms;
 }
 
-describe('idle sweep (#722)', () => {
-  it('drops connections older than maxAgeMs', () => {
+describe("idle sweep (#722)", () => {
+  it("drops connections older than maxAgeMs", () => {
     const m = new StreamManager({ maxAgeMs: 1000 });
     const stale = m.register();
 
@@ -387,7 +386,7 @@ describe('idle sweep (#722)', () => {
     expect(m.getStats().totalReaped).toBe(1);
   });
 
-  it('keeps connections inside the window', () => {
+  it("keeps connections inside the window", () => {
     const m = new StreamManager({ maxAgeMs: 60_000 });
     const fresh = m.register();
 
@@ -395,7 +394,7 @@ describe('idle sweep (#722)', () => {
     expect(m.isActive(fresh.id)).toBe(true);
   });
 
-  it('aborts what it reaps', () => {
+  it("aborts what it reaps", () => {
     const m = new StreamManager({ maxAgeMs: 1 });
     const { signal } = m.register();
 
@@ -404,7 +403,7 @@ describe('idle sweep (#722)', () => {
     expect(signal.aborted).toBe(true);
   });
 
-  it('stops at the first connection young enough to keep', () => {
+  it("stops at the first connection young enough to keep", () => {
     // Insertion order is registration order, so the sweep is O(expired), not
     // O(registry) -- it must not walk every entry on every registration.
     const m = new StreamManager({ maxAgeMs: 1000 });
@@ -416,7 +415,7 @@ describe('idle sweep (#722)', () => {
     expect(m.isActive(recent.id)).toBe(true);
   });
 
-  it('runs on registration, so nothing has to schedule it', () => {
+  it("runs on registration, so nothing has to schedule it", () => {
     // Deliberately not a setInterval: a timer in a module-level singleton
     // keeps the Node process alive, which is a leak of the same kind.
     const m = new StreamManager({ maxAgeMs: 1000 });
@@ -430,8 +429,8 @@ describe('idle sweep (#722)', () => {
   });
 });
 
-describe('stats', () => {
-  it('starts every counter at zero', () => {
+describe("stats", () => {
+  it("starts every counter at zero", () => {
     expect(new StreamManager().getStats()).toEqual({
       activeConnections: 0,
       totalRegistered: 0,

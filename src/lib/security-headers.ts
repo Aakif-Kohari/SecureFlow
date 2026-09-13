@@ -35,13 +35,13 @@ export type CspDirectives = Record<string, string[] | null>;
 
 /** Sources that are keywords rather than origins, and therefore need quoting. */
 const KEYWORD_SOURCES = new Set([
-  'self',
-  'none',
-  'unsafe-inline',
-  'unsafe-eval',
-  'strict-dynamic',
-  'unsafe-hashes',
-  'wasm-unsafe-eval',
+  "self",
+  "none",
+  "unsafe-inline",
+  "unsafe-eval",
+  "strict-dynamic",
+  "unsafe-hashes",
+  "wasm-unsafe-eval",
 ]);
 
 /**
@@ -54,11 +54,11 @@ const KEYWORD_SOURCES = new Set([
  * actually stops them drifting.
  */
 export const REMOTE_IMAGE_HOSTS = [
-  'https://placehold.co',
-  'https://images.unsplash.com',
-  'https://picsum.photos',
-  'https://avatars.githubusercontent.com',
-  'https://github.com',
+  "https://placehold.co",
+  "https://images.unsplash.com",
+  "https://picsum.photos",
+  "https://avatars.githubusercontent.com",
+  "https://github.com",
 ] as const;
 
 /** Default cap for HSTS: two years, the value the preload list requires. */
@@ -100,7 +100,7 @@ export interface SecurityHeaderOptions {
  */
 export function formatCspSource(source: string): string {
   const trimmed = source.trim();
-  if (!trimmed) return '';
+  if (!trimmed) return "";
   if (KEYWORD_SOURCES.has(trimmed)) return `'${trimmed}'`;
   // Hashes and nonces are already written in their quoted form by the caller.
   return trimmed;
@@ -137,10 +137,10 @@ export function serializeCspDirectives(directives: CspDirectives): string {
     // different policy from the one the caller wrote. Skip it instead.
     if (formatted.length === 0) continue;
 
-    parts.push(`${directive} ${formatted.join(' ')}`);
+    parts.push(`${directive} ${formatted.join(" ")}`);
   }
 
-  return parts.join('; ');
+  return parts.join("; ");
 }
 
 /**
@@ -164,68 +164,73 @@ export function serializeCspDirectives(directives: CspDirectives): string {
  * Callers that can mint a nonce get the strict form for free by passing one.
  */
 export function buildCspDirectives(options: SecurityHeaderOptions = {}): CspDirectives {
-  const { isDev = false, nonce, reportUri, imageHosts = REMOTE_IMAGE_HOSTS, apiRoute = false } =
-    options;
+  const {
+    isDev = false,
+    nonce,
+    reportUri,
+    imageHosts = REMOTE_IMAGE_HOSTS,
+    apiRoute = false,
+  } = options;
 
   if (apiRoute) {
     // No API response is ever rendered as a document, so the safest policy is
     // also the simplest one.
     const apiDirectives: CspDirectives = {
-      'default-src': ['none'],
-      'frame-ancestors': ['none'],
-      'base-uri': ['none'],
-      'form-action': ['none'],
+      "default-src": ["none"],
+      "frame-ancestors": ["none"],
+      "base-uri": ["none"],
+      "form-action": ["none"],
     };
-    if (reportUri) apiDirectives['report-uri'] = [reportUri];
+    if (reportUri) apiDirectives["report-uri"] = [reportUri];
     return apiDirectives;
   }
 
   const scriptSrc = nonce
-    ? [`'nonce-${nonce}'`, 'strict-dynamic', 'self']
-    : ['self', 'unsafe-inline'];
+    ? [`'nonce-${nonce}'`, "strict-dynamic", "self"]
+    : ["self", "unsafe-inline"];
 
   if (isDev) {
     // Turbopack compiles and evaluates modules in the browser during HMR.
-    scriptSrc.push('unsafe-eval');
+    scriptSrc.push("unsafe-eval");
   }
 
-  const connectSrc = ['self', 'https://api.github.com'];
+  const connectSrc = ["self", "https://api.github.com"];
   if (isDev) {
     // The HMR socket. `ws:` covers `localhost` over plain HTTP; `wss:` covers a
     // tunnelled dev server (the repo ships an `ngrok` script).
-    connectSrc.push('ws:', 'wss:');
+    connectSrc.push("ws:", "wss:");
   }
 
   const directives: CspDirectives = {
-    'default-src': ['self'],
-    'base-uri': ['self'],
+    "default-src": ["self"],
+    "base-uri": ["self"],
     // Tailwind and the Radix primitives both set inline styles at runtime;
     // there is no nonce path for those, and a style-src bypass is not a
     // meaningful escalation on its own.
-    'style-src': ['self', 'unsafe-inline'],
-    'script-src': scriptSrc,
-    'img-src': ['self', 'data:', 'blob:', ...imageHosts],
-    'font-src': ['self', 'data:'],
-    'connect-src': connectSrc,
-    'media-src': ['self'],
-    'worker-src': ['self', 'blob:'],
-    'manifest-src': ['self'],
+    "style-src": ["self", "unsafe-inline"],
+    "script-src": scriptSrc,
+    "img-src": ["self", "data:", "blob:", ...imageHosts],
+    "font-src": ["self", "data:"],
+    "connect-src": connectSrc,
+    "media-src": ["self"],
+    "worker-src": ["self", "blob:"],
+    "manifest-src": ["self"],
     // `object` and `embed` have no use in this app and are classic XSS sinks.
-    'object-src': ['none'],
+    "object-src": ["none"],
     // The dashboard has one-click triage (`FindingTriageControls`) and policy
     // toggles; both are clickjackable without this.
-    'frame-ancestors': ['none'],
-    'frame-src': ['none'],
-    'form-action': ['self'],
+    "frame-ancestors": ["none"],
+    "frame-src": ["none"],
+    "form-action": ["self"],
   };
 
   if (!isDev) {
     // Pointless against a local HTTP dev server, and it makes `next dev`
     // rewrite localhost asset URLs to https.
-    directives['upgrade-insecure-requests'] = null;
+    directives["upgrade-insecure-requests"] = null;
   }
 
-  if (reportUri) directives['report-uri'] = [reportUri];
+  if (reportUri) directives["report-uri"] = [reportUri];
 
   return directives;
 }
@@ -244,25 +249,25 @@ export function buildContentSecurityPolicy(options: SecurityHeaderOptions = {}):
  */
 export function buildPermissionsPolicy(): string {
   return [
-    'accelerometer=()',
-    'ambient-light-sensor=()',
-    'autoplay=()',
-    'camera=()',
-    'display-capture=()',
-    'encrypted-media=()',
-    'geolocation=()',
-    'gyroscope=()',
-    'interest-cohort=()',
-    'magnetometer=()',
-    'microphone=()',
-    'midi=()',
-    'payment=()',
-    'publickey-credentials-get=()',
-    'screen-wake-lock=()',
-    'serial=()',
-    'usb=()',
-    'xr-spatial-tracking=()',
-  ].join(', ');
+    "accelerometer=()",
+    "ambient-light-sensor=()",
+    "autoplay=()",
+    "camera=()",
+    "display-capture=()",
+    "encrypted-media=()",
+    "geolocation=()",
+    "gyroscope=()",
+    "interest-cohort=()",
+    "magnetometer=()",
+    "microphone=()",
+    "midi=()",
+    "payment=()",
+    "publickey-credentials-get=()",
+    "screen-wake-lock=()",
+    "serial=()",
+    "usb=()",
+    "xr-spatial-tracking=()",
+  ].join(", ");
 }
 
 /**
@@ -272,56 +277,54 @@ export function buildPermissionsPolicy(): string {
  * HTTPS-only for two years in the developer's browser is a genuinely annoying
  * thing to do, and it survives long after the branch is deleted.
  */
-export function buildSecurityHeaders(
-  options: SecurityHeaderOptions = {}
-): Record<string, string> {
+export function buildSecurityHeaders(options: SecurityHeaderOptions = {}): Record<string, string> {
   const { isDev = false, reportOnly = false, apiRoute = false } = options;
 
   const cspHeaderName = reportOnly
-    ? 'Content-Security-Policy-Report-Only'
-    : 'Content-Security-Policy';
+    ? "Content-Security-Policy-Report-Only"
+    : "Content-Security-Policy";
 
   const headers: Record<string, string> = {
     [cspHeaderName]: buildContentSecurityPolicy(options),
 
     // Redundant with `frame-ancestors 'none'` for modern browsers, kept for the
     // ones that never implemented it.
-    'X-Frame-Options': 'DENY',
+    "X-Frame-Options": "DENY",
 
     // `/api/admin/export` returns CSV built from attacker-influenced repository
     // names. Sniffing that as HTML would undo the formula-injection defence in
     // src/lib/utils/csv.ts.
-    'X-Content-Type-Options': 'nosniff',
+    "X-Content-Type-Options": "nosniff",
 
     // Send the full URL same-origin (useful for our own analytics) and only the
     // origin cross-origin, so `/share/heist/<id>` paths do not leak outward.
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    "Referrer-Policy": "strict-origin-when-cross-origin",
 
-    'Permissions-Policy': buildPermissionsPolicy(),
+    "Permissions-Policy": buildPermissionsPolicy(),
 
     // The GitHub OAuth flow opens a popup; isolating the browsing-context group
     // keeps that window from reaching back into the app.
-    'Cross-Origin-Opener-Policy': 'same-origin',
+    "Cross-Origin-Opener-Policy": "same-origin",
 
     // `same-site` rather than `same-origin`: the OG image route is fetched by
     // crawlers and must stay embeddable.
-    'Cross-Origin-Resource-Policy': 'same-site',
+    "Cross-Origin-Resource-Policy": "same-site",
 
     // Legacy XSS auditor. Explicitly disabled — the auditor introduced its own
     // vulnerabilities and every current browser has removed it, but a stale
     // value in a proxy cache is worth overriding.
-    'X-XSS-Protection': '0',
+    "X-XSS-Protection": "0",
   };
 
   if (!isDev) {
-    headers['Strict-Transport-Security'] =
+    headers["Strict-Transport-Security"] =
       `max-age=${HSTS_MAX_AGE_SECONDS}; includeSubDomains; preload`;
   }
 
   if (apiRoute) {
     // API payloads contain findings and audit rows. Nothing about them should
     // sit in a shared cache.
-    headers['Cache-Control'] = 'no-store, max-age=0';
+    headers["Cache-Control"] = "no-store, max-age=0";
   }
 
   return headers;
@@ -331,7 +334,7 @@ export function buildSecurityHeaders(
 export function isReportOnlyEnabled(raw: string | undefined): boolean {
   if (!raw) return false;
   const value = raw.trim().toLowerCase();
-  return value === 'true' || value === '1' || value === 'yes';
+  return value === "true" || value === "1" || value === "yes";
 }
 
 /**
@@ -341,10 +344,10 @@ export function isReportOnlyEnabled(raw: string | undefined): boolean {
  * stay trivially testable.
  */
 export function securityHeaderOptionsFromEnv(
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
 ): SecurityHeaderOptions {
   return {
-    isDev: env.NODE_ENV === 'development',
+    isDev: env.NODE_ENV === "development",
     reportOnly: isReportOnlyEnabled(env.CSP_REPORT_ONLY),
     reportUri: env.CSP_REPORT_URI?.trim() || undefined,
   };
@@ -369,15 +372,15 @@ function toHeaderList(headers: Record<string, string>): Array<{ key: string; val
  * overwrite the catch-all's for the keys they share.
  */
 export function buildNextSecurityHeaderRules(
-  options: SecurityHeaderOptions = {}
+  options: SecurityHeaderOptions = {},
 ): NextHeaderRule[] {
   return [
     {
-      source: '/api/:path*',
+      source: "/api/:path*",
       headers: toHeaderList(buildSecurityHeaders({ ...options, apiRoute: true })),
     },
     {
-      source: '/:path*',
+      source: "/:path*",
       headers: toHeaderList(buildSecurityHeaders({ ...options, apiRoute: false })),
     },
   ];
@@ -397,7 +400,7 @@ export interface HeaderBearingResponse {
  */
 export function applySecurityHeaders<T extends HeaderBearingResponse>(
   response: T,
-  options: SecurityHeaderOptions = {}
+  options: SecurityHeaderOptions = {},
 ): T {
   for (const [key, value] of Object.entries(buildSecurityHeaders(options))) {
     response.headers.set(key, value);

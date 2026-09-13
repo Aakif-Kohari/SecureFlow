@@ -52,7 +52,8 @@ export default async function CodenameSetupPage() {
             The Naming Ceremony
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Welcome to the Resistance. To safeguard operations and protect your fellow crew members, real names are strictly prohibited.
+            Welcome to the Resistance. To safeguard operations and protect your fellow crew members,
+            real names are strictly prohibited.
           </p>
         </div>
 

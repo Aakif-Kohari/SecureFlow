@@ -2,13 +2,13 @@
  * Type definitions for Software Bill of Materials (SBOM) scanning.
  */
 
-export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type SeverityLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export interface Dependency {
   name: string;
   version: string;
   manifestFile: string;
-  ecosystem: 'npm' | 'pypi' | 'maven' | 'gem';
+  ecosystem: "npm" | "pypi" | "maven" | "gem";
 }
 
 export interface VulnerabilityMatch {
@@ -24,5 +24,5 @@ export interface SbomScanResult {
   timestamp: Date;
   totalDependencies: number;
   vulnerabilities: VulnerabilityMatch[];
-  status: 'CLEAN' | 'WARNING' | 'VULNERABLE' | 'ERROR';
+  status: "CLEAN" | "WARNING" | "VULNERABLE" | "ERROR";
 }
