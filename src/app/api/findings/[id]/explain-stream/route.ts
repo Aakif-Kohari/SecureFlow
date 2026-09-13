@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import { streamDeveloperSecurityExplanations } from "@/ai/flows/security-explanation-stream";
-import { withRateLimit, TIERS } from "@/lib/middleware/rate-limit";
-import { checkRateLimit } from "@/lib/redis";
-import { ratelimit } from "@/lib/rate-limit";
-import { streamManager } from "@/lib/sse/streamManager";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
+import { streamDeveloperSecurityExplanations } from '@/ai/flows/security-explanation-stream';
+import { withRateLimit, TIERS } from '@/lib/middleware/rate-limit';
+import { checkRateLimit } from '@/lib/redis';
+import { ratelimit } from '@/lib/rate-limit';
+import { streamManager } from '@/lib/sse/streamManager';
+import {
+  createExplanationCacheKey,
+  getCachedExplanation,
+  setCachedExplanation,
+} from '@/lib/explanation-cache';
 
 export const dynamic = "force-dynamic";
 
@@ -83,14 +88,55 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ id:
   });
 
   if (!finding) {
-    return NextResponse.json(
-      { error: "Forbidden: You do not have access to this finding" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "Forbidden: You do not have access to this finding" }, { status: 403 });
   }
+  const cacheKey = createExplanationCacheKey({
+    findingType: finding.type,
+    severity: finding.severity,
+    fileLocation: finding.fileLocation,
+    codeSnippet: finding.codeSnippet || '',
+  });
+  
+  const cachedExplanation = await getCachedExplanation(cacheKey);
+  if (cachedExplanation) {
+  
+
+  const cachedStream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            type: 'chunk',
+            explanation: cachedExplanation.explanation,
+          })}\n\n`
+        )
+      );
+
+      controller.enqueue(
+        encoder.encode(
+          `data: ${JSON.stringify({
+            type: 'done',
+            result: cachedExplanation,
+          })}\n\n`
+        )
+      );
+
+      controller.close();
+    },
+  });
+
+  return new Response(cachedStream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
 
   const encoder = new TextEncoder();
-  const { signal: abortSignal, release } = streamManager.register(request.signal, "explain-stream");
+  const { signal: abortSignal, release } = streamManager.register(request.signal, 'explain-stream');
 
   let closed = false;
 
@@ -149,7 +195,8 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ id:
 
           send(event);
 
-          if (event.type === "done") {
+          if (event.type === 'done') {
+            await setCachedExplanation(cacheKey, event.result);
             // Persist the refreshed explanation so a page reload (or the batch webhook view)
             // reflects the same text the user just watched stream in, rather than going stale.
             try {
