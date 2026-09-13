@@ -280,6 +280,33 @@ describe("Prisma Development Query Logging & Process-Wide Repeated-Query Detecti
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
 
+    it("never logs raw query bind parameters even when params are provided in the event", () => {
+      const event: PrismaQueryEvent = {
+        query: 'SELECT * FROM "User" WHERE email = $1 AND passwordHash = $2',
+        params: '["sensitive-email@test.com", "$2b$12$e8uqP0..."]',
+        duration: 25,
+      };
+
+      handlePrismaQueryEvent(
+        event,
+        {
+          slowThresholdMs: 100,
+          tracker,
+          logger: mockLogger as unknown as Logger,
+        },
+        1000,
+      );
+
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        "Prisma query (25ms)",
+        expect.not.objectContaining({
+          params: expect.anything(),
+        }),
+      );
+      const loggedMeta = mockLogger.debug.mock.calls[0][1];
+      expect(loggedMeta).not.toHaveProperty("params");
+    });
+
     it("logs slow queries at warn level", () => {
       const event: PrismaQueryEvent = {
         query: 'SELECT * FROM "AuditLog" ORDER BY timestamp DESC',
@@ -371,7 +398,7 @@ describe("Prisma Development Query Logging & Process-Wide Repeated-Query Detecti
       expect(client.listeners.get("error")).toHaveLength(1);
     });
 
-    it("in production: passes error-only stdout logging and does NOT register query listeners", async () => {
+    it("in production: passes error-only event logging and registers error listener through the application logger", async () => {
       await importWithEnv({
         NODE_ENV: "production",
         DATABASE_URL: "postgresql://u:p@db.production:5432/secureflow",
@@ -380,13 +407,16 @@ describe("Prisma Development Query Logging & Process-Wide Repeated-Query Detecti
       expect(constructedClients).toHaveLength(1);
       const client = constructedClients[0];
 
-      // Verify constructor receives error-only stdout config
-      expect(client.options.log).toEqual([{ emit: "stdout", level: "error" }]);
+      // Verify constructor receives error-only event config (not stdout)
+      expect(client.options.log).toEqual([{ emit: "event", level: "error" }]);
 
-      // Verify no event listeners registered
+      // Verify query and warn listeners are NOT registered in production
       expect(client.listeners.has("query")).toBe(false);
       expect(client.listeners.has("warn")).toBe(false);
-      expect(client.listeners.has("error")).toBe(false);
+
+      // Verify error listener IS registered so errors pass through the logger's redaction pipeline
+      expect(client.listeners.has("error")).toBe(true);
+      expect(client.listeners.get("error")).toHaveLength(1);
     });
 
     it("in production with PRISMA_LOG_QUERIES='true': remains strictly error-only and registers NO query listeners", async () => {
@@ -400,8 +430,10 @@ describe("Prisma Development Query Logging & Process-Wide Repeated-Query Detecti
       const client = constructedClients[0];
 
       // Production must remain error-only even if someone sets PRISMA_LOG_QUERIES
-      expect(client.options.log).toEqual([{ emit: "stdout", level: "error" }]);
+      expect(client.options.log).toEqual([{ emit: "event", level: "error" }]);
       expect(client.listeners.has("query")).toBe(false);
+      expect(client.listeners.has("warn")).toBe(false);
+      expect(client.listeners.has("error")).toBe(true);
     });
 
     it("safely handles PrismaClient mocks where $on is not defined", async () => {

@@ -448,9 +448,6 @@ export function handlePrismaQueryEvent(
     query: event.query,
     durationMs: duration,
   };
-  if (event.params && event.params !== "[]") {
-    meta.params = event.params;
-  }
 
   if (isRepeated) {
     logger.warn(
@@ -503,28 +500,31 @@ const prismaClientSingleton = () => {
           { emit: "event", level: "warn" },
           { emit: "event", level: "error" },
         ]
-      : [{ emit: "stdout", level: "error" }],
+      : [{ emit: "event", level: "error" }],
   };
 
   // 4. Pass options to the Prisma Client constructor
   const client = new PrismaClient(clientOptions as any);
 
-  // 5. In development, register query, slow-query and repeated-query listeners
-  if (loggingEnabled && typeof (client as any).$on === "function") {
-    const slowThresholdMs = resolveSlowQueryThreshold();
-    const tracker = createRecentQueryTracker();
+  // 5. Register event listeners: query/warn in dev, and route error events through
+  // the application logger in all environments so they pass through redaction.
+  if (typeof (client as any).$on === "function") {
+    if (loggingEnabled) {
+      const slowThresholdMs = resolveSlowQueryThreshold();
+      const tracker = createRecentQueryTracker();
 
-    (client as any).$on("query", (e: PrismaQueryEvent) => {
-      handlePrismaQueryEvent(e, {
-        slowThresholdMs,
-        tracker,
-        logger: log,
+      (client as any).$on("query", (e: PrismaQueryEvent) => {
+        handlePrismaQueryEvent(e, {
+          slowThresholdMs,
+          tracker,
+          logger: log,
+        });
       });
-    });
 
-    (client as any).$on("warn", (e: { message: string }) => {
-      log.warn(e.message);
-    });
+      (client as any).$on("warn", (e: { message: string }) => {
+        log.warn(e.message);
+      });
+    }
 
     (client as any).$on("error", (e: { message: string }) => {
       log.error(e.message);

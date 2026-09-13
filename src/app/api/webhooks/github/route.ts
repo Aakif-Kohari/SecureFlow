@@ -211,7 +211,9 @@ const handler = withErrorHandler(async function POST(req: NextRequest) {
     throw new AppError("Missing or invalid x-github-delivery header", 400);
   }
 
-  const signatureHex = parseGithubSignature(req.headers.get("x-hub-signature-256"));
+  const signatureHex = parseGithubSignature(
+    req.headers.get("x-hub-signature-256") ?? req.headers.get("X-Hub-Signature-256"),
+  );
   if (!signatureHex) {
     throw new AppError("Missing or invalid x-hub-signature-256 header", 401);
   }
